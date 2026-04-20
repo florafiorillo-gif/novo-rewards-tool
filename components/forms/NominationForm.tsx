@@ -12,6 +12,7 @@ interface EmployeeOption {
   name: string
   email: string
   role_title: string
+  manager_id: string | null
 }
 
 interface ValueOption {
@@ -23,21 +24,44 @@ interface ValueOption {
 interface Props {
   employees: EmployeeOption[]
   values: ValueOption[]
+  // If the selected nominee's manager_id matches this, the reflection
+  // dropdown appears and is required (spec §7.2 self-approval).
+  currentEmployeeId: string
 }
+
+// Spec §7.2 — captured for pattern analysis; values must match the
+// ReflectionType enum in prisma/schema.prisma.
+const REFLECTION_OPTIONS: { value: string; label: string }[] = [
+  { value: 'FIRST_RECOGNITION', label: 'First recognition for this person' },
+  {
+    value: 'SPECIFIC_MOMENT',
+    label: 'Specific moment, different from past recognitions',
+  },
+  {
+    value: 'BROADER_PATTERN',
+    label: 'Part of a broader pattern I want to acknowledge',
+  },
+  { value: 'OTHER', label: 'Other' },
+]
 
 const OUTCOME_PLACEHOLDER = 'What happened as a result? Why did it matter?'
 const DEFAULT_BEHAVIOR_PLACEHOLDER = 'What did they do? Be specific.'
 const MIN_LEN = 30
 const MAX_LEN = 500
 
-export function NominationForm({ employees, values }: Props) {
+export function NominationForm({ employees, values, currentEmployeeId }: Props) {
   const [state, formAction] = useFormState(
     submitNominationAction,
     submitNominationInitialState
   )
+  const [selectedNomineeId, setSelectedNomineeId] = useState('')
   const [selectedValueId, setSelectedValueId] = useState('')
   const [behavior, setBehavior] = useState('')
   const [outcome, setOutcome] = useState('')
+
+  const selectedNominee = employees.find((e) => e.id === selectedNomineeId)
+  const isSelfApprovalPath =
+    !!selectedNominee && selectedNominee.manager_id === currentEmployeeId
 
   const behaviorPlaceholder =
     values.find((v) => v.id === selectedValueId)?.behavior_placeholder ??
@@ -58,7 +82,8 @@ export function NominationForm({ employees, values }: Props) {
           id="nominee_id"
           name="nominee_id"
           required
-          defaultValue=""
+          value={selectedNomineeId}
+          onChange={(e) => setSelectedNomineeId(e.target.value)}
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-0"
         >
           <option value="" disabled>
@@ -131,6 +156,37 @@ export function NominationForm({ employees, values }: Props) {
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-0"
         />
       </Field>
+
+      {isSelfApprovalPath && (
+        <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+          <p className="mb-3 text-xs uppercase tracking-wide text-gray-500">
+            You're recognizing one of your direct reports
+          </p>
+          <Field
+            label="A quick reflection"
+            htmlFor="reflection_type"
+            error={err.reflection_type}
+            hint="Captured for pattern analysis. Not shown publicly."
+          >
+            <select
+              id="reflection_type"
+              name="reflection_type"
+              required={isSelfApprovalPath}
+              defaultValue=""
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-0"
+            >
+              <option value="" disabled>
+                Pick one
+              </option>
+              {REFLECTION_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+      )}
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium text-gray-900">

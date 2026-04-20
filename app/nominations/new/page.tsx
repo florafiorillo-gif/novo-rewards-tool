@@ -11,9 +11,15 @@ export default async function NewNominationPage() {
   if (!session?.user?.employeeId) redirect('/auth/signin')
   const currentEmployeeId = session.user.employeeId
 
-  const employees = (await getAllActiveEmployees()).filter(
-    (e) => e.id !== currentEmployeeId
-  )
+  const employees = (await getAllActiveEmployees())
+    .filter((e) => e.id !== currentEmployeeId)
+    .map((e) => ({
+      id: e.id,
+      name: e.name,
+      email: e.email,
+      role_title: e.role_title,
+      manager_id: e.manager_id,
+    }))
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-6 py-12">
@@ -32,6 +38,7 @@ export default async function NewNominationPage() {
           name: v.name,
           behavior_placeholder: v.behavior_placeholder,
         }))}
+        currentEmployeeId={currentEmployeeId}
       />
     </main>
   )
