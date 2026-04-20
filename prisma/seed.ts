@@ -51,6 +51,37 @@ async function main() {
     })
   }
   console.log(`  ✓ ${MOCK_EMPLOYEES.length} employees seeded`)
+
+  console.log('Seeding Q2 2026 budget period (for local dev demos)...')
+  const existing = await db.budgetPeriod.findFirst({
+    where: { period_label: 'Q2 2026' },
+  })
+  if (existing) {
+    console.log('  · Q2 2026 already seeded; skipping')
+  } else {
+    const { createPeriod } = await import('../modules/budget/periods')
+    const { allocatePools } = await import('../modules/budget/allocation')
+    const { DEFAULT_ALLOCATION_CONFIG } = await import('../modules/budget/types')
+    const result = await createPeriod({
+      period_label: 'Q2 2026',
+      start_date: new Date('2026-04-01'),
+      end_date: new Date('2026-06-30'),
+      total_allocation_usd: 100_000,
+      allocation_config: DEFAULT_ALLOCATION_CONFIG,
+    })
+    if (!result.ok) throw new Error('seed: createPeriod failed')
+    const alloc = await allocatePools(result.period.id, DEFAULT_ALLOCATION_CONFIG)
+    if (!alloc.ok) throw new Error('seed: allocatePools failed')
+    // Flip directly to active for the mock demo; real periods require
+    // committee approval via /committee/budget.
+    await db.budgetPeriod.update({
+      where: { id: result.period.id },
+      data: { status: 'active', approved_at: new Date() },
+    })
+    console.log(
+      `  ✓ Q2 2026 period active with ${alloc.result.pools.length} pools`
+    )
+  }
 }
 
 main()

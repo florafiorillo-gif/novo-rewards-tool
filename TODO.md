@@ -1,7 +1,40 @@
 # TODO — deferred follow-ups
 
-Tracked from the Phase 3 audit. All items here were consciously deferred
-by the builder; none block Phase 4. Work through before the launch review.
+Tracked from the Phase 3 audit and Phase 4 build. Items were consciously
+deferred by the builder; none block the current phase. Work through before
+launch review.
+
+## Pre-Phase-5 must-wire
+
+### Reward-selection lapse check against closed periods
+**Ref:** Phase 4 Q4 / close-grace edge case. `BudgetPeriod.closed_at`
+stamps when committee closes a period. Pools stay drawable for 14 days
+(`CLOSE_GRACE_MS`) so in-flight approvals can still select rewards.
+Phase 5 reward-selection must check at commit time: if the nomination
+was approved in a period whose `closed_at + CLOSE_GRACE_MS < now`, fail
+with a warm error ("period closed, please re-approve") and surface the
+nomination back in the approver's queue. Don't silently lapse.
+
+**Fix sketch:** resolve the period from nomination.approved_at →
+BudgetPeriod lookup. If period.closed_at is set and the grace has
+elapsed, refuse commitSpend and return a distinct error code like
+`period_lapsed`. Phase 5 renders the warm message.
+
+### Reward selection must call resolvePoolForNomination + commitSpend
+**Ref:** Phase 4 decision Q4 + Q5. Phase 3 approvals don't touch the
+budget. Phase 5 reward-selection does:
+1. On screen load: resolvePoolForNomination → show pool.remaining.
+2. On confirm: commitSpend(pool_id, reward_amount). On
+   insufficient_balance, surface the warm "budget depleted since you
+   started" error; offer the exception path (Checkbox → drawFromReserve).
+3. On exception-checkbox confirm: drawFromReserve instead of commitSpend.
+
+### Colombia cash bonus contractor path (spec §8.1)
+Spec update: Colombia = fully manual, regardless of platform. Contractors
+in Colombia may need a separate payment path from employees. Sakshi +
+Finance to confirm. Phase 5 reward-selection should route all Colombia
+recipients to the manual-fulfillment flow (set delivery_mechanism=manual)
+and flag contractor vs employee for the People team's instruction.
 
 ## Pre-launch must-fix
 
