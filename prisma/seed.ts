@@ -19,7 +19,7 @@ async function main() {
   }
   console.log(`  ✓ ${VALUES.length} values seeded`)
 
-  console.log('Seeding mock employees...')
+  console.log('Seeding mock employees (including the inactive System actor)...')
   // Seed managers before direct reports to satisfy the FK constraint.
   // Sort: null manager_id first, then by manager_id presence.
   const sorted = [...MOCK_EMPLOYEES].sort((a, b) => {

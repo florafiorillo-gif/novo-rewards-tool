@@ -1,10 +1,33 @@
 import type { Employee } from './types'
 
+// Stable id of the synthetic "System" employee used by automated actors
+// (SLA auto-deny + 7-day escalations per spec §7.6). Kept inactive so it
+// never appears in dropdowns, Slack nominee pickers, or announcements.
+// See TODO.md item A1 for the stakeholder-facing note.
+export const SYSTEM_EMPLOYEE_ID = 'emp_system'
+
 // Represents the org structure for dev/test. Mirrors what Zoho will provide
 // plus the Phase 3 role flags (department, dept head, People team rep,
 // committee member, and Tier 2 round-robin counter).
 // IDs use "emp_" prefix to make them obviously synthetic.
 export const MOCK_EMPLOYEES: Employee[] = [
+  // ── Automated actor ────────────────────────────────────────────────────────
+  {
+    id: SYSTEM_EMPLOYEE_ID,
+    name: 'System',
+    email: 'system@novo.co',
+    geo: 'US',
+    manager_id: null,
+    role_title: 'System',
+    active: false,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+    department: null,
+    is_department_head: false,
+    is_people_team_rep: false,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
+  },
   // ── Committee ──────────────────────────────────────────────────────────────
   {
     id: 'emp_001',

@@ -4,6 +4,7 @@ import {
   updateMock,
 } from '@/modules/nominations/mock-store'
 import type { NominationRecord } from '@/modules/nominations/types'
+import { SYSTEM_EMPLOYEE_ID } from '@/modules/employees/mock-data'
 import { recordAction } from './service'
 
 const useMock = () => process.env.USE_MOCK_DATA === 'true'
@@ -40,7 +41,7 @@ export async function runSlaSweep(now: Date = new Date()): Promise<SlaRunResult>
       await patch(nom.id, { last_escalation_at: now })
       await recordAction({
         nomination_id: nom.id,
-        actor_id: 'system',
+        actor_id: SYSTEM_EMPLOYEE_ID,
         action: 'escalate',
         reason_text: '7-day SLA escalation (spec §7.6)',
       })
@@ -65,7 +66,7 @@ async function autoDeny(nom: NominationRecord, now: Date): Promise<void> {
   })
   await recordAction({
     nomination_id: nom.id,
-    actor_id: 'system',
+    actor_id: SYSTEM_EMPLOYEE_ID,
     action: 'deny',
     reason_structured: 'other',
     reason_text: 'No action taken within 21 days (spec §7.6 auto-deny)',
