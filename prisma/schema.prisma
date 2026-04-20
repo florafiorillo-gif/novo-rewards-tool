@@ -1,0 +1,333 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Geo {
+  US
+  India
+  Colombia
+}
+
+enum EmploymentType {
+  employee
+  contractor
+}
+
+enum RecognitionPreference {
+  public
+  team_only
+  private
+}
+
+enum BudgetPeriodStatus {
+  draft
+  approved
+  active
+  closed
+}
+
+enum PoolType {
+  manager_tier1
+  peer_tier1
+  department_tier2
+  committee_tier3
+  reserve
+}
+
+enum NominationStatus {
+  submitted
+  under_review
+  approved
+  denied
+  fulfilled
+  cancelled
+}
+
+enum ApprovalActionType {
+  approve
+  deny
+  propose_upgrade
+  escalate
+  request_info
+  recuse
+  group_into_team_award
+  undo
+}
+
+enum DenialReason {
+  failed_loophole
+  value_mismatch
+  already_recognized
+  insufficient_detail
+  other
+}
+
+enum RewardType {
+  cash
+  gift_card
+  experience
+  l_and_d
+  custom
+}
+
+enum RewardStatus {
+  selected
+  issued
+  delivered
+  failed
+  unclaimed
+}
+
+enum DeliveryMechanism {
+  tremendous
+  justworks_csv
+  zoho_payroll
+  manual
+}
+
+enum CommitteeDecisionType {
+  approve
+  deny
+  defer
+}
+
+enum DigestStatus {
+  draft
+  published
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+// Section 12.1 — synced from Zoho; id is the Zoho employee ID
+model Employee {
+  id                     String                @id
+  name                   String
+  email                  String                @unique
+  geo                    Geo
+  manager_id             String?
+  manager                Employee?             @relation("EmployeeManager", fields: [manager_id], references: [id])
+  direct_reports         Employee[]            @relation("EmployeeManager")
+  role_title             String
+  active                 Boolean               @default(true)
+  employment_type        EmploymentType        @default(employee)
+  recognition_preference RecognitionPreference @default(public)
+  created_at             DateTime              @default(now())
+  updated_at             DateTime              @updatedAt
+
+  nominations_sent              Nomination[]        @relation("NominatorNominations")
+  nominations_received          Nomination[]        @relation("NomineeNominations")
+  nominations_pending           Nomination[]        @relation("CurrentApprover")
+  approval_actions              ApprovalAction[]
+  reactions                     Reaction[]
+  comments                      Comment[]
+  managed_pools                 BudgetPool[]        @relation("PoolOwner")
+  digests_published             Digest[]
+  budget_exceptions_approved    BudgetException[]
+  team_awards_created           TeamAwardGroup[]
+  committee_decisions_delivered CommitteeDecision[] @relation("CommitteeDecisionDeliveredBy")
+}
+
+// Section 12.2 — static list, editable only by admin
+model Value {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String  @db.Text
+  active      Boolean @default(true)
+
+  nominations Nomination[]
+}
+
+// Section 12.3
+model BudgetPeriod {
+  id                   String             @id @default(cuid())
+  period_label         String
+  start_date           DateTime
+  end_date             DateTime
+  total_allocation_usd Decimal            @db.Decimal(10, 2)
+  status               BudgetPeriodStatus @default(draft)
+  approved_by          String[] // array of Employee IDs
+  approved_at          DateTime?
+
+  pools BudgetPool[]
+}
+
+// Section 12.4 — remaining_amount_usd maintained by budget engine (allocated - spent - reserved)
+model BudgetPool {
+  id                   String       @id @default(cuid())
+  period_id            String
+  period               BudgetPeriod @relation(fields: [period_id], references: [id])
+  pool_type            PoolType
+  geo                  Geo? // null for committee_tier3 and reserve
+  owner_id             String? // manager or department head employee ID; null for peer/committee/reserve
+  owner                Employee?    @relation("PoolOwner", fields: [owner_id], references: [id])
+  allocated_amount_usd Decimal      @db.Decimal(10, 2)
+  spent_amount_usd     Decimal      @db.Decimal(10, 2) @default(0)
+  reserved_amount_usd  Decimal      @db.Decimal(10, 2) @default(0)
+  remaining_amount_usd Decimal      @db.Decimal(10, 2)
+
+  budget_exceptions BudgetException[]
+}
+
+// Section 12.5 — core nomination object; tier defaults to 1, routing determined at submission
+model Nomination {
+  id                  String           @id @default(cuid())
+  nominator_id        String
+  nominator           Employee         @relation("NominatorNominations", fields: [nominator_id], references: [id])
+  nominee_id          String
+  nominee             Employee         @relation("NomineeNominations", fields: [nominee_id], references: [id])
+  value_id            String
+  value               Value            @relation(fields: [value_id], references: [id])
+  behavior_text       String           @db.Text
+  outcome_text        String           @db.Text
+  evidence_links      String[]
+  submitted_at        DateTime         @default(now())
+  current_tier        Int              @default(1)
+  status              NominationStatus @default(submitted)
+  current_approver_id String?
+  current_approver    Employee?        @relation("CurrentApprover", fields: [current_approver_id], references: [id])
+  team_award_group_id String?
+  team_award_group    TeamAwardGroup?  @relation(fields: [team_award_group_id], references: [id])
+  created_at          DateTime         @default(now())
+  updated_at          DateTime         @updatedAt
+
+  reward              Reward?
+  approval_actions    ApprovalAction[]
+  reactions           Reaction[]
+  comments            Comment[]
+  budget_exceptions   BudgetException[]
+  committee_decisions CommitteeDecision[]
+}
+
+// Section 12.6 — full audit trail; every decision creates a record
+model ApprovalAction {
+  id                String             @id @default(cuid())
+  nomination_id     String
+  nomination        Nomination         @relation(fields: [nomination_id], references: [id])
+  actor_id          String
+  actor             Employee           @relation(fields: [actor_id], references: [id])
+  action            ApprovalActionType
+  from_tier         Int?
+  to_tier           Int?
+  reason_structured DenialReason?
+  reason_text       String?            @db.Text
+  created_at        DateTime           @default(now())
+}
+
+// Section 12.8 — reusable scope note copy per tier, editable by approver
+model ScopeNoteTemplate {
+  id            String  @id @default(cuid())
+  tier          Int
+  template_text String  @db.Text
+  active        Boolean @default(true)
+
+  rewards Reward[]
+}
+
+// Section 12.7 — one reward per nomination; FK lives here, not on Nomination
+model Reward {
+  id                     String             @id @default(cuid())
+  nomination_id          String             @unique
+  nomination             Nomination         @relation(fields: [nomination_id], references: [id])
+  reward_type            RewardType
+  vendor                 String?
+  amount_usd             Decimal            @db.Decimal(10, 2)
+  amount_local           Decimal?           @db.Decimal(10, 2)
+  currency_local         String?
+  status                 RewardStatus       @default(selected)
+  delivery_mechanism     DeliveryMechanism
+  scope_note_template_id String?
+  scope_note_template    ScopeNoteTemplate? @relation(fields: [scope_note_template_id], references: [id])
+  scope_note_text        String?            @db.Text
+  issued_at              DateTime?
+  delivered_at           DateTime?
+}
+
+// Section 12.10
+model TeamAwardGroup {
+  id          String   @id @default(cuid())
+  created_at  DateTime @default(now())
+  created_by  String
+  creator     Employee @relation(fields: [created_by], references: [id])
+  description String   @db.Text
+
+  nominations         Nomination[]
+  committee_decisions CommitteeDecision[]
+}
+
+// Section 12.9 — exactly one of nomination_id or team_award_group_id must be set (enforced in app)
+model CommitteeDecision {
+  id                   String                @id @default(cuid())
+  nomination_id        String?
+  nomination           Nomination?           @relation(fields: [nomination_id], references: [id])
+  team_award_group_id  String?
+  team_award_group     TeamAwardGroup?       @relation(fields: [team_award_group_id], references: [id])
+  committee_members    String[] // array of Employee IDs
+  decision             CommitteeDecisionType
+  approved_amount_usd  Decimal?              @db.Decimal(10, 2)
+  reward_form          String?
+  delivery_plan        String?               @db.Text
+  decision_log_text    String?               @db.Text
+  conflicted_members   String[] // array of Employee IDs who recused
+  substitute_member_id String?
+  delivered_by_id      String?
+  delivered_by         Employee?             @relation("CommitteeDecisionDeliveredBy", fields: [delivered_by_id], references: [id])
+  delivered_at         DateTime?
+  decided_at           DateTime              @default(now())
+}
+
+// Section 12.11 — emoji reactions on #made-it-happen posts
+model Reaction {
+  id            String     @id @default(cuid())
+  nomination_id String
+  nomination    Nomination @relation(fields: [nomination_id], references: [id])
+  user_id       String
+  user          Employee   @relation(fields: [user_id], references: [id])
+  reaction_type String
+  created_at    DateTime   @default(now())
+
+  @@unique([nomination_id, user_id, reaction_type])
+}
+
+// Section 12.12 — threaded corroborating comments
+model Comment {
+  id            String     @id @default(cuid())
+  nomination_id String
+  nomination    Nomination @relation(fields: [nomination_id], references: [id])
+  user_id       String
+  user          Employee   @relation(fields: [user_id], references: [id])
+  text          String     @db.Text
+  created_at    DateTime   @default(now())
+}
+
+// Section 12.13 — auto-drafted monthly; People team edits and publishes
+model Digest {
+  id                      String       @id @default(cuid())
+  period                  String // YYYY-MM
+  status                  DigestStatus @default(draft)
+  content                 String       @db.Text
+  featured_nomination_ids String[]
+  published_at            DateTime?
+  published_by_id         String?
+  published_by            Employee?    @relation(fields: [published_by_id], references: [id])
+}
+
+// Section 12.14 — logged when an approval draws from the reserve pool
+model BudgetException {
+  id            String     @id @default(cuid())
+  nomination_id String
+  nomination    Nomination @relation(fields: [nomination_id], references: [id])
+  pool_id       String
+  pool          BudgetPool @relation(fields: [pool_id], references: [id])
+  amount_usd    Decimal    @db.Decimal(10, 2)
+  approver_id   String
+  approver      Employee   @relation(fields: [approver_id], references: [id])
+  reason_text   String?    @db.Text
+  created_at    DateTime   @default(now())
+}
