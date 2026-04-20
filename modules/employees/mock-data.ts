@@ -1,0 +1,136 @@
+import type { Employee } from './types'
+
+// Represents the org structure for dev/test. Mirrors what Zoho will provide.
+// IDs use "emp_" prefix to make them obviously synthetic.
+export const MOCK_EMPLOYEES: Employee[] = [
+  // ── Committee ──────────────────────────────────────────────────────────────
+  {
+    id: 'emp_001',
+    name: 'Rares Crisan',
+    email: 'rares@novo.co',
+    geo: 'US',
+    manager_id: null,
+    role_title: 'CEO',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+  },
+  {
+    id: 'emp_002',
+    name: 'Flora Fiorillo',
+    email: 'flora@novo.co',
+    geo: 'US',
+    manager_id: 'emp_001',
+    role_title: 'Head of People',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+  },
+
+  // ── People team ────────────────────────────────────────────────────────────
+  {
+    id: 'emp_003',
+    name: 'Rubina Khan',
+    email: 'rubina@novo.co',
+    geo: 'US',
+    manager_id: 'emp_002',
+    role_title: 'Brand and Culture Lead',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+  },
+  {
+    id: 'emp_004',
+    name: 'Sakshi Mehta',
+    email: 'sakshi@novo.co',
+    geo: 'US',
+    manager_id: 'emp_002',
+    role_title: 'People Operations Manager',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+  },
+
+  // ── US team ────────────────────────────────────────────────────────────────
+  {
+    id: 'emp_005',
+    name: 'Sarah Chen',
+    email: 'sarah.chen@novo.co',
+    geo: 'US',
+    manager_id: 'emp_001',
+    role_title: 'VP Engineering',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+  },
+  {
+    id: 'emp_006',
+    name: 'Alex Rivera',
+    email: 'alex.rivera@novo.co',
+    geo: 'US',
+    manager_id: 'emp_005',
+    role_title: 'Senior Software Engineer',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+  },
+  {
+    id: 'emp_007',
+    name: 'Jamie Kim',
+    email: 'jamie.kim@novo.co',
+    geo: 'US',
+    manager_id: 'emp_005',
+    role_title: 'Product Manager',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'team_only',
+  },
+
+  // ── India team ─────────────────────────────────────────────────────────────
+  {
+    id: 'emp_008',
+    name: 'Priya Sharma',
+    email: 'priya.sharma@novo.co',
+    geo: 'India',
+    manager_id: 'emp_001',
+    role_title: 'Engineering Manager',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+  },
+  {
+    id: 'emp_009',
+    name: 'Arjun Patel',
+    email: 'arjun.patel@novo.co',
+    geo: 'India',
+    manager_id: 'emp_008',
+    role_title: 'Software Engineer',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+  },
+
+  // ── Colombia team ──────────────────────────────────────────────────────────
+  {
+    id: 'emp_010',
+    name: 'Carlos Mendez',
+    email: 'carlos.mendez@novo.co',
+    geo: 'Colombia',
+    manager_id: 'emp_001',
+    role_title: 'Operations Manager',
+    active: true,
+    employment_type: 'employee',
+    recognition_preference: 'public',
+  },
+  {
+    id: 'emp_011',
+    name: 'Valentina Torres',
+    email: 'valentina.torres@novo.co',
+    geo: 'Colombia',
+    manager_id: 'emp_010',
+    role_title: 'Operations Specialist',
+    active: true,
+    employment_type: 'contractor',
+    recognition_preference: 'private',
+  },
+]
