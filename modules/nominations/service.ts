@@ -111,6 +111,13 @@ export async function createNomination(
     current_approver_id: routing.current_approver_id,
     duplicate_of_id: duplicate?.id ?? null,
     team_award_group_id: null,
+    tier2_dept_head_id: null,
+    tier2_people_team_rep_id: null,
+    urgent: false,
+    last_nudge_at: null,
+    last_escalation_at: null,
+    approved_at: null,
+    denied_at: null,
     created_at: now,
     updated_at: now,
   }

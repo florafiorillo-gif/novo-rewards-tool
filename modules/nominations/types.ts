@@ -25,6 +25,13 @@ export interface NominationRecord {
   current_approver_id: string | null
   team_award_group_id: string | null
   duplicate_of_id: string | null
+  tier2_dept_head_id: string | null
+  tier2_people_team_rep_id: string | null
+  urgent: boolean
+  last_nudge_at: Date | null
+  last_escalation_at: Date | null
+  approved_at: Date | null
+  denied_at: Date | null
   created_at: Date
   updated_at: Date
 }

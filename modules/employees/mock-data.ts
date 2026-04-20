@@ -1,6 +1,8 @@
 import type { Employee } from './types'
 
-// Represents the org structure for dev/test. Mirrors what Zoho will provide.
+// Represents the org structure for dev/test. Mirrors what Zoho will provide
+// plus the Phase 3 role flags (department, dept head, People team rep,
+// committee member, and Tier 2 round-robin counter).
 // IDs use "emp_" prefix to make them obviously synthetic.
 export const MOCK_EMPLOYEES: Employee[] = [
   // ── Committee ──────────────────────────────────────────────────────────────
@@ -14,6 +16,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'public',
+    department: null,
+    is_department_head: false,
+    is_people_team_rep: false,
+    is_committee_member: true,
+    tier2_assignments_count: 0,
   },
   {
     id: 'emp_002',
@@ -25,6 +32,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'public',
+    department: 'People',
+    is_department_head: false,
+    is_people_team_rep: true,
+    is_committee_member: true,
+    tier2_assignments_count: 0,
   },
 
   // ── People team ────────────────────────────────────────────────────────────
@@ -38,6 +50,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'public',
+    department: 'People',
+    is_department_head: false,
+    is_people_team_rep: false,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
   },
   {
     id: 'emp_004',
@@ -49,6 +66,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'public',
+    department: 'People',
+    is_department_head: true,
+    is_people_team_rep: true,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
   },
 
   // ── US team ────────────────────────────────────────────────────────────────
@@ -62,6 +84,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'public',
+    department: 'Engineering',
+    is_department_head: true,
+    is_people_team_rep: false,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
   },
   {
     id: 'emp_006',
@@ -73,6 +100,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'public',
+    department: 'Engineering',
+    is_department_head: false,
+    is_people_team_rep: false,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
   },
   {
     id: 'emp_007',
@@ -84,6 +116,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'team_only',
+    department: 'Engineering',
+    is_department_head: false,
+    is_people_team_rep: false,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
   },
 
   // ── India team ─────────────────────────────────────────────────────────────
@@ -97,6 +134,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'public',
+    department: 'Engineering',
+    is_department_head: true,
+    is_people_team_rep: false,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
   },
   {
     id: 'emp_009',
@@ -108,6 +150,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'public',
+    department: 'Engineering',
+    is_department_head: false,
+    is_people_team_rep: false,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
   },
 
   // ── Colombia team ──────────────────────────────────────────────────────────
@@ -121,6 +168,11 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'employee',
     recognition_preference: 'public',
+    department: 'Operations',
+    is_department_head: true,
+    is_people_team_rep: false,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
   },
   {
     id: 'emp_011',
@@ -132,5 +184,10 @@ export const MOCK_EMPLOYEES: Employee[] = [
     active: true,
     employment_type: 'contractor',
     recognition_preference: 'private',
+    department: 'Operations',
+    is_department_head: false,
+    is_people_team_rep: false,
+    is_committee_member: false,
+    tier2_assignments_count: 0,
   },
 ]

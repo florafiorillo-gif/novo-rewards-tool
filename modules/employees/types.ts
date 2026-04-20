@@ -12,6 +12,11 @@ export interface Employee {
   active: boolean
   employment_type: EmploymentType
   recognition_preference: RecognitionPreference
+  department: string | null
+  is_department_head: boolean
+  is_people_team_rep: boolean
+  is_committee_member: boolean
+  tier2_assignments_count: number
 }
 
 export interface EmployeeSummary {

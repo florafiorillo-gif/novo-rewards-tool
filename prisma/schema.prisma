@@ -103,23 +103,42 @@ enum DigestStatus {
   published
 }
 
+// Captured on manager self-approval (spec §7.2). Structured so Phase 7 dashboards
+// can aggregate manager-to-direct recognition rhythms without parsing free text.
+enum ReflectionType {
+  FIRST_RECOGNITION
+  SPECIFIC_MOMENT
+  BROADER_PATTERN
+  OTHER
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 // Section 12.1 — synced from Zoho; id is the Zoho employee ID
 model Employee {
-  id                     String                @id
-  name                   String
-  email                  String                @unique
-  geo                    Geo
-  manager_id             String?
-  manager                Employee?             @relation("EmployeeManager", fields: [manager_id], references: [id])
-  direct_reports         Employee[]            @relation("EmployeeManager")
-  role_title             String
-  active                 Boolean               @default(true)
-  employment_type        EmploymentType        @default(employee)
-  recognition_preference RecognitionPreference @default(public)
-  created_at             DateTime              @default(now())
-  updated_at             DateTime              @updatedAt
+  id                      String                @id
+  name                    String
+  email                   String                @unique
+  geo                     Geo
+  manager_id              String?
+  manager                 Employee?             @relation("EmployeeManager", fields: [manager_id], references: [id])
+  direct_reports          Employee[]            @relation("EmployeeManager")
+  role_title              String
+  active                  Boolean               @default(true)
+  employment_type         EmploymentType        @default(employee)
+  recognition_preference  RecognitionPreference @default(public)
+  // Department is a string for v1 (Engineering / People / Operations / …).
+  // A full Department table is deferred; the boolean flags below are sufficient
+  // for Tier 2 routing in a ~200-person org.
+  department              String?
+  is_department_head      Boolean               @default(false)
+  is_people_team_rep      Boolean               @default(false)
+  is_committee_member     Boolean               @default(false)
+  // Round-robin counter for Tier 2 People team assignments (spec §7.4).
+  // Incremented at propose-upgrade time; rep with the lowest count wins ties.
+  tier2_assignments_count Int                   @default(0)
+  created_at              DateTime              @default(now())
+  updated_at              DateTime              @updatedAt
 
   nominations_sent              Nomination[]        @relation("NominatorNominations")
   nominations_received          Nomination[]        @relation("NomineeNominations")
@@ -177,30 +196,46 @@ model BudgetPool {
 
 // Section 12.5 — core nomination object; tier defaults to 1, routing determined at submission
 model Nomination {
-  id                  String           @id @default(cuid())
-  nominator_id        String
-  nominator           Employee         @relation("NominatorNominations", fields: [nominator_id], references: [id])
-  nominee_id          String
-  nominee             Employee         @relation("NomineeNominations", fields: [nominee_id], references: [id])
-  value_id            String
-  value               Value            @relation(fields: [value_id], references: [id])
-  behavior_text       String           @db.Text
-  outcome_text        String           @db.Text
-  evidence_links      String[]
-  submitted_at        DateTime         @default(now())
-  current_tier        Int              @default(1)
-  status              NominationStatus @default(submitted)
-  current_approver_id String?
-  current_approver    Employee?        @relation("CurrentApprover", fields: [current_approver_id], references: [id])
-  team_award_group_id String?
-  team_award_group    TeamAwardGroup?  @relation(fields: [team_award_group_id], references: [id])
+  id                       String           @id @default(cuid())
+  nominator_id             String
+  nominator                Employee         @relation("NominatorNominations", fields: [nominator_id], references: [id])
+  nominee_id               String
+  nominee                  Employee         @relation("NomineeNominations", fields: [nominee_id], references: [id])
+  value_id                 String
+  value                    Value            @relation(fields: [value_id], references: [id])
+  behavior_text            String           @db.Text
+  outcome_text             String           @db.Text
+  evidence_links           String[]
+  submitted_at             DateTime         @default(now())
+  current_tier             Int              @default(1)
+  status                   NominationStatus @default(submitted)
+  current_approver_id      String?
+  current_approver         Employee?        @relation("CurrentApprover", fields: [current_approver_id], references: [id])
+  team_award_group_id      String?
+  team_award_group         TeamAwardGroup?  @relation(fields: [team_award_group_id], references: [id])
   // Signal only — links to the most recent prior nomination (same nominator → same nominee)
   // within 7 days. Phase 6 surfaces this as a "maybe add a corroborating comment" prompt.
-  duplicate_of_id     String?
-  duplicate_of        Nomination?      @relation("NominationDuplicate", fields: [duplicate_of_id], references: [id])
-  duplicates          Nomination[]     @relation("NominationDuplicate")
-  created_at          DateTime         @default(now())
-  updated_at          DateTime         @updatedAt
+  duplicate_of_id          String?
+  duplicate_of             Nomination?      @relation("NominationDuplicate", fields: [duplicate_of_id], references: [id])
+  duplicates               Nomination[]     @relation("NominationDuplicate")
+  // Snapshot of the two required Tier 2 approvers at propose-upgrade time
+  // (spec §7.4). Holding the snapshot here keeps the queue stable if either
+  // role changes mid-review. Both null unless the nomination is at Tier 2.
+  tier2_dept_head_id       String?
+  tier2_people_team_rep_id String?
+  // Tier 3 urgent flag (spec §7.5). Triggers a Slack ping to committee members
+  // and a badge in the committee queue; does not change the approval path.
+  urgent                   Boolean          @default(false)
+  // SLA tracking (spec §7.6). last_nudge_at is set when the 72h nudge fires;
+  // last_escalation_at when the 7d escalation fires; used to prevent re-firing.
+  last_nudge_at            DateTime?
+  last_escalation_at       DateTime?
+  // Terminal-state timestamps (separate from the ApprovalAction audit trail so
+  // queries can filter by decision time without a join).
+  approved_at              DateTime?
+  denied_at                DateTime?
+  created_at               DateTime         @default(now())
+  updated_at               DateTime         @updatedAt
 
   reward              Reward?
   approval_actions    ApprovalAction[]
@@ -225,7 +260,12 @@ model ApprovalAction {
   to_tier           Int?
   reason_structured DenialReason?
   reason_text       String?            @db.Text
+  // Populated only when a manager self-approves a direct report (spec §7.2).
+  // Structured for Phase 7 aggregation rather than parsing reason_text.
+  reflection_type   ReflectionType?
   created_at        DateTime           @default(now())
+
+  @@index([nomination_id, created_at])
 }
 
 // Section 12.8 — reusable scope note copy per tier, editable by approver

@@ -29,29 +29,25 @@ async function main() {
   })
 
   for (const emp of sorted) {
+    const data = {
+      name: emp.name,
+      email: emp.email,
+      geo: emp.geo,
+      manager_id: emp.manager_id,
+      role_title: emp.role_title,
+      active: emp.active,
+      employment_type: emp.employment_type,
+      recognition_preference: emp.recognition_preference,
+      department: emp.department,
+      is_department_head: emp.is_department_head,
+      is_people_team_rep: emp.is_people_team_rep,
+      is_committee_member: emp.is_committee_member,
+      tier2_assignments_count: emp.tier2_assignments_count,
+    }
     await db.employee.upsert({
       where: { id: emp.id },
-      update: {
-        name: emp.name,
-        email: emp.email,
-        geo: emp.geo,
-        manager_id: emp.manager_id,
-        role_title: emp.role_title,
-        active: emp.active,
-        employment_type: emp.employment_type,
-        recognition_preference: emp.recognition_preference,
-      },
-      create: {
-        id: emp.id,
-        name: emp.name,
-        email: emp.email,
-        geo: emp.geo,
-        manager_id: emp.manager_id,
-        role_title: emp.role_title,
-        active: emp.active,
-        employment_type: emp.employment_type,
-        recognition_preference: emp.recognition_preference,
-      },
+      update: data,
+      create: { id: emp.id, ...data },
     })
   }
   console.log(`  ✓ ${MOCK_EMPLOYEES.length} employees seeded`)
