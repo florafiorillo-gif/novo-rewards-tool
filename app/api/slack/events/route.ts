@@ -1,34 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifySlackSignature } from '@/modules/integrations/slack/signing'
 
-// Slack sends a URL verification challenge when first configuring the Events API endpoint.
-// All other events are dispatched to Bolt handlers registered in modules/integrations/slack/app.ts.
-// Full Bolt integration is wired in Phase 2.
+export const runtime = 'nodejs'
+
+// Slack Events API endpoint. Today only handles the url_verification
+// handshake. Phase 6 will add real event subscriptions (reaction_added,
+// message.channels) for the #made-it-happen channel; the signing check
+// below is required for that path and harmless for url_verification.
 export async function POST(req: NextRequest) {
-  let body: Record<string, unknown>
-
-  const contentType = req.headers.get('content-type') ?? ''
-
-  try {
-    if (contentType.includes('application/json')) {
-      body = await req.json()
-    } else {
-      // Slash commands and interactive payloads arrive as URL-encoded form data
-      const text = await req.text()
-      const params = new URLSearchParams(text)
-      const raw = Object.fromEntries(params.entries())
-      body = raw.payload ? (JSON.parse(raw.payload) as Record<string, unknown>) : raw
-    }
-  } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  const rawBody = await req.text()
+  const signingSecret = process.env.SLACK_SIGNING_SECRET
+  if (!signingSecret) {
+    return NextResponse.json({ error: 'Slack is not configured' }, { status: 503 })
   }
 
-  // Slack URL verification handshake
+  const valid = verifySlackSignature({
+    signingSecret,
+    timestamp: req.headers.get('x-slack-request-timestamp'),
+    signature: req.headers.get('x-slack-signature'),
+    rawBody,
+  })
+  if (!valid) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  }
+
+  let body: Record<string, unknown>
+  try {
+    body = JSON.parse(rawBody) as Record<string, unknown>
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
   if (body.type === 'url_verification') {
     return NextResponse.json({ challenge: body.challenge })
   }
 
-  // Phase 2: process events through the Bolt app
-  console.log('[slack] event received:', body.type)
-
+  // Phase 6 will dispatch event_callback payloads through a handler here.
+  // Acknowledge everything else with a 200 so Slack doesn't retry.
   return NextResponse.json({ ok: true })
 }
