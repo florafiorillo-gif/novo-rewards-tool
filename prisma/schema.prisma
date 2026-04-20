@@ -151,6 +151,11 @@ model Employee {
   budget_exceptions_approved    BudgetException[]
   team_awards_created           TeamAwardGroup[]
   committee_decisions_delivered CommitteeDecision[] @relation("CommitteeDecisionDeliveredBy")
+
+  // Supports round-robin People team rep picker (ORDER BY
+  // tier2_assignments_count ASC) and dept-head lookup by {department, geo}.
+  @@index([is_people_team_rep, tier2_assignments_count])
+  @@index([is_department_head, department, geo])
 }
 
 // Section 12.2 — static list, editable only by admin
@@ -244,8 +249,14 @@ model Nomination {
   budget_exceptions   BudgetException[]
   committee_decisions CommitteeDecision[]
 
+  // Phase 2 duplicate-signal + Tier 1 approver queue.
   @@index([nominator_id, nominee_id, submitted_at])
   @@index([current_approver_id, status])
+  // Phase 3 Tier 2 queue filters (per-approver snapshot) and committee
+  // queue + SLA sweep ordering by tier/status/submitted_at.
+  @@index([tier2_dept_head_id, status, current_tier])
+  @@index([tier2_people_team_rep_id, status, current_tier])
+  @@index([current_tier, status, submitted_at])
 }
 
 // Section 12.6 — full audit trail; every decision creates a record
@@ -266,6 +277,9 @@ model ApprovalAction {
   created_at        DateTime           @default(now())
 
   @@index([nomination_id, created_at])
+  // Used by isTier2FullyApproved + undoApproval to look up an actor's
+  // most recent approve without scanning the whole trail.
+  @@index([actor_id, action])
 }
 
 // Section 12.8 — reusable scope note copy per tier, editable by approver
