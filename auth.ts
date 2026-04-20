@@ -45,11 +45,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     async session({ session, token }) {
-      if (token.employeeId) {
-        session.user.employeeId = token.employeeId
-        session.user.geo = token.geo ?? ''
-        session.user.managerId = token.managerId ?? null
-        session.user.roleTitle = token.roleTitle ?? ''
+      // NextAuth v5-beta's JWT module-augmentation doesn't merge with `next-auth/jwt`
+      // under strict mode; cast through the augmented shape we declared in
+      // types/next-auth.d.ts. Drop once v5 stable ships.
+      const t = token as typeof token & {
+        employeeId?: string
+        geo?: string
+        managerId?: string | null
+        roleTitle?: string
+      }
+      if (t.employeeId) {
+        session.user.employeeId = t.employeeId
+        session.user.geo = t.geo ?? ''
+        session.user.managerId = t.managerId ?? null
+        session.user.roleTitle = t.roleTitle ?? ''
       }
       return session
     },
