@@ -1,34 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 import { MOCK_EMPLOYEES } from '../modules/employees/mock-data'
+import { VALUES } from '../modules/values/constants'
 
 const db = new PrismaClient()
-
-const VALUES = [
-  {
-    id: 'val_run_for_the_bus',
-    name: 'Run for the Bus',
-    description:
-      'Bias to action. If it advances a company goal or customer need, move. Do not wait for permission when you have the information to act.',
-  },
-  {
-    id: 'val_hierarchy_not_authority',
-    name: 'Hierarchy Is Not Authority',
-    description:
-      'The best idea wins regardless of who says it. Leaders are comfortable following when someone else has the better answer.',
-  },
-  {
-    id: 'val_assume_best_intention',
-    name: 'Assume Best Intention',
-    description:
-      'Give grace for a bad day, a clumsy message, an unaware tone. Address conflict directly. Extend trust.',
-  },
-  {
-    id: 'val_intellectual_honesty',
-    name: 'Intellectual Honesty',
-    description:
-      'Own mistakes. Apologize before doubling down. Do not contort data to fit a narrative.',
-  },
-]
 
 async function main() {
   console.log('Seeding values...')
@@ -36,7 +10,11 @@ async function main() {
     await db.value.upsert({
       where: { id: value.id },
       update: { name: value.name, description: value.description },
-      create: value,
+      create: {
+        id: value.id,
+        name: value.name,
+        description: value.description,
+      },
     })
   }
   console.log(`  ✓ ${VALUES.length} values seeded`)

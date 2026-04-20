@@ -168,8 +168,8 @@ model BudgetPool {
   owner_id             String? // manager or department head employee ID; null for peer/committee/reserve
   owner                Employee?    @relation("PoolOwner", fields: [owner_id], references: [id])
   allocated_amount_usd Decimal      @db.Decimal(10, 2)
-  spent_amount_usd     Decimal      @db.Decimal(10, 2) @default(0)
-  reserved_amount_usd  Decimal      @db.Decimal(10, 2) @default(0)
+  spent_amount_usd     Decimal      @default(0) @db.Decimal(10, 2)
+  reserved_amount_usd  Decimal      @default(0) @db.Decimal(10, 2)
   remaining_amount_usd Decimal      @db.Decimal(10, 2)
 
   budget_exceptions BudgetException[]
@@ -194,6 +194,11 @@ model Nomination {
   current_approver    Employee?        @relation("CurrentApprover", fields: [current_approver_id], references: [id])
   team_award_group_id String?
   team_award_group    TeamAwardGroup?  @relation(fields: [team_award_group_id], references: [id])
+  // Signal only — links to the most recent prior nomination (same nominator → same nominee)
+  // within 7 days. Phase 6 surfaces this as a "maybe add a corroborating comment" prompt.
+  duplicate_of_id     String?
+  duplicate_of        Nomination?      @relation("NominationDuplicate", fields: [duplicate_of_id], references: [id])
+  duplicates          Nomination[]     @relation("NominationDuplicate")
   created_at          DateTime         @default(now())
   updated_at          DateTime         @updatedAt
 
@@ -203,6 +208,9 @@ model Nomination {
   comments            Comment[]
   budget_exceptions   BudgetException[]
   committee_decisions CommitteeDecision[]
+
+  @@index([nominator_id, nominee_id, submitted_at])
+  @@index([current_approver_id, status])
 }
 
 // Section 12.6 — full audit trail; every decision creates a record
