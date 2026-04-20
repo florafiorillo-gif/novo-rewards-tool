@@ -1,8 +1,9 @@
 import { approveNomination, proposeUpgrade, undoApproval } from '@/modules/approvals/service'
 import { createNomination } from '@/modules/nominations/service'
 import { getEmployeeByEmail, getEmployeeById } from '@/modules/employees/service'
-import { getValueById } from '@/modules/values/constants'
 import type { Employee } from '@/modules/employees/types'
+import { getCommitteeMembers } from '@/modules/roles/service'
+import { getValueById } from '@/modules/values/constants'
 import { getSlackClient } from '../client'
 import {
   ACTION_BEHAVIOR,
@@ -35,6 +36,7 @@ import {
   buildUpgradeModal,
 } from '../blocks/upgrade-modal'
 import {
+  pingCommitteeUrgent,
   sendApproverDM,
   sendNominatorApprovalDM,
   updateApproverDMToApproved,
@@ -318,6 +320,34 @@ async function handleUpgradeSubmit(payload: any): Promise<ResponseAction | undef
     return modalError({
       [BLOCK_UPGRADE_REASON]: errorTextForProposeUpgrade(result.error.code),
     })
+  }
+
+  // Tier 2 target: DM both snapshot approvers. Tier 3 + urgent: ping committee.
+  if (result.nomination.current_tier === 2) {
+    if (result.nomination.tier2_dept_head_id) {
+      await sendApproverDM({
+        ...result.nomination,
+        current_approver_id: result.nomination.tier2_dept_head_id,
+      })
+    }
+    if (result.nomination.tier2_people_team_rep_id) {
+      await sendApproverDM({
+        ...result.nomination,
+        current_approver_id: result.nomination.tier2_people_team_rep_id,
+      })
+    }
+  } else if (result.nomination.current_tier === 3 && result.nomination.urgent) {
+    const nominee = await getEmployeeById(result.nomination.nominee_id)
+    const value = getValueById(result.nomination.value_id)
+    const committee = await getCommitteeMembers()
+    if (nominee) {
+      await pingCommitteeUrgent({
+        nomination_id: result.nomination.id,
+        nominee_name: nominee.name,
+        value_name: value?.name ?? 'a Novo value',
+        committee_emails: committee.map((m) => m.email),
+      })
+    }
   }
 
   return { response_action: 'clear' }

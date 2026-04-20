@@ -10,11 +10,13 @@ import {
 } from '@/modules/approvals/service'
 import type { DenialReason } from '@/modules/approvals/types'
 import {
+  pingCommitteeUrgent,
   sendApproverDM,
   sendNominatorApprovalDM,
   sendNominatorDenialDM,
 } from '@/modules/integrations/slack/notifications'
 import { getEmployeeById } from '@/modules/employees/service'
+import { getCommitteeMembers } from '@/modules/roles/service'
 import { getValueById } from '@/modules/values/constants'
 import { getNominationById } from '@/modules/nominations/service'
 
@@ -151,6 +153,20 @@ export async function upgradeFromQueueAction(formData: FormData): Promise<void> 
     }
     if (nom?.tier2_people_team_rep_id) {
       await sendApproverDM({ ...nom, current_approver_id: nom.tier2_people_team_rep_id })
+    }
+  }
+  if (result.ok && toTier === 3 && urgent) {
+    const nom = await getNominationById(nominationId)
+    const nominee = nom ? await getEmployeeById(nom.nominee_id) : null
+    const value = nom ? getValueById(nom.value_id) : null
+    const committee = await getCommitteeMembers()
+    if (nom && nominee) {
+      await pingCommitteeUrgent({
+        nomination_id: nom.id,
+        nominee_name: nominee.name,
+        value_name: value?.name ?? 'a Novo value',
+        committee_emails: committee.map((m) => m.email),
+      })
     }
   }
   revalidatePath('/approvals/queue')
