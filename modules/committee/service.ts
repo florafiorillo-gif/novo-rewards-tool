@@ -6,13 +6,17 @@ import {
   updateMock as updateNominationMock,
 } from '@/modules/nominations/mock-store'
 import type { NominationRecord } from '@/modules/nominations/types'
-import { getEmployeeById } from '@/modules/employees/service'
+import { getEmployeesByIds } from '@/modules/employees/service'
 import type { Employee } from '@/modules/employees/types'
 import {
-  hasTier3Conflict,
+  hasTier3ConflictFromMap,
   isCommitteeMember,
 } from '@/modules/roles/service'
-import { listApprovalActions, recordAction } from '@/modules/approvals/service'
+import {
+  listApprovalActions,
+  listApprovalActionsForNominations,
+  recordAction,
+} from '@/modules/approvals/service'
 import type { ApprovalActionRecord } from '@/modules/approvals/types'
 import {
   insertMockDecision,
@@ -204,39 +208,86 @@ export async function listCommitteeQueue(
         orderBy: [{ urgent: 'desc' }, { submitted_at: 'asc' }],
       })) as unknown as NominationRecord[])
 
-  return Promise.all(
-    rows.map(async (nomination) => {
-      const [nominator, nominee, actions, conflict, priorDecisions] =
-        await Promise.all([
-          getEmployeeById(nomination.nominator_id),
-          getEmployeeById(nomination.nominee_id),
-          listApprovalActions(nomination.id),
-          hasTier3Conflict(viewerEmployeeId, nomination.nominee_id),
-          listCommitteeDecisionsForNomination(nomination.id),
-        ])
-      const viewerRecused = actions.some(
+  if (rows.length === 0) return []
+
+  // Batch-load everything up front. For conflict detection we also need the
+  // nominees' direct and skip-level managers, so resolve chain heads first
+  // then widen the employee fetch.
+  const nominationIds: string[] = []
+  const initialEmpIds = new Set<string>([viewerEmployeeId])
+  for (const n of rows) {
+    nominationIds.push(n.id)
+    initialEmpIds.add(n.nominator_id)
+    initialEmpIds.add(n.nominee_id)
+  }
+
+  const firstPass = await getEmployeesByIds([...initialEmpIds])
+  const managerIds = new Set<string>()
+  for (const n of rows) {
+    const nominee = firstPass.get(n.nominee_id)
+    if (nominee?.manager_id) managerIds.add(nominee.manager_id)
+  }
+  const managers = managerIds.size
+    ? await getEmployeesByIds([...managerIds])
+    : new Map<string, Employee>()
+  const skipIds = new Set<string>()
+  for (const m of managers.values()) {
+    if (m.manager_id) skipIds.add(m.manager_id)
+  }
+  const skips = skipIds.size
+    ? await getEmployeesByIds([...skipIds])
+    : new Map<string, Employee>()
+
+  // Merge all three passes into one lookup map for the in-memory conflict walk.
+  const employees = new Map<string, Employee>()
+  for (const [k, v] of firstPass) employees.set(k, v)
+  for (const [k, v] of managers) employees.set(k, v)
+  for (const [k, v] of skips) employees.set(k, v)
+
+  const [actionsByNom, decisionsByNom] = await Promise.all([
+    listApprovalActionsForNominations(nominationIds),
+    listCommitteeDecisionsForNominations(nominationIds),
+  ])
+
+  return rows.map((nomination) => {
+    const actions = actionsByNom.get(nomination.id) ?? []
+    return {
+      nomination,
+      nominator: employees.get(nomination.nominator_id) ?? null,
+      nominee: employees.get(nomination.nominee_id) ?? null,
+      actions,
+      viewer_conflict: hasTier3ConflictFromMap(
+        viewerEmployeeId,
+        nomination.nominee_id,
+        employees
+      ),
+      viewer_recused: actions.some(
         (a) => a.action === 'recuse' && a.actor_id === viewerEmployeeId
-      )
-      return {
-        nomination,
-        nominator,
-        nominee,
-        actions,
-        viewer_conflict: conflict,
-        viewer_recused: viewerRecused,
-        prior_decisions: priorDecisions,
-      }
-    })
-  )
+      ),
+      prior_decisions: decisionsByNom.get(nomination.id) ?? [],
+    }
+  })
 }
 
-async function listCommitteeDecisionsForNomination(
-  nomination_id: string
-): Promise<CommitteeDecisionRecord[]> {
-  if (useMock()) return listMockDecisionsForNomination(nomination_id)
-  const rows = await db.committeeDecision.findMany({
-    where: { nomination_id },
+async function listCommitteeDecisionsForNominations(
+  nomination_ids: string[]
+): Promise<Map<string, CommitteeDecisionRecord[]>> {
+  const out = new Map<string, CommitteeDecisionRecord[]>()
+  if (nomination_ids.length === 0) return out
+  const unique = Array.from(new Set(nomination_ids))
+  if (useMock()) {
+    for (const id of unique) out.set(id, listMockDecisionsForNomination(id))
+    return out
+  }
+  const rows = (await db.committeeDecision.findMany({
+    where: { nomination_id: { in: unique } },
     orderBy: { decided_at: 'asc' },
-  })
-  return rows as unknown as CommitteeDecisionRecord[]
+  })) as unknown as CommitteeDecisionRecord[]
+  for (const id of unique) out.set(id, [])
+  for (const row of rows) {
+    if (!row.nomination_id) continue
+    const bucket = out.get(row.nomination_id)
+    if (bucket) bucket.push(row)
+  }
+  return out
 }

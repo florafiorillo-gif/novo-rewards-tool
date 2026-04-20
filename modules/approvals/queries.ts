@@ -1,11 +1,13 @@
 import { db } from '@/lib/db'
 import { listAllMock } from '@/modules/nominations/mock-store'
 import type { NominationRecord } from '@/modules/nominations/types'
-import { getEmployeeById } from '@/modules/employees/service'
+import {
+  getEmployeesByIds,
+} from '@/modules/employees/service'
 import type { Employee } from '@/modules/employees/types'
 import { getValueById } from '@/modules/values/constants'
 import type { ValueDef } from '@/modules/values/constants'
-import { listApprovalActions } from './service'
+import { listApprovalActionsForNominations } from './service'
 import type { ApprovalActionRecord } from './types'
 
 const useMock = () => process.env.USE_MOCK_DATA === 'true'
@@ -20,7 +22,9 @@ export interface HydratedNomination {
 
 // Returns nominations where `employeeId` is an eligible actor right now —
 // Tier 1 current approver, Tier 2 snapshot dept head, or Tier 2 snapshot
-// People team rep. Used by /approvals/queue.
+// People team rep. Hydrated with bulk-loaded employees + actions: one DB
+// round-trip for all nominations, one for all referenced employees, one
+// for all actions — instead of 3 per row.
 export async function listPendingApprovalsForEmployee(
   employeeId: string
 ): Promise<HydratedNomination[]> {
@@ -48,7 +52,27 @@ export async function listPendingApprovalsForEmployee(
         orderBy: { submitted_at: 'asc' },
       })) as unknown as NominationRecord[])
 
-  return Promise.all(raw.map(hydrate))
+  if (raw.length === 0) return []
+
+  const employeeIds: string[] = []
+  const nominationIds: string[] = []
+  for (const n of raw) {
+    employeeIds.push(n.nominator_id, n.nominee_id)
+    nominationIds.push(n.id)
+  }
+
+  const [employees, actionsByNom] = await Promise.all([
+    getEmployeesByIds(employeeIds),
+    listApprovalActionsForNominations(nominationIds),
+  ])
+
+  return raw.map((nomination) => ({
+    nomination,
+    nominator: employees.get(nomination.nominator_id) ?? null,
+    nominee: employees.get(nomination.nominee_id) ?? null,
+    value: getValueById(nomination.value_id),
+    actions: actionsByNom.get(nomination.id) ?? [],
+  }))
 }
 
 function isPendingForEmployee(n: NominationRecord, employeeId: string): boolean {
@@ -68,19 +92,4 @@ function isPendingForEmployee(n: NominationRecord, employeeId: string): boolean 
     return true
   }
   return false
-}
-
-async function hydrate(nomination: NominationRecord): Promise<HydratedNomination> {
-  const [nominator, nominee, actions] = await Promise.all([
-    getEmployeeById(nomination.nominator_id),
-    getEmployeeById(nomination.nominee_id),
-    listApprovalActions(nomination.id),
-  ])
-  return {
-    nomination,
-    nominator,
-    nominee,
-    value: getValueById(nomination.value_id),
-    actions,
-  }
 }

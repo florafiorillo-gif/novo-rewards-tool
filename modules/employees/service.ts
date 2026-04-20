@@ -60,3 +60,21 @@ export async function getManager(employeeId: string): Promise<Employee | null> {
   if (!employee?.manager_id) return null
   return getEmployeeById(employee.manager_id)
 }
+
+// Bulk lookup. Returns a Map keyed by employee id. Unknown ids are
+// simply absent from the map. Consumers should handle the miss case.
+export async function getEmployeesByIds(
+  ids: string[]
+): Promise<Map<string, Employee>> {
+  const unique = Array.from(new Set(ids.filter((id) => id.length > 0)))
+  if (unique.length === 0) return new Map()
+  if (useMock()) {
+    const idSet = new Set(unique)
+    const rows = MOCK_EMPLOYEES.filter((e) => idSet.has(e.id))
+    return new Map(rows.map((e) => [e.id, e]))
+  }
+  const rows = (await db.employee.findMany({
+    where: { id: { in: unique } },
+  })) as unknown as Employee[]
+  return new Map(rows.map((e) => [e.id, e]))
+}

@@ -107,6 +107,24 @@ export async function hasTier3Conflict(
   return skip?.id === committeeMemberId
 }
 
+// In-memory variant for batch queue hydration. The caller provides a map
+// of already-loaded employees keyed by id so we avoid three DB hops per
+// row in the committee queue.
+export function hasTier3ConflictFromMap(
+  committeeMemberId: string,
+  nomineeId: string,
+  employeesById: Map<string, Employee>
+): boolean {
+  const nominee = employeesById.get(nomineeId)
+  if (!nominee?.manager_id) return false
+  const direct = employeesById.get(nominee.manager_id)
+  if (!direct) return false
+  if (direct.id === committeeMemberId) return true
+  if (!direct.manager_id) return false
+  const skip = employeesById.get(direct.manager_id)
+  return skip?.id === committeeMemberId
+}
+
 // ─── Internal ────────────────────────────────────────────────────────────────
 // getAllActiveEmployees() returns EmployeeSummary. Role flags live on the full
 // Employee shape, so we read the richer record for role resolution.

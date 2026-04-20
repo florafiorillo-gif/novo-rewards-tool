@@ -93,6 +93,30 @@ export async function listApprovalActions(
   return listActions(nomination_id)
 }
 
+// Bulk counterpart — returns a Map nomination_id → actions[], used by
+// queue hydration so we issue one query per page rather than one per row.
+export async function listApprovalActionsForNominations(
+  nomination_ids: string[]
+): Promise<Map<string, ApprovalActionRecord[]>> {
+  const unique = Array.from(new Set(nomination_ids))
+  const out = new Map<string, ApprovalActionRecord[]>()
+  if (unique.length === 0) return out
+  if (useMock()) {
+    for (const id of unique) out.set(id, listMockApprovalActions(id))
+    return out
+  }
+  const rows = (await db.approvalAction.findMany({
+    where: { nomination_id: { in: unique } },
+    orderBy: { created_at: 'asc' },
+  })) as unknown as ApprovalActionRecord[]
+  for (const id of unique) out.set(id, [])
+  for (const row of rows) {
+    const bucket = out.get(row.nomination_id)
+    if (bucket) bucket.push(row)
+  }
+  return out
+}
+
 // ─── Nomination read + patch (bridge between mock store and Prisma) ──────────
 
 async function loadNomination(id: string): Promise<NominationRecord | null> {
