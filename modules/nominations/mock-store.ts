@@ -64,3 +64,9 @@ export function listPendingForApproverMock(approver_id: string): NominationRecor
     )
     .sort((a, b) => a.submitted_at.getTime() - b.submitted_at.getTime())
 }
+
+// Used by approval queue queries in mock mode. Prefer the more specific
+// helpers above when possible.
+export function listAllMock(): NominationRecord[] {
+  return [...store.values()]
+}
