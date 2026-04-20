@@ -178,11 +178,23 @@ model BudgetPeriod {
   status               BudgetPeriodStatus @default(draft)
   approved_by          String[] // array of Employee IDs
   approved_at          DateTime?
+  // Spec §10 — v1 default split percentages, committee adjusts per quarter.
+  // Shape defined in modules/budget/types.ts (AllocationConfig).
+  allocation_config    Json?
+  // Spec §10.4 + Phase 4 decision — set when committee closes the period.
+  // Pools stay drawable for 14 days after closed_at for in-flight approvals
+  // (Phase 5 reward-selection enforces the lapse check).
+  closed_at            DateTime?
 
   pools BudgetPool[]
+
+  @@index([status, start_date])
 }
 
 // Section 12.4 — remaining_amount_usd maintained by budget engine (allocated - spent - reserved)
+// Phase 4 decision: no pre-reservation during approval/reward-selection.
+// commitSpend is atomic (check-then-increment); reserved_amount_usd stays 0
+// in v1 but the column remains for v2 if Finance wants hold semantics.
 model BudgetPool {
   id                   String       @id @default(cuid())
   period_id            String
@@ -191,12 +203,19 @@ model BudgetPool {
   geo                  Geo? // null for committee_tier3 and reserve
   owner_id             String? // manager or department head employee ID; null for peer/committee/reserve
   owner                Employee?    @relation("PoolOwner", fields: [owner_id], references: [id])
+  // Department this pool covers — only set when pool_type=department_tier2.
+  // Keyed with {geo, department} for dept-head pool lookups.
+  department           String?
   allocated_amount_usd Decimal      @db.Decimal(10, 2)
   spent_amount_usd     Decimal      @default(0) @db.Decimal(10, 2)
   reserved_amount_usd  Decimal      @default(0) @db.Decimal(10, 2)
   remaining_amount_usd Decimal      @db.Decimal(10, 2)
 
   budget_exceptions BudgetException[]
+
+  @@index([period_id, pool_type, geo])
+  @@index([period_id, pool_type, department, geo])
+  @@index([owner_id])
 }
 
 // Section 12.5 — core nomination object; tier defaults to 1, routing determined at submission
