@@ -1,27 +1,25 @@
-import type { App } from '@slack/bolt'
+import { getSlackClient } from '../client'
+import { buildNominationModal } from '../modal/nomination-modal'
 
-export function registerCommandHandlers(app: App): void {
-  app.command('/recognize', async ({ ack, body, client }) => {
-    await ack()
+// Slack sends slash commands as URL-encoded form data. We only handle /recognize
+// for now; the route forwards everything else back to Slack with a generic ack.
 
-    // Phase 2: replace this stub with the full four-field nomination modal
-    await client.views.open({
-      trigger_id: body.trigger_id,
-      view: {
-        type: 'modal',
-        callback_id: 'nomination_modal',
-        title: { type: 'plain_text', text: 'Recognize a teammate' },
-        close: { type: 'plain_text', text: 'Cancel' },
-        blocks: [
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: "The nomination flow is coming in Phase 2. Stay tuned.",
-            },
-          },
-        ],
-      },
-    })
+export interface SlashCommandBody {
+  command?: string
+  trigger_id?: string
+  user_id?: string
+  user_name?: string
+  team_id?: string
+  channel_id?: string
+}
+
+export async function handleSlashCommand(body: SlashCommandBody): Promise<void> {
+  if (body.command !== '/recognize') return
+  if (!body.trigger_id) return
+
+  const client = getSlackClient()
+  await client.views.open({
+    trigger_id: body.trigger_id,
+    view: buildNominationModal(),
   })
 }
