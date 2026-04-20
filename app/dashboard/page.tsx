@@ -1,10 +1,14 @@
 import Link from 'next/link'
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
+import { isCommitteeMember } from '@/modules/roles/service'
 
 export default async function DashboardPage() {
   const session = await auth()
   if (!session) redirect('/auth/signin')
+  const isCommittee = session.user.employeeId
+    ? await isCommitteeMember(session.user.employeeId)
+    : false
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-6 py-12">
@@ -26,6 +30,22 @@ export default async function DashboardPage() {
         >
           Review nominations
         </Link>
+        {isCommittee && (
+          <>
+            <Link
+              href="/committee/queue"
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+            >
+              Committee queue
+            </Link>
+            <Link
+              href="/committee/budget"
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+            >
+              Budget
+            </Link>
+          </>
+        )}
       </div>
     </main>
   )
