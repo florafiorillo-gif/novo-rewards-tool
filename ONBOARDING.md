@@ -10,9 +10,9 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 
 ## 2. Where we are
 
-- **Last commit:** Phase 6F (in-session; hash written in next commit) — unit + integration test coverage for Phase 6.
-- **Phases 1–6 complete.** Phase 7 (dashboards) is the next scoped chunk.
-- **Build state:** `npm run typecheck` clean. `npm test` green (205 tests / 30 suites). `npm run test:integration` skips cleanly without `DATABASE_URL` (expected; Prisma suites are opt-in — 13 tests across 6 suites when wired).
+- **Last commit:** Phase 7A (in-session; hash written in next commit) — manager dashboard at `/dashboard` (pool + pacing + pending count + recent recognitions).
+- **Phases 1–6 complete. Phase 7A done; 7B–7E still pending.**
+- **Build state:** `npm run typecheck` clean. `npm test` green (214 tests / 31 suites). `npm run test:integration` skips cleanly without `DATABASE_URL` (expected; Prisma suites are opt-in — 13 tests across 6 suites when wired).
 - **Data source:** everything runs on mock data in `modules/employees/mock-data.ts` and in-memory `mock-store.ts` files. `USE_MOCK_DATA=true` is the dev default. Prisma schema is complete and integration tests exist for when a real DB is wired.
 
 ## 3. Phase status (from spec §18)
@@ -25,7 +25,7 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 | 4 | Budget engine: pools, allocation, reserve, exceptions, pacing, period lifecycle | done |
 | 5 | Rewards: catalog, reward selection, vendor stub, tax gross-up, CSV/Zoho exports, scope notes, recipient DM, People Ops manual queue, tests | done |
 | 6 | Communication: visibility prefs, ack-before-post, #made-it-happen post, reactions/comments, TZ-aware recipient DM | done |
-| 7 | Dashboards per role | **next** |
+| 7 | Dashboards per role | **in progress** (7A manager done; 7B dept head / 7C People team / 7D committee / 7E recipient next) |
 | 8 | Monthly digest | pending |
 | 9 | Integrations & ops: Zoho live, Airbase export, edge-case polish, admin tools | pending |
 | 10 | Pre-launch: copy pass, manager training, catalog seeding | pending |
@@ -54,6 +54,7 @@ modules/               Service layer, one folder per bounded context
   scope-notes/         per-tier template CRUD
   committee/           T3 batched review + decisions
   communication/       ack state machine, #made-it-happen post composer, reactions/comments, TZ-aware recipient DM scheduler
+  dashboard/           per-role view assemblers; manager-view.ts returns pool + pacing + pending count + recent recognitions
   employees/           Zoho-shaped mock data; manager graph; getEmployeeById; setRecognitionPreference
   roles/               role resolution (manager / dept head / people team rep / committee)
   values/              four value IDs (constant set)
@@ -129,13 +130,17 @@ See `TODO.md` for the running list. Headline items:
 
 ## 9. What to work on next
 
-Two viable paths depending on user intent:
+Phase 7 is underway; user has asked to push through all five sub-surfaces one session at a time. Remaining chunks, in the order we've agreed to go:
 
-**A. Start Phase 7 (role-scoped dashboards, spec §10.5 + §14).** Needs per-role views for managers (own Tier 1 pool + program-health indicator), department heads (Tier 2 pool + their managers' Tier 1 pools on demand), People team (full program dashboard), committee (full + Tier 3 pool detail). No leaderboards, no cross-comparison. Pre-Phase-7 decision: which dashboard surface first? Manager view is the highest-frequency user.
+**Phase 7B — Department head dashboard.** New page (likely `/dashboard/department` or an expansion of `/dashboard` with a dept-head card) surfacing the dept's Tier 2 pool (spent/committed/remaining, pacing) plus an opt-in view of their managers' Tier 1 pools on demand. Driven off `modules/dashboard/` — extend the existing assembler pattern from 7A rather than forking.
 
-**B. Clear pre-launch must-fix list before more features.** Small, high-leverage fixes from TODO.md. Good if the user wants to tighten before moving forward.
+**Phase 7C — People team dashboard.** Full program view for People Ops: all pools across geos, exceptions, SLA misses, pacing by geo. Likely lives under `/people-ops/dashboard` and reuses existing People Ops surfaces (`/people-ops`, `/committee/budget`).
 
-Ask the user which to pursue unless they've directed already.
+**Phase 7D — Committee dashboard.** Superset of People team plus Tier 3 pool detail and committee decisions history.
+
+**Phase 7E — Recipient personal view.** Their own recognition history, with tier masked (spec §2.1). Small surface — one page showing received recognitions + delivered rewards. Probably lives at `/dashboard/me` or similar.
+
+Alternative if user redirects: the pre-launch must-fix items from TODO.md (Tier 2 repeat-approval, undoApproval tier guard, Tier 2 first-approver stale response, SLA auto-deny DM).
 
 ## 10. Cold-start checklist for a new session
 
