@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { db } from '@/lib/db'
 import { getManagerDashboardView } from '@/modules/dashboard/manager-view'
+import { getDepartmentDashboardView } from '@/modules/dashboard/department-view'
 import { allocatePools } from '@/modules/budget/allocation'
 import {
   activatePeriod,
@@ -162,5 +163,62 @@ describeIntegration('Manager dashboard view E2E (Prisma)', () => {
     expect(view.period?.id).toBe(periodId)
     expect(view.in_grace).toBe(true)
     expect(view.pool).not.toBeNull()
+  })
+})
+
+describeIntegration('Department head dashboard view E2E (Prisma)', () => {
+  beforeEach(async () => {
+    await resetDb()
+    await seedFixtures()
+  })
+
+  afterAll(async () => {
+    await disconnect()
+  })
+
+  it('assembles dept pool + managers list + pending T2 from Postgres', async () => {
+    await seedActivePeriod()
+
+    // Propose a Tier 2 upgrade where Sarah is the snapshot dept head.
+    const nom = await createNomination(
+      { ...baseInput, nominee_id: 'emp_006' },
+      'emp_007'
+    )
+    if (!nom.ok) throw new Error('nom seed failed')
+    const up = await proposeUpgrade({
+      nomination_id: nom.nomination.id,
+      actor_id: 'emp_005',
+      to_tier: 2,
+      reasoning:
+        'Cross-org outcome warrants more weight than a Tier 1 peer shoutout.',
+    })
+    expect(up.ok).toBe(true)
+
+    const view = await getDepartmentDashboardView('emp_005')
+    expect(view.department).toBe('Engineering')
+    expect(view.geo).toBe('US')
+    expect(view.dept_pool).not.toBeNull()
+    expect(view.dept_pool!.pool_type).toBe('department_tier2')
+    expect(view.dept_pool!.department).toBe('Engineering')
+    expect(view.dept_pool!.geo).toBe('US')
+    expect(view.dept_pacing).not.toBeNull()
+    expect(view.pending_tier2_count).toBe(1)
+
+    // Managers list: Sarah herself manages emp_006/emp_007, so she appears.
+    // No other US-Engineering managers in the seed.
+    const ids = view.manager_pools.map((m) => m.manager.id)
+    expect(ids).toContain('emp_005')
+    expect(view.manager_pools.every((m) => m.pool.pool_type === 'manager_tier1')).toBe(
+      true
+    )
+  })
+
+  it('returns empty shape for a non-dept-head viewer', async () => {
+    await seedActivePeriod()
+    const view = await getDepartmentDashboardView('emp_006')
+    expect(view.department).toBeNull()
+    expect(view.dept_pool).toBeNull()
+    expect(view.manager_pools).toEqual([])
+    expect(view.pending_tier2_count).toBe(0)
   })
 })

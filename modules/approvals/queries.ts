@@ -193,6 +193,31 @@ export async function countPendingTier1ForApprover(
   })
 }
 
+// Tier 2 pending count for the dept-head dashboard. Scoped to nominations
+// where the viewer is the snapshot dept head — not a People-team rep, even
+// if the viewer is also a rep. status covers both the approval phase
+// (under_review) and the reward-selection phase (approved, dept head picks
+// before the People-team rep confirms).
+export async function countPendingTier2ForDeptHead(
+  employeeId: string
+): Promise<number> {
+  if (useMock()) {
+    return listAllMock().filter(
+      (n) =>
+        n.current_tier === 2 &&
+        n.tier2_dept_head_id === employeeId &&
+        (n.status === 'under_review' || n.status === 'approved')
+    ).length
+  }
+  return db.nomination.count({
+    where: {
+      current_tier: 2,
+      tier2_dept_head_id: employeeId,
+      status: { in: ['under_review', 'approved'] },
+    },
+  })
+}
+
 function isPendingForEmployee(n: NominationRecord, employeeId: string): boolean {
   if (
     n.current_tier === 1 &&
