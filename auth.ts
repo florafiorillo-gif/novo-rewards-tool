@@ -15,31 +15,55 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async signIn({ profile }) {
       const allowedDomain = process.env.AUTH_ALLOWED_DOMAIN ?? 'novo.co'
-      return profile?.email?.endsWith(`@${allowedDomain}`) ?? false
+      if (!profile?.email?.endsWith(`@${allowedDomain}`)) return false
+
+      // Require a seeded Employee row. A session without employeeId/geo/manager_id
+      // breaks every role-gated page, so fail closed rather than hand out a
+      // partial session.
+      try {
+        const employee = await db.employee.findUnique({
+          where: { email: profile.email },
+          select: { id: true },
+        })
+        if (!employee) {
+          console.error(
+            `[auth] signIn blocked: no Employee row for ${profile.email}. Seed the directory or onboard this user in Zoho.`
+          )
+          return false
+        }
+        return true
+      } catch (err) {
+        console.error(
+          `[auth] signIn blocked: DB lookup failed for ${profile.email}`,
+          err
+        )
+        throw err
+      }
     },
 
     async jwt({ token, profile }) {
-      // profile is only present on the initial sign-in
+      // profile is only present on the initial sign-in. signIn already verified
+      // the row exists, so a miss here is an unexpected race (employee deleted
+      // between signIn and jwt) — fail loudly rather than silently.
       if (profile?.email) {
-        try {
-          const employee = await db.employee.findUnique({
-            where: { email: profile.email },
-            select: {
-              id: true,
-              geo: true,
-              manager_id: true,
-              role_title: true,
-            },
-          })
-          if (employee) {
-            token.employeeId = employee.id
-            token.geo = employee.geo
-            token.managerId = employee.manager_id
-            token.roleTitle = employee.role_title
-          }
-        } catch {
-          // DB not yet available (e.g. pre-migration local dev); session still works
+        const employee = await db.employee.findUnique({
+          where: { email: profile.email },
+          select: {
+            id: true,
+            geo: true,
+            manager_id: true,
+            role_title: true,
+          },
+        })
+        if (!employee) {
+          throw new Error(
+            `[auth] jwt: Employee row vanished between signIn and jwt for ${profile.email}`
+          )
         }
+        token.employeeId = employee.id
+        token.geo = employee.geo
+        token.managerId = employee.manager_id
+        token.roleTitle = employee.role_title
       }
       return token
     },
