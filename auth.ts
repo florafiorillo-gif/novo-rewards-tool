@@ -1,63 +1,146 @@
 import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
+import Credentials from 'next-auth/providers/credentials'
 import { db } from '@/lib/db'
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
+// Directory resolution respects the USE_MOCK_DATA dev flag so local
+// click-through works without a live Postgres. Keeps auth in sync with
+// the rest of the service layer's mock/DB split.
+type EmployeeFields = {
+  id: string
+  email: string
+  name: string
+  geo: string
+  manager_id: string | null
+  role_title: string
+}
+
+async function resolveEmployeeByEmail(
+  email: string
+): Promise<EmployeeFields | null> {
+  const normalized = email.trim().toLowerCase()
+  if (process.env.USE_MOCK_DATA === 'true') {
+    const { MOCK_EMPLOYEES } = await import('@/modules/employees/mock-data')
+    const emp = MOCK_EMPLOYEES.find(
+      (e) => e.email.toLowerCase() === normalized && e.active
+    )
+    if (!emp) return null
+    return {
+      id: emp.id,
+      email: emp.email,
+      name: emp.name,
+      geo: emp.geo,
+      manager_id: emp.manager_id,
+      role_title: emp.role_title,
+    }
+  }
+  const row = await db.employee.findUnique({
+    where: { email: normalized },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      geo: true,
+      manager_id: true,
+      role_title: true,
+      active: true,
+    },
+  })
+  if (!row || !row.active) return null
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    geo: row.geo,
+    manager_id: row.manager_id,
+    role_title: row.role_title,
+  }
+}
+
+const providers = []
+
+if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
+  providers.push(
     Google({
-      clientId: process.env.AUTH_GOOGLE_ID!,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-    }),
-  ],
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    })
+  )
+}
+
+// Dev-only mock signin. Gated behind ALLOW_DEV_SIGNIN + non-prod so the
+// provider cannot register in a Vercel prod deploy even if the flag leaks.
+export const DEV_SIGNIN_ENABLED =
+  process.env.ALLOW_DEV_SIGNIN === 'true' &&
+  process.env.NODE_ENV !== 'production'
+
+if (DEV_SIGNIN_ENABLED) {
+  providers.push(
+    Credentials({
+      id: 'dev-email',
+      name: 'Dev (mock)',
+      credentials: {
+        email: {
+          label: 'Novo email',
+          type: 'email',
+          placeholder: 'flora@novo.co',
+        },
+      },
+      async authorize(creds) {
+        const raw = (creds?.email as string | undefined) ?? ''
+        const email = raw.trim().toLowerCase()
+        if (!email) return null
+        const employee = await resolveEmployeeByEmail(email)
+        if (!employee) return null
+        return { id: employee.id, email: employee.email, name: employee.name }
+      },
+    })
+  )
+}
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers,
   pages: {
     signIn: '/auth/signin',
   },
   callbacks: {
-    async signIn({ profile }) {
-      const allowedDomain = process.env.AUTH_ALLOWED_DOMAIN ?? 'novo.co'
-      if (!profile?.email?.endsWith(`@${allowedDomain}`)) return false
+    async signIn({ profile, user, account }) {
+      // Credentials provider authorize() has already validated the row; the
+      // domain gate doesn't apply (operator is picking a known seeded user).
+      if (account?.provider === 'dev-email') return true
 
-      // Require a seeded Employee row. A session without employeeId/geo/manager_id
-      // breaks every role-gated page, so fail closed rather than hand out a
-      // partial session.
+      const email = profile?.email ?? user?.email ?? null
+      const allowedDomain = process.env.AUTH_ALLOWED_DOMAIN ?? 'novo.co'
+      if (!email?.endsWith(`@${allowedDomain}`)) return false
+
       try {
-        const employee = await db.employee.findUnique({
-          where: { email: profile.email },
-          select: { id: true },
-        })
+        const employee = await resolveEmployeeByEmail(email)
         if (!employee) {
           console.error(
-            `[auth] signIn blocked: no Employee row for ${profile.email}. Seed the directory or onboard this user in Zoho.`
+            `[auth] signIn blocked: no Employee row for ${email}. Seed the directory or onboard this user in Zoho.`
           )
           return false
         }
         return true
       } catch (err) {
         console.error(
-          `[auth] signIn blocked: DB lookup failed for ${profile.email}`,
+          `[auth] signIn blocked: lookup failed for ${email}`,
           err
         )
         throw err
       }
     },
 
-    async jwt({ token, profile }) {
-      // profile is only present on the initial sign-in. signIn already verified
-      // the row exists, so a miss here is an unexpected race (employee deleted
-      // between signIn and jwt) — fail loudly rather than silently.
-      if (profile?.email) {
-        const employee = await db.employee.findUnique({
-          where: { email: profile.email },
-          select: {
-            id: true,
-            geo: true,
-            manager_id: true,
-            role_title: true,
-          },
-        })
+    async jwt({ token, profile, user }) {
+      // OAuth gives us `profile` on first signin; Credentials gives us `user`.
+      // Both only populate on the initial signin hop; later requests reuse
+      // the token as-is.
+      const email = profile?.email ?? user?.email ?? null
+      if (email) {
+        const employee = await resolveEmployeeByEmail(email)
         if (!employee) {
           throw new Error(
-            `[auth] jwt: Employee row vanished between signIn and jwt for ${profile.email}`
+            `[auth] jwt: Employee row vanished between signIn and jwt for ${email}`
           )
         }
         token.employeeId = employee.id
@@ -69,9 +152,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     async session({ session, token }) {
-      // NextAuth v5-beta's JWT module-augmentation doesn't merge with `next-auth/jwt`
-      // under strict mode; cast through the augmented shape we declared in
-      // types/next-auth.d.ts. Drop once v5 stable ships.
       const t = token as typeof token & {
         employeeId?: string
         geo?: string
