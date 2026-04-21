@@ -10,9 +10,9 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 
 ## 2. Where we are
 
-- **Last commit:** 6fd9269 Phase 7B — department head dashboard: dept Tier 2 pool + pacing, pending-T2 count scoped to snapshot dept head, managers-in-(department, geo) Tier 1 pool list. Reused `/dashboard` route with conditional rendering rather than forking a new route.
-- **Phases 1–6 complete. Phase 7A + 7A.1 + 7B done; 7C–7E still pending.**
-- **Build state:** `npm run typecheck` clean. `npm test` green (231 tests / 32 suites). `npm run test:integration` registers 18 tests across 7 suites; skips cleanly without `DATABASE_URL`. `next build` has a pre-existing failure on `/nominations/submitted` tracked in TODO.md (not a 7A/7B regression). `npm run lint` is unconfigured (interactive prompt on first run; has never been wired).
+- **Last commit:** 02faf2e Phase 7E — recipient personal view at `/dashboard/me`. Phase 7 is complete across all five role surfaces: manager (7A/7A.1 `5721c65` → dec5052), dept head (7B `5721c65`), People team at `/people-ops/dashboard` (7C `651cea7`), committee at `/committee/dashboard` (7D `b3f15f9`), and recipient at `/dashboard/me` (7E `adf293d`). Recipient view deliberately strips tier labels and dollar amounts server-side per spec §2 principles 1+2.
+- **Phases 1–7 complete. Phase 8–10 still pending.**
+- **Build state:** `npm run typecheck` clean. `npm test` green (252 tests / 35 suites). `npm run test:integration` registers 18 tests across 7 suites; skips cleanly without `DATABASE_URL`. `next build` has a pre-existing failure on `/nominations/submitted` tracked in TODO.md (not a Phase 7 regression). `npm run lint` is unconfigured (interactive prompt on first run; has never been wired).
 - **Data source:** everything runs on mock data in `modules/employees/mock-data.ts` and in-memory `mock-store.ts` files. `USE_MOCK_DATA=true` is the dev default. Prisma schema is complete and integration tests exist for when a real DB is wired.
 
 ## 3. Phase status (from spec §18)
@@ -25,7 +25,7 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 | 4 | Budget engine: pools, allocation, reserve, exceptions, pacing, period lifecycle | done |
 | 5 | Rewards: catalog, reward selection, vendor stub, tax gross-up, CSV/Zoho exports, scope notes, recipient DM, People Ops manual queue, tests | done |
 | 6 | Communication: visibility prefs, ack-before-post, #made-it-happen post, reactions/comments, TZ-aware recipient DM | done |
-| 7 | Dashboards per role | **in progress** (7A manager + 7B dept head done; 7C People team / 7D committee / 7E recipient next) |
+| 7 | Dashboards per role | done (7A manager, 7B dept head, 7C People team, 7D committee, 7E recipient) |
 | 8 | Monthly digest | pending |
 | 9 | Integrations & ops: Zoho live, Airbase export, edge-case polish, admin tools | pending |
 | 10 | Pre-launch: copy pass, manager training, catalog seeding | pending |
@@ -54,7 +54,7 @@ modules/               Service layer, one folder per bounded context
   scope-notes/         per-tier template CRUD
   committee/           T3 batched review + decisions
   communication/       ack state machine, #made-it-happen post composer, reactions/comments, TZ-aware recipient DM scheduler
-  dashboard/           per-role view assemblers; manager-view.ts (Tier 1 pool + pacing + pending + recent), department-view.ts (dept Tier 2 pool + pending T2 + managers-in-dept Tier 1 pools)
+  dashboard/           per-role view assemblers: manager-view, department-view, people-team-view (+ exported buildProgramView), committee-view, recipient-view
   employees/           Zoho-shaped mock data; manager graph; getEmployeeById; setRecognitionPreference
   roles/               role resolution (manager / dept head / people team rep / committee)
   values/              four value IDs (constant set)
@@ -130,15 +130,15 @@ See `TODO.md` for the running list. Headline items:
 
 ## 9. What to work on next
 
-Phase 7 is underway; user has asked to push through all five sub-surfaces one session at a time. Remaining chunks, in the order we've agreed to go:
+Phase 7 is complete. Remaining pre-launch work:
 
-**Phase 7C — People team dashboard.** Full program view for People Ops: all pools across geos, exceptions, SLA misses, pacing by geo. Likely lives under `/people-ops/dashboard` and reuses existing People Ops surfaces (`/people-ops`, `/committee/budget`).
+**Phase 8 — Monthly digest.** Auto-drafted on the 1st; People team edits and publishes to `#made-it-happen` + email within 3 business days. Structure in spec §11.3. Probably lives under `modules/digest/` + `/people-ops/digest/*` (draft editor) and the existing `/api/cron/digest` endpoint (stub today) does the auto-draft.
 
-**Phase 7D — Committee dashboard.** Superset of People team plus Tier 3 pool detail and committee decisions history.
+**Phase 9 — Integrations & ops.** Zoho live sync (currently mock), Airbase export alongside JustWorks, hardening around SLA edge cases, admin tools for recategorising nominations. Spec §18 Phase 9.
 
-**Phase 7E — Recipient personal view.** Their own recognition history, with tier masked (spec §2.1). Small surface — one page showing received recognitions + delivered rewards. Probably lives at `/dashboard/me` or similar.
+**Phase 10 — Pre-launch.** Rubina copy pass across all user-facing strings (warm-tone placeholders today), manager training module, catalog seeding per geo.
 
-Alternative if user redirects: the pre-launch must-fix items from TODO.md (Tier 2 repeat-approval, undoApproval tier guard, Tier 2 first-approver stale response, SLA auto-deny DM).
+**Parallel pre-launch must-fix** (TODO.md): Tier 2 repeat-approval guard (Audit I3), undoApproval tier guard (I4 / spec §13.3), Tier 2 first-approver stale response (I9), SLA auto-deny must DM the nominator (spec §7.6). Any of these is a good one-session chunk and doesn't depend on Phase 8/9/10 order.
 
 ## 10. Cold-start checklist for a new session
 
