@@ -1,16 +1,36 @@
 import { db } from '@/lib/db'
 import { MOCK_EMPLOYEES } from './mock-data'
-import type { Employee, EmployeeSummary } from './types'
+import type { Employee, EmployeeSummary, RecognitionPreference } from './types'
 
 const useMock = () => process.env.USE_MOCK_DATA === 'true'
 
+// Mock-mode only: recognition_preference changes from the settings UI
+// accumulate here rather than mutating MOCK_EMPLOYEES so the fixture
+// stays stable across tests. Applied in every Employee-returning reader.
+const mockRecognitionOverrides = new Map<string, RecognitionPreference>()
+
+export function resetMockRecognitionOverrides(): void {
+  mockRecognitionOverrides.clear()
+}
+
+function applyMockOverrides(employee: Employee): Employee {
+  const override = mockRecognitionOverrides.get(employee.id)
+  return override ? { ...employee, recognition_preference: override } : employee
+}
+
 export async function getEmployeeById(id: string): Promise<Employee | null> {
-  if (useMock()) return MOCK_EMPLOYEES.find((e) => e.id === id) ?? null
+  if (useMock()) {
+    const row = MOCK_EMPLOYEES.find((e) => e.id === id)
+    return row ? applyMockOverrides(row) : null
+  }
   return db.employee.findUnique({ where: { id } }) as Promise<Employee | null>
 }
 
 export async function getEmployeeByEmail(email: string): Promise<Employee | null> {
-  if (useMock()) return MOCK_EMPLOYEES.find((e) => e.email === email) ?? null
+  if (useMock()) {
+    const row = MOCK_EMPLOYEES.find((e) => e.email === email)
+    return row ? applyMockOverrides(row) : null
+  }
   return db.employee.findUnique({ where: { email } }) as Promise<Employee | null>
 }
 
@@ -77,4 +97,25 @@ export async function getEmployeesByIds(
     where: { id: { in: unique } },
   })) as unknown as Employee[]
   return new Map(rows.map((e) => [e.id, e]))
+}
+
+// Spec §11.5 — recipient sets this on their own profile from the web app.
+// Governs #made-it-happen post behavior (Phase 6C): public = full channel
+// post; team_only = falls back to private in v1 since team channels aren't
+// wired; private = no public post, recognition still delivered privately.
+export async function setRecognitionPreference(
+  employeeId: string,
+  preference: RecognitionPreference
+): Promise<void> {
+  if (useMock()) {
+    if (!MOCK_EMPLOYEES.some((e) => e.id === employeeId)) {
+      throw new Error(`Unknown employee ${employeeId}`)
+    }
+    mockRecognitionOverrides.set(employeeId, preference)
+    return
+  }
+  await db.employee.update({
+    where: { id: employeeId },
+    data: { recognition_preference: preference },
+  })
 }
