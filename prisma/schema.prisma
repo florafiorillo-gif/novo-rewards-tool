@@ -79,6 +79,9 @@ enum RewardType {
 
 enum RewardStatus {
   selected
+  // Tier 2 intermediate: dept head has picked a reward, People team rep
+  // hasn't signed off yet (spec §7.4). On rep confirm → `selected`.
+  selected_pending_confirm
   issued
   delivered
   failed
@@ -309,6 +312,27 @@ model ScopeNoteTemplate {
   active        Boolean @default(true)
 
   rewards Reward[]
+
+  @@index([tier, active])
+}
+
+// Section 8.2 — reward catalog, per geo, maintained by the People team.
+// Filtered by {geo, amount_usd ∈ tier_range, active} at reward-selection.
+// Per Phase 5 Q5: no explicit tier tag; amount drives filtering.
+model CatalogItem {
+  id          String     @id @default(cuid())
+  geo         Geo
+  reward_type RewardType
+  vendor      String?
+  name        String
+  description String     @db.Text
+  amount_usd  Decimal    @db.Decimal(10, 2)
+  active      Boolean    @default(true)
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+
+  @@index([geo, active])
+  @@index([geo, reward_type, active])
 }
 
 // Section 12.7 — one reward per nomination; FK lives here, not on Nomination

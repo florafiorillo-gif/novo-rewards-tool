@@ -1,13 +1,16 @@
 import Link from 'next/link'
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
-import { isCommitteeMember } from '@/modules/roles/service'
+import { isCommitteeMember, isPeopleTeamRep } from '@/modules/roles/service'
 
 export default async function DashboardPage() {
   const session = await auth()
   if (!session) redirect('/auth/signin')
   const isCommittee = session.user.employeeId
     ? await isCommitteeMember(session.user.employeeId)
+    : false
+  const isPeopleOps = session.user.employeeId
+    ? await isPeopleTeamRep(session.user.employeeId)
     : false
 
   return (
@@ -45,6 +48,14 @@ export default async function DashboardPage() {
               Budget
             </Link>
           </>
+        )}
+        {isPeopleOps && (
+          <Link
+            href="/people-ops"
+            className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+          >
+            People Ops
+          </Link>
         )}
       </div>
     </main>

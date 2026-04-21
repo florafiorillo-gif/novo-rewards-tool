@@ -87,6 +87,13 @@ export async function isCommitteeMember(employeeId: string): Promise<boolean> {
   return emp?.is_committee_member === true
 }
 
+// People Ops surfaces — catalog + scope note admin + manual fulfillment queue.
+// Spec §3: "People team representative... Owns catalog maintenance per geo."
+export async function isPeopleTeamRep(employeeId: string): Promise<boolean> {
+  const emp = await getEmployeeById(employeeId)
+  return emp?.is_people_team_rep === true
+}
+
 // Spec §7.5 — committee member recuses when nominee is their direct or
 // skip-level report. We walk up the nominee's manager chain and check whether
 // the committee member appears within two levels.
