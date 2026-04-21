@@ -9,8 +9,9 @@ import type { RewardRecord } from '@/modules/rewards/types'
 const useMock = () => process.env.USE_MOCK_DATA === 'true'
 
 // Spec §9.8 — post fires on ack, or 24h after the recipient DM was sent.
-// For 6B we use reward.issued_at as the DM-sent proxy; 6E introduces a
-// dedicated recipient_dm_sent_at on Reward and this constant is re-anchored.
+// The anchor is reward.recipient_dm_sent_at (Phase 6E); if it's null (pre-6E
+// data or not-yet-sent), we fall back to reward.issued_at so the logic
+// stays monotonically forward-compatible.
 export const POST_TIMEOUT_MS = 24 * 60 * 60 * 1000
 
 export type AckError =
@@ -75,9 +76,8 @@ export function shouldFirePost(
   if (nom.post_fired_at) return false
   if (nom.status !== 'approved' && nom.status !== 'fulfilled') return false
   if (nom.acknowledged_at) return true
-  // Timeout clock starts when the recipient DM went out. In 6B that's
-  // tracked as reward.issued_at; 6E moves to an explicit column.
-  const dmSentAt = reward?.issued_at
+  // Timeout clock starts when the recipient DM actually went out.
+  const dmSentAt = reward?.recipient_dm_sent_at ?? reward?.issued_at ?? null
   if (!dmSentAt) return false
   return now.getTime() - dmSentAt.getTime() >= POST_TIMEOUT_MS
 }

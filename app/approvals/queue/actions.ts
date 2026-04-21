@@ -188,8 +188,8 @@ export async function confirmRewardFromQueueAction(
     if (!isManualDelivery(result.reward.delivery_mechanism)) {
       const { getVendorAdapter } = await import('@/modules/fulfillment/stubs')
       const { markRewardIssued } = await import('@/modules/rewards/service')
-      const { sendRecipientRewardDM } = await import(
-        '@/modules/integrations/slack/recipient'
+      const { onRewardIssued } = await import(
+        '@/modules/communication/recipient-dm'
       )
       const nom = await getNominationById(result.reward.nomination_id)
       const nominee = nom ? await getEmployeeById(nom.nominee_id) : null
@@ -211,10 +211,7 @@ export async function confirmRewardFromQueueAction(
             vendor_reference_id: null,
           })
           if (issued.ok) {
-            await sendRecipientRewardDM({
-              reward: issued.reward,
-              nomination_id: issued.reward.nomination_id,
-            })
+            await onRewardIssued({ reward_id: issued.reward.id })
           }
         } catch (err) {
           console.error('[rewards] confirm → vendor stub failed', err)

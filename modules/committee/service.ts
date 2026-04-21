@@ -203,6 +203,8 @@ export async function decideCommittee(
       amount_usd: input.reward.amount_usd,
       amount_local: null,
       currency_local: null,
+      recipient_dm_scheduled_at: null,
+      recipient_dm_sent_at: null,
       status: 'selected',
       delivery_mechanism: resolveDeliveryMechanism({
         geo: nominee?.geo ?? 'US',

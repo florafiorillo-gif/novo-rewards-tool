@@ -361,6 +361,12 @@ model Reward {
   scope_note_text        String?            @db.Text
   issued_at              DateTime?
   delivered_at           DateTime?
+  // Spec §9.4 — recipient DM timing. Scheduled when the reward is issued;
+  // sent immediately if the recipient's Slack presence is active, else
+  // held by the cron sweep until presence flips or the 24h fallback
+  // expires. Phase 6E; null on rewards issued before that migration.
+  recipient_dm_scheduled_at DateTime?
+  recipient_dm_sent_at      DateTime?
 }
 
 // Section 12.10

@@ -151,6 +151,8 @@ export async function selectReward(
     scope_note_text: input.scope_note_text.trim(),
     issued_at: null,
     delivered_at: null,
+    recipient_dm_scheduled_at: null,
+    recipient_dm_sent_at: null,
     budget_exception: input.budget_exception,
     created_at: now,
   }
@@ -407,6 +409,8 @@ function hydrate(row: unknown): RewardRecord {
     scope_note_text: string | null
     issued_at: Date | null
     delivered_at: Date | null
+    recipient_dm_scheduled_at: Date | null
+    recipient_dm_sent_at: Date | null
     created_at?: Date
   }
   return {
@@ -428,6 +432,8 @@ function hydrate(row: unknown): RewardRecord {
     scope_note_text: r.scope_note_text,
     issued_at: r.issued_at,
     delivered_at: r.delivered_at,
+    recipient_dm_scheduled_at: r.recipient_dm_scheduled_at,
+    recipient_dm_sent_at: r.recipient_dm_sent_at,
     // Prisma schema doesn't (yet) have a budget_exception column; reconstruct
     // via join against BudgetException at read sites that need it. For Phase
     // 5 the mock store tracks the flag; DB path defaults to false.

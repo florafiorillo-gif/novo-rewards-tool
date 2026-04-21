@@ -9,7 +9,7 @@ import {
   markRewardIssued,
   getReward,
 } from '@/modules/rewards/service'
-import { sendRecipientRewardDM } from '@/modules/integrations/slack/recipient'
+import { onRewardIssued } from '@/modules/communication/recipient-dm'
 
 async function requirePeopleOps(): Promise<void> {
   const session = await auth()
@@ -27,11 +27,10 @@ export async function markIssuedAction(formData: FormData): Promise<void> {
     vendor_reference_id: null,
   })
   if (result.ok) {
-    // Recipient DM now that People Ops confirmed issue — matches spec §9.4.
-    await sendRecipientRewardDM({
-      reward: result.reward,
-      nomination_id: result.reward.nomination_id,
-    })
+    // Schedule the recipient DM — spec §9.4 presence-gated, 24h fallback
+    // (Phase 6E). onRewardIssued stamps scheduled_at and sends immediately
+    // if Slack presence is active; otherwise the cron sweep picks it up.
+    await onRewardIssued({ reward_id: result.reward.id })
   }
   revalidatePath('/people-ops/fulfillment')
 }

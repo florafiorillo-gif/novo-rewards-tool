@@ -30,6 +30,11 @@ export interface RewardRecord {
   scope_note_text: string | null
   issued_at: Date | null
   delivered_at: Date | null
+  // Phase 6E — set when markRewardIssued fires (start of the presence-gated
+  // window) and when the recipient DM is actually delivered. Both null on
+  // rewards issued before 6E.
+  recipient_dm_scheduled_at: Date | null
+  recipient_dm_sent_at: Date | null
   // Exception-path flag: set when this reward was drawn from reserve
   // instead of the primary pool. Captured here for the Reward read path;
   // the canonical record is on BudgetException.

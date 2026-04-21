@@ -123,15 +123,12 @@ async function fireVendorStub(
     else if (rewardType === 'cash') await adapter.issueCash(callArgs)
     else if (rewardType === 'l_and_d') await adapter.issueGiftCard(callArgs)
     const issued = await markRewardIssued({ reward_id: rewardId, vendor_reference_id: null })
-    // Fire recipient DM on transition to issued (spec §9.4).
+    // Schedule recipient DM (presence-gated, 24h fallback — spec §9.4 + 6E).
     if (issued.ok) {
-      const { sendRecipientRewardDM } = await import(
-        '@/modules/integrations/slack/recipient'
+      const { onRewardIssued } = await import(
+        '@/modules/communication/recipient-dm'
       )
-      await sendRecipientRewardDM({
-        reward: issued.reward,
-        nomination_id: issued.reward.nomination_id,
-      })
+      await onRewardIssued({ reward_id: issued.reward.id })
     }
   } catch (err) {
     console.error('[rewards] vendor stub call failed', err)
