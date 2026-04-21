@@ -24,7 +24,9 @@ export default async function NewNominationPage() {
   return (
     <main className="mx-auto min-h-screen max-w-xl px-6 py-12">
       <header className="mb-8">
-        <h1 className="text-xl font-semibold text-gray-900">Recognize a teammate</h1>
+        <h1 className="font-display text-3xl uppercase tracking-tight text-novo-ink">
+          Recognize a teammate
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
           Every nomination is an observation of a Novo value being lived. Thank you for
           noticing.

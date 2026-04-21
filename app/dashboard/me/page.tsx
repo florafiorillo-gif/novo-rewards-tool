@@ -20,7 +20,9 @@ export default async function RecipientDashboardPage() {
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-6 py-12">
       <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Your recognitions</h1>
+        <h1 className="font-display text-3xl uppercase tracking-tight text-novo-ink">
+          Your recognitions
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
           What teammates have noticed and called out.
         </p>

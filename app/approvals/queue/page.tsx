@@ -15,7 +15,9 @@ export default async function ApprovalsQueuePage() {
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-6 py-12">
       <header className="mb-8">
-        <h1 className="text-xl font-semibold text-gray-900">Recognition to review</h1>
+        <h1 className="font-display text-3xl uppercase tracking-tight text-novo-ink">
+          Recognition to review
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
           {items.length === 0
             ? 'Nothing waiting on you right now.'

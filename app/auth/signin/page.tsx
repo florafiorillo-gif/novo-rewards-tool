@@ -2,9 +2,11 @@ import { signIn } from '@/auth'
 
 export default function SignInPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-1 text-xl font-semibold text-gray-900">Novo Rewards</h1>
+    <main className="flex min-h-screen items-center justify-center bg-novo-paper">
+      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-novo-paper p-8 shadow-sm">
+        <h1 className="mb-1 font-display text-2xl uppercase tracking-tight text-novo-ink">
+          Novo Rewards
+        </h1>
         <p className="mb-8 text-sm text-gray-500">Sign in with your Novo Google account.</p>
 
         <form

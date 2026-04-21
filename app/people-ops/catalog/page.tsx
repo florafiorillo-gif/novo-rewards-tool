@@ -27,14 +27,16 @@ export default async function CatalogPage() {
           <Link href="/people-ops" className="text-sm text-gray-500 hover:text-gray-700">
             ← People Ops
           </Link>
-          <h1 className="mt-2 text-xl font-semibold text-gray-900">Reward catalog</h1>
+          <h1 className="mt-2 font-display text-3xl uppercase tracking-tight text-novo-ink">
+            Reward catalog
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
             Per geo. Approvers see only active items within the target tier range.
           </p>
         </div>
         <Link
           href="/people-ops/catalog/new"
-          className="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+          className="inline-flex items-center rounded-md bg-novo-ink px-4 py-2 text-sm font-medium text-novo-paper hover:bg-gray-800"
         >
           New item
         </Link>
