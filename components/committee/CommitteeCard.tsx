@@ -1,15 +1,20 @@
 import type { HydratedTier3 } from '@/modules/committee/service'
-import {
-  decideCommitteeAction,
-  recuseCommitteeAction,
-} from '@/app/committee/queue/actions'
+import { recuseCommitteeAction } from '@/app/committee/queue/actions'
+import { TIER_RANGES } from '@/modules/catalog/types'
+import { CommitteeDecisionForm } from './CommitteeDecisionForm'
+
+interface ScopeNote {
+  id: string
+  template_text: string
+}
 
 interface Props {
   item: HydratedTier3
   viewerEmployeeId: string
+  scopeNotes: ScopeNote[]
 }
 
-export function CommitteeCard({ item, viewerEmployeeId }: Props) {
+export function CommitteeCard({ item, viewerEmployeeId, scopeNotes }: Props) {
   const { nomination, nominator, nominee, viewer_conflict, viewer_recused, prior_decisions } =
     item
 
@@ -96,34 +101,11 @@ export function CommitteeCard({ item, viewerEmployeeId }: Props) {
       )}
 
       {!viewer_recused && (
-        <form action={decideCommitteeAction} className="space-y-3">
-          <input type="hidden" name="nomination_id" value={nomination.id} />
-          <div className="flex gap-3">
-            <label className="flex items-center gap-1 text-sm">
-              <input type="radio" name="decision" value="approve" required /> Approve
-            </label>
-            <label className="flex items-center gap-1 text-sm">
-              <input type="radio" name="decision" value="deny" /> Deny (returns to Tier 2)
-            </label>
-            <label className="flex items-center gap-1 text-sm">
-              <input type="radio" name="decision" value="defer" /> Defer
-            </label>
-          </div>
-          <textarea
-            name="decision_log_text"
-            required
-            minLength={10}
-            rows={3}
-            placeholder="Short decision log — what did you decide and why?"
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-          >
-            Record decision
-          </button>
-        </form>
+        <CommitteeDecisionForm
+          nominationId={nomination.id}
+          tier3Range={TIER_RANGES[3]}
+          scopeNotes={scopeNotes}
+        />
       )}
     </article>
   )

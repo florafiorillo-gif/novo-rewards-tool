@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { listCommitteeQueue } from '@/modules/committee/service'
 import { isCommitteeMember } from '@/modules/roles/service'
+import { listScopeNoteTemplates } from '@/modules/scope-notes/service'
 import { CommitteeCard } from '@/components/committee/CommitteeCard'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +17,14 @@ export default async function CommitteeQueuePage() {
   const allowed = await isCommitteeMember(employeeId)
   if (!allowed) notFound()
 
-  const items = await listCommitteeQueue(employeeId)
+  const [items, scopeNoteRows] = await Promise.all([
+    listCommitteeQueue(employeeId),
+    listScopeNoteTemplates({ tier: 3, active_only: true }),
+  ])
+  const scopeNotes = scopeNoteRows.map((s) => ({
+    id: s.id,
+    template_text: s.template_text,
+  }))
 
   const urgent = items.filter((i) => i.nomination.urgent)
   const regular = items.filter((i) => !i.nomination.urgent)
@@ -41,6 +49,7 @@ export default async function CommitteeQueuePage() {
               key={item.nomination.id}
               item={item}
               viewerEmployeeId={employeeId}
+              scopeNotes={scopeNotes}
             />
           ))}
         </section>
@@ -61,6 +70,7 @@ export default async function CommitteeQueuePage() {
                 key={item.nomination.id}
                 item={item}
                 viewerEmployeeId={employeeId}
+                scopeNotes={scopeNotes}
               />
             ))}
           </>

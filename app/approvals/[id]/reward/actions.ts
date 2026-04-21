@@ -9,6 +9,7 @@ import { getCatalogItem } from '@/modules/catalog/service'
 import { isManualDelivery } from '@/modules/fulfillment/routing'
 import { getVendorAdapter } from '@/modules/fulfillment/stubs'
 import { getEmployeeById } from '@/modules/employees/service'
+import { getNominationById } from '@/modules/nominations/service'
 
 // Server action called by /approvals/[id]/reward. Handles catalog,
 // custom, and cash choices via a single form — the UI posts form fields
@@ -31,6 +32,11 @@ export async function selectRewardAction(
 
   if (!nominationId) return { ok: false, error: 'Missing nomination id.' }
 
+  // Tier 2 reward selection parks the reward in selected_pending_confirm
+  // so the People team rep signs off before budget commits (spec §7.4).
+  const nomination = await getNominationById(nominationId)
+  const pendingConfirm = nomination?.current_tier === 2
+
   const input: Parameters<typeof selectReward>[0] = {
     nomination_id: nominationId,
     actor_id: actorId,
@@ -39,6 +45,7 @@ export async function selectRewardAction(
     scope_note_template_id: scopeNoteTemplateId || null,
     scope_note_text: scopeNoteText,
     budget_exception: budgetException,
+    pending_confirm: pendingConfirm,
   }
 
   if (choiceKind === 'catalog') {
@@ -75,7 +82,12 @@ export async function selectRewardAction(
 
   // Fire the vendor stub for automated paths. Manual paths (Colombia +
   // custom + cash) stay in `selected` so People Ops picks them up.
-  if (!isManualDelivery(result.reward.delivery_mechanism)) {
+  // Tier 2 stays in pending_confirm until the rep signs off, so no vendor
+  // call here either — that happens after confirmReward.
+  if (
+    !pendingConfirm &&
+    !isManualDelivery(result.reward.delivery_mechanism)
+  ) {
     await fireVendorStub(result.reward.id, result.reward.reward_type, actorId)
   }
 

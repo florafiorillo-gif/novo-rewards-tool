@@ -27,6 +27,21 @@ export interface CommitteeDecideInput {
   decision_log_text: string
   // Concurring members who were in the room; defaults to [actor_id].
   concurring_member_ids?: string[]
+  // Reward fields — required when decision='approve' (spec §7.5).
+  // Committee picks amount + form + delivery plan inline, and the budget
+  // commit fires as part of the decide call.
+  reward?: {
+    reward_type:
+      | 'cash'
+      | 'gift_card'
+      | 'experience'
+      | 'l_and_d'
+      | 'custom'
+    amount_usd: number
+    delivery_plan: string
+    scope_note_text: string
+    scope_note_template_id?: string
+  }
 }
 
 export type CommitteeDecideError =
@@ -35,6 +50,11 @@ export type CommitteeDecideError =
   | { code: 'wrong_status' }
   | { code: 'recused' }
   | { code: 'decision_log_required' }
+  | { code: 'reward_required_on_approve' }
+  | { code: 'reward_amount_out_of_range'; min: number; max: number }
+  | { code: 'delivery_plan_required' }
+  | { code: 'insufficient_balance'; remaining: number }
+  | { code: 'no_active_period' }
 
 export type CommitteeDecideResult =
   | {

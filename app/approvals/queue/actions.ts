@@ -9,6 +9,7 @@ import {
   requestMoreInfo,
 } from '@/modules/approvals/service'
 import type { DenialReason } from '@/modules/approvals/types'
+import { confirmReward } from '@/modules/rewards/service'
 import {
   pingCommitteeUrgent,
   sendApproverDM,
@@ -169,6 +170,18 @@ export async function upgradeFromQueueAction(formData: FormData): Promise<void> 
       })
     }
   }
+  revalidatePath('/approvals/queue')
+}
+
+// ─── Confirm Tier 2 reward (People team rep sign-off) ────────────────────────
+
+export async function confirmRewardFromQueueAction(
+  formData: FormData
+): Promise<void> {
+  const actorId = await requireActorId()
+  const rewardId = (formData.get('reward_id') ?? '').toString()
+  if (!rewardId) return
+  await confirmReward({ reward_id: rewardId, actor_id: actorId })
   revalidatePath('/approvals/queue')
 }
 

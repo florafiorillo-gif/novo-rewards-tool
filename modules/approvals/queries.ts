@@ -10,8 +10,15 @@ import type { ValueDef } from '@/modules/values/constants'
 import { listApprovalActionsForNominations } from './service'
 import type { ApprovalActionRecord } from './types'
 import { getRewardForNomination } from '@/modules/rewards/service'
+import type { RewardRecord } from '@/modules/rewards/types'
 
 const useMock = () => process.env.USE_MOCK_DATA === 'true'
+
+export type ActionNeeded =
+  | 'approve' // pre-approval; viewer hasn't signed yet
+  | 'select_reward' // approved, no reward; viewer is the picker
+  | 'confirm_reward' // reward pending_confirm; viewer is Tier 2 rep
+  | 'wait' // viewer acted, waiting on another approver
 
 export interface HydratedNomination {
   nomination: NominationRecord
@@ -19,10 +26,8 @@ export interface HydratedNomination {
   nominee: Employee | null
   value: ValueDef | null
   actions: ApprovalActionRecord[]
-  // Phase 5: when true, this viewer should see a "Select reward" entry
-  // point instead of the approval action buttons. Set for Tier 1 approved
-  // nominations without a reward yet where the viewer was the approver.
-  needs_reward_selection?: boolean
+  action_needed: ActionNeeded
+  pending_reward: RewardRecord | null
 }
 
 // Returns nominations where `employeeId` is an eligible actor right now —
@@ -48,7 +53,7 @@ export async function listPendingApprovalsForEmployee(
             { current_approver_id: employeeId, status: 'approved', current_tier: 1 },
             {
               AND: [
-                { current_tier: 2, status: 'under_review' },
+                { current_tier: 2, status: { in: ['under_review', 'approved'] } },
                 {
                   OR: [
                     { tier2_dept_head_id: employeeId },
@@ -71,47 +76,93 @@ export async function listPendingApprovalsForEmployee(
     nominationIds.push(n.id)
   }
 
-  const [employees, actionsByNom, rewardFlags] = await Promise.all([
+  const [employees, actionsByNom, rewardsByNom] = await Promise.all([
     getEmployeesByIds(employeeIds),
     listApprovalActionsForNominations(nominationIds),
-    flagNominationsWithRewards(raw),
+    fetchRewardsByNomination(raw),
   ])
 
-  // Drop approved-but-already-rewarded — those belong on another surface
-  // (Phase 6 dashboard) not the "needs your action" queue.
-  const withNeeds = raw
+  return raw
     .map((nomination) => {
-      const hasReward = rewardFlags.has(nomination.id)
-      const isApprovedAwaitingReward =
-        nomination.status === 'approved' &&
-        nomination.current_tier === 1 &&
-        !hasReward
+      const reward = rewardsByNom.get(nomination.id) ?? null
+      const action_needed = deriveActionNeeded(nomination, reward, employeeId)
       return {
         nomination,
         nominator: employees.get(nomination.nominator_id) ?? null,
         nominee: employees.get(nomination.nominee_id) ?? null,
         value: getValueById(nomination.value_id),
         actions: actionsByNom.get(nomination.id) ?? [],
-        needs_reward_selection: isApprovedAwaitingReward,
-        _skip: nomination.status === 'approved' && hasReward,
+        action_needed,
+        pending_reward:
+          action_needed === 'confirm_reward' ? reward : null,
       }
     })
-    .filter((h) => !h._skip)
-  return withNeeds.map(({ _skip, ...rest }) => rest)
+    // A viewer with nothing left to do on a row (action_needed='wait' AND
+    // reward already issued/delivered) drops off the queue. We still keep
+    // 'wait' rows when the nomination is genuinely awaiting another
+    // approver so the viewer can see what's blocked on whom.
+    .filter((h) => !(h.action_needed === 'wait' && h.pending_reward?.status === 'issued'))
+    .filter((h) => !(h.action_needed === 'wait' && h.pending_reward?.status === 'delivered'))
+    .filter((h) => !(h.action_needed === 'wait' && h.nomination.status === 'approved' && !h.pending_reward))
 }
 
-async function flagNominationsWithRewards(
+function deriveActionNeeded(
+  n: NominationRecord,
+  reward: RewardRecord | null,
+  viewerId: string
+): ActionNeeded {
+  // ── Tier 1 ────────────────────────────────────────────────────────────────
+  if (n.current_tier === 1) {
+    if (n.status === 'submitted' && n.current_approver_id === viewerId) {
+      return 'approve'
+    }
+    if (
+      n.status === 'approved' &&
+      n.current_approver_id === viewerId &&
+      !reward
+    ) {
+      return 'select_reward'
+    }
+    return 'wait'
+  }
+
+  // ── Tier 2 ────────────────────────────────────────────────────────────────
+  if (n.current_tier === 2) {
+    // Reward flow (after nomination is fully approved):
+    if (n.status === 'approved') {
+      if (
+        reward?.status === 'selected_pending_confirm' &&
+        n.tier2_people_team_rep_id === viewerId
+      ) {
+        return 'confirm_reward'
+      }
+      if (!reward && n.tier2_dept_head_id === viewerId) {
+        return 'select_reward'
+      }
+      return 'wait'
+    }
+
+    // Approval phase (status=under_review): still need both signatures.
+    if (n.status === 'under_review') {
+      const viewerIsDeptHead = n.tier2_dept_head_id === viewerId
+      const viewerIsRep = n.tier2_people_team_rep_id === viewerId
+      return viewerIsDeptHead || viewerIsRep ? 'approve' : 'wait'
+    }
+  }
+
+  return 'wait'
+}
+
+async function fetchRewardsByNomination(
   nominations: NominationRecord[]
-): Promise<Set<string>> {
-  const out = new Set<string>()
-  // Only check nominations already approved — submitted ones can't have
-  // rewards by definition.
-  const approved = nominations.filter((n) => n.status === 'approved')
-  if (approved.length === 0) return out
+): Promise<Map<string, RewardRecord>> {
+  const out = new Map<string, RewardRecord>()
+  const candidates = nominations.filter((n) => n.status === 'approved')
+  if (candidates.length === 0) return out
   await Promise.all(
-    approved.map(async (n) => {
+    candidates.map(async (n) => {
       const reward = await getRewardForNomination(n.id)
-      if (reward) out.add(n.id)
+      if (reward) out.set(n.id, reward)
     })
   )
   return out
@@ -127,7 +178,7 @@ function isPendingForEmployee(n: NominationRecord, employeeId: string): boolean 
   }
   if (
     n.current_tier === 2 &&
-    n.status === 'under_review' &&
+    (n.status === 'under_review' || n.status === 'approved') &&
     (n.tier2_dept_head_id === employeeId ||
       n.tier2_people_team_rep_id === employeeId)
   ) {

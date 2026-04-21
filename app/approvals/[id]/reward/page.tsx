@@ -31,20 +31,23 @@ export default async function RewardSelectionPage({
   const existing = await getRewardForNomination(nomination.id)
   if (existing) redirect('/approvals/queue')
 
-  // Authorization: only an approver on the nomination. Tier 1: the current
-  // approver (if set). Tier 2: either snapshot approver. Tier 3: any
-  // committee member. For Phase 5 Commit C we handle Tier 1 only; C/D/E
-  // path widens this once Tier 2 + Tier 3 reward flows ship.
+  // Authorization: only an approver on the nomination.
+  // Tier 1: current approver (or self-approval nominator).
+  // Tier 2: dept head picks; People team rep confirms via queue button
+  //   (they don't reach this page directly). Reward saves with
+  //   status=selected_pending_confirm so the rep's queue surfaces it.
+  // Tier 3: handled inline in the committee decision form, not here.
+  const isTier2 = nomination.current_tier === 2
   if (nomination.current_tier === 1) {
-    // nominator==manager (self-approval) or the peer's manager approved
-    // them. Either way, the current_approver_id or the nominator (for
-    // self-approval) is the eligible picker.
     const isSelfApproval = nomination.nominator_id === employeeId
     const isManagerApprover = nomination.current_approver_id === employeeId
     if (!isSelfApproval && !isManagerApprover) notFound()
+  } else if (isTier2) {
+    if (nomination.status !== 'approved') redirect('/approvals/queue')
+    if (nomination.tier2_dept_head_id !== employeeId) notFound()
   } else {
-    // Tier 2/3 reward paths land in Commit D — send them back for now.
-    redirect('/approvals/queue')
+    // Tier 3 — reward picked inside the committee decision form.
+    redirect('/committee/queue')
   }
 
   const nominee = await getEmployeeById(nomination.nominee_id)

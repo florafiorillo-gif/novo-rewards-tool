@@ -34,6 +34,14 @@ const useMock = () => process.env.USE_MOCK_DATA === 'true'
 
 // ─── Decide (approve / deny / defer) ─────────────────────────────────────────
 
+import { TIER_RANGES } from '@/modules/catalog/types'
+import { getActivePeriod } from '@/modules/budget/periods'
+import { commitSpend } from '@/modules/budget/pools'
+import { resolvePoolForNomination } from '@/modules/budget/routing'
+import { resolveDeliveryMechanism } from '@/modules/fulfillment/routing'
+import { insertMockReward } from '@/modules/rewards/mock-store'
+import type { RewardRecord } from '@/modules/rewards/types'
+
 export async function decideCommittee(
   input: CommitteeDecideInput
 ): Promise<CommitteeDecideResult> {
@@ -60,6 +68,33 @@ export async function decideCommittee(
   )
   if (recused) return { ok: false, error: { code: 'recused' } }
 
+  // Approve requires a complete reward payload (spec §7.5).
+  const tier3Range = TIER_RANGES[3]
+  if (input.decision === 'approve') {
+    if (!input.reward) {
+      return { ok: false, error: { code: 'reward_required_on_approve' } }
+    }
+    if (
+      input.reward.amount_usd < tier3Range.min ||
+      input.reward.amount_usd > tier3Range.max
+    ) {
+      return {
+        ok: false,
+        error: {
+          code: 'reward_amount_out_of_range',
+          min: tier3Range.min,
+          max: tier3Range.max,
+        },
+      }
+    }
+    if (!input.reward.delivery_plan?.trim()) {
+      return { ok: false, error: { code: 'delivery_plan_required' } }
+    }
+    if (!input.reward.scope_note_text?.trim()) {
+      return { ok: false, error: { code: 'delivery_plan_required' } }
+    }
+  }
+
   const now = new Date()
   const members = input.concurring_member_ids?.length
     ? Array.from(new Set([input.actor_id, ...input.concurring_member_ids]))
@@ -69,15 +104,49 @@ export async function decideCommittee(
     .filter((a) => a.action === 'recuse')
     .map((a) => a.actor_id)
 
+  // For approve, commit the Tier 3 budget BEFORE writing the decision so
+  // we never have a CommitteeDecision referring to a spend that failed.
+  if (input.decision === 'approve' && input.reward) {
+    const period = await getActivePeriod()
+    if (!period) return { ok: false, error: { code: 'no_active_period' } }
+    const resolution = await resolvePoolForNomination({
+      nomination_id: nom.id,
+      current_tier: 3,
+      nominator_id: nom.nominator_id,
+      nominee_id: nom.nominee_id,
+      nominee_manager_id: null,
+      nominee_geo: 'US', // committee pool is not geo-filtered; any valid geo works
+      nominee_department: null,
+    })
+    if (!resolution.ok) return { ok: false, error: { code: 'no_active_period' } }
+    const spend = await commitSpend({
+      pool_id: resolution.pool.id,
+      amount_usd: input.reward.amount_usd,
+      nomination_id: nom.id,
+      approver_id: input.actor_id,
+    })
+    if (!spend.ok) {
+      if (spend.error.code === 'insufficient_balance') {
+        return {
+          ok: false,
+          error: { code: 'insufficient_balance', remaining: spend.error.remaining },
+        }
+      }
+      return { ok: false, error: { code: 'no_active_period' } }
+    }
+  }
+
   const decisionRecord: CommitteeDecisionRecord = {
     id: `cdec_${randomUUID()}`,
     nomination_id: nom.id,
     team_award_group_id: null,
     committee_members: members,
     decision: input.decision,
-    approved_amount_usd: null,
-    reward_form: null,
-    delivery_plan: null,
+    approved_amount_usd:
+      input.decision === 'approve' ? input.reward!.amount_usd : null,
+    reward_form: input.decision === 'approve' ? input.reward!.reward_type : null,
+    delivery_plan:
+      input.decision === 'approve' ? input.reward!.delivery_plan : null,
     decision_log_text: input.decision_log_text,
     conflicted_members: conflictedMembers,
     substitute_member_id: null,
@@ -96,6 +165,9 @@ export async function decideCommittee(
         decision: input.decision,
         decision_log_text: input.decision_log_text,
         conflicted_members: conflictedMembers,
+        approved_amount_usd: decisionRecord.approved_amount_usd ?? undefined,
+        reward_form: decisionRecord.reward_form ?? undefined,
+        delivery_plan: decisionRecord.delivery_plan ?? undefined,
       },
     })
     decisionRecord.id = created.id
@@ -119,7 +191,48 @@ export async function decideCommittee(
   })
 
   // Nomination state transition.
-  if (input.decision === 'approve') {
+  if (input.decision === 'approve' && input.reward) {
+    // Write the Reward row — stays in `selected` since Tier 3 delivery is
+    // manual (Rares/Flora personally delivers per spec §7.5).
+    const nominee = await getNomineeForNomination(nom.nominee_id)
+    const reward: RewardRecord = {
+      id: `rew_${randomUUID()}`,
+      nomination_id: nom.id,
+      reward_type: input.reward.reward_type,
+      vendor: null,
+      amount_usd: input.reward.amount_usd,
+      amount_local: null,
+      currency_local: null,
+      status: 'selected',
+      delivery_mechanism: resolveDeliveryMechanism({
+        geo: nominee?.geo ?? 'US',
+        reward_type: input.reward.reward_type,
+        employment_type: nominee?.employment_type,
+      }),
+      scope_note_template_id: input.reward.scope_note_template_id ?? null,
+      scope_note_text: input.reward.scope_note_text,
+      issued_at: null,
+      delivered_at: null,
+      budget_exception: false,
+      created_at: now,
+    }
+    if (useMock()) {
+      insertMockReward(reward)
+    } else {
+      await db.reward.create({
+        data: {
+          id: reward.id,
+          nomination_id: reward.nomination_id,
+          reward_type: reward.reward_type,
+          amount_usd: reward.amount_usd,
+          status: reward.status,
+          delivery_mechanism: reward.delivery_mechanism,
+          scope_note_template_id: reward.scope_note_template_id ?? undefined,
+          scope_note_text: reward.scope_note_text ?? undefined,
+        },
+      })
+    }
+
     await patchNomination(nom.id, {
       status: 'approved',
       approved_at: now,
@@ -137,6 +250,11 @@ export async function decideCommittee(
   }
   // defer — stays under_review.
   return { ok: true, decision: decisionRecord, outcome: 'deferred' }
+}
+
+async function getNomineeForNomination(nomineeId: string) {
+  const { getEmployeeById } = await import('@/modules/employees/service')
+  return getEmployeeById(nomineeId)
 }
 
 async function patchNomination(

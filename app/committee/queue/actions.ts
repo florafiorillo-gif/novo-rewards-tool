@@ -33,6 +33,8 @@ function isDecision(v: string): v is CommitteeDecisionType {
   return (DECISION_VALUES as readonly string[]).includes(v)
 }
 
+const VALID_REWARD_FORMS = ['cash', 'gift_card', 'experience', 'l_and_d', 'custom'] as const
+
 export async function decideCommitteeAction(formData: FormData): Promise<void> {
   const actorId = await requireCommitteeActor()
   const nominationId = (formData.get('nomination_id') ?? '').toString()
@@ -40,11 +42,38 @@ export async function decideCommitteeAction(formData: FormData): Promise<void> {
   const decisionLog = (formData.get('decision_log_text') ?? '').toString()
   if (!nominationId || !isDecision(decisionRaw)) return
 
+  // Spec §7.5 — committee picks reward + amount + delivery plan inline
+  // as part of the approve decision. Deny/defer don't need these.
+  const rewardFormRaw = (formData.get('reward_form') ?? '').toString()
+  const rewardAmountStr = (formData.get('reward_amount_usd') ?? '').toString()
+  const deliveryPlan = (formData.get('delivery_plan') ?? '').toString()
+  const scopeNoteText = (formData.get('scope_note_text') ?? '').toString()
+  const scopeNoteTemplateId = (formData.get('scope_note_template_id') ?? '').toString()
+
+  let rewardPayload:
+    | Parameters<typeof decideCommittee>[0]['reward']
+    | undefined = undefined
+  if (decisionRaw === 'approve') {
+    const rewardForm = (VALID_REWARD_FORMS as readonly string[]).includes(rewardFormRaw)
+      ? (rewardFormRaw as (typeof VALID_REWARD_FORMS)[number])
+      : null
+    const amount = Number.parseFloat(rewardAmountStr)
+    if (!rewardForm || !Number.isFinite(amount) || amount <= 0) return
+    rewardPayload = {
+      reward_type: rewardForm,
+      amount_usd: amount,
+      delivery_plan: deliveryPlan,
+      scope_note_text: scopeNoteText,
+      scope_note_template_id: scopeNoteTemplateId || undefined,
+    }
+  }
+
   const result = await decideCommittee({
     nomination_id: nominationId,
     actor_id: actorId,
     decision: decisionRaw,
     decision_log_text: decisionLog,
+    reward: rewardPayload,
   })
 
   // Fire nominator notifications on terminal outcomes only.

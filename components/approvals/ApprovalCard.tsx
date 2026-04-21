@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { HydratedNomination } from '@/modules/approvals/queries'
 import {
   approveFromQueueAction,
+  confirmRewardFromQueueAction,
   denyFromQueueAction,
   requestInfoFromQueueAction,
   upgradeFromQueueAction,
@@ -13,8 +14,15 @@ interface Props {
 }
 
 export function ApprovalCard({ hydrated, viewerEmployeeId }: Props) {
-  const { nomination, nominator, nominee, value, actions, needs_reward_selection } =
-    hydrated
+  const {
+    nomination,
+    nominator,
+    nominee,
+    value,
+    actions,
+    action_needed,
+    pending_reward,
+  } = hydrated
   const tier = nomination.current_tier
 
   const approveActions = actions.filter((a) => a.action === 'approve')
@@ -89,21 +97,45 @@ export function ApprovalCard({ hydrated, viewerEmployeeId }: Props) {
         </section>
       )}
 
-      {needs_reward_selection && (
+      {action_needed === 'select_reward' && (
         <p className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-900">
           Approved — pick a reward to finish.
         </p>
       )}
+      {action_needed === 'confirm_reward' && pending_reward && (
+        <p className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-900">
+          Dept head picked a {pending_reward.reward_type}
+          {pending_reward.vendor ? ` from ${pending_reward.vendor}` : ''} · $
+          {pending_reward.amount_usd.toLocaleString()} — confirm to commit budget.
+        </p>
+      )}
+      {action_needed === 'wait' && (
+        <p className="mb-3 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-600">
+          Waiting on the other approver.
+        </p>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {needs_reward_selection ? (
+        {action_needed === 'select_reward' && (
           <Link
             href={`/approvals/${nomination.id}/reward`}
             className="inline-flex items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
           >
             Select reward
           </Link>
-        ) : !viewerAlreadyApproved ? (
+        )}
+        {action_needed === 'confirm_reward' && pending_reward && (
+          <form action={confirmRewardFromQueueAction}>
+            <input type="hidden" name="reward_id" value={pending_reward.id} />
+            <button
+              type="submit"
+              className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            >
+              Confirm reward
+            </button>
+          </form>
+        )}
+        {action_needed === 'approve' && !viewerAlreadyApproved && (
           <form action={approveFromQueueAction}>
             <input type="hidden" name="nomination_id" value={nomination.id} />
             <button
@@ -113,7 +145,7 @@ export function ApprovalCard({ hydrated, viewerEmployeeId }: Props) {
               Approve
             </button>
           </form>
-        ) : null}
+        )}
 
         <details className="col-span-1 rounded-md border border-gray-200 p-3">
           <summary className="cursor-pointer text-sm font-medium text-gray-700">
