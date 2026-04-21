@@ -47,7 +47,7 @@ export default async function SubmittedPage({
       <section className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
         <p>
           <span className="font-medium text-gray-900">Value:</span>{' '}
-          {value?.name ?? nomination.value_id}
+          {value?.name ?? '—'}
         </p>
         <p className="mt-2 italic">&ldquo;{nomination.behavior_text}&rdquo;</p>
       </section>

@@ -70,11 +70,11 @@ but rename to e.g. `auditAction()` if we ever want to make the
 difference between "state-changing service call" and "audit-only
 write" more obvious.
 
-### Replace raw `value_id` fallback on `/nominations/submitted`
-**Ref:** Audit M4. `app/nominations/submitted/page.tsx` renders
-`value.name ?? nomination.value_id` — if `getValueById` ever returns
-null, the raw `val_run_for_the_bus` leaks to the user. Pin the four
-values as exhaustive and drop the fallback, or show "—".
+### ~~Replace raw `value_id` fallback on `/nominations/submitted`~~
+**Ref:** Audit M4. Closed: page now renders `value?.name ?? '—'`. The
+four-value set is enforced at create time by the zod refine against
+`VALUE_IDS`, so the null branch should only hit for corrupted data;
+'—' is the warm fallback instead of leaking `val_*` identifiers.
 
 ### `/approvals/queue` ambiguity for unauthorized viewers
 **Ref:** Audit A6. Empty state and "not an approver" state render the
