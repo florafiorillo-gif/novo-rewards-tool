@@ -10,9 +10,9 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 
 ## 2. Where we are
 
-- **Last commit:** Phase 7A (in-session; hash written in next commit) — manager dashboard at `/dashboard` (pool + pacing + pending count + recent recognitions).
-- **Phases 1–6 complete. Phase 7A done; 7B–7E still pending.**
-- **Build state:** `npm run typecheck` clean. `npm test` green (214 tests / 31 suites). `npm run test:integration` skips cleanly without `DATABASE_URL` (expected; Prisma suites are opt-in — 13 tests across 6 suites when wired).
+- **Last commit:** Phase 7A.1 (in-session; hash written in next commit) — code-review fixes to 7A: Prisma relation filter for recent list, Tier 1-scoped pending count, 14-day close-grace window support, mock/Prisma parity on re-approve, `pacingCopy` moved to components, added integration test.
+- **Phases 1–6 complete. Phase 7A + 7A.1 done; 7B–7E still pending.**
+- **Build state:** `npm run typecheck` clean. `npm test` green (220 tests / 31 suites). `npm run test:integration` registers 16 tests across 7 suites; skips cleanly without `DATABASE_URL`. `next build` has a pre-existing failure on `/nominations/submitted` tracked in TODO.md (not a 7A/7A.1 regression). `npm run lint` is unconfigured (interactive prompt on first run; has never been wired).
 - **Data source:** everything runs on mock data in `modules/employees/mock-data.ts` and in-memory `mock-store.ts` files. `USE_MOCK_DATA=true` is the dev default. Prisma schema is complete and integration tests exist for when a real DB is wired.
 
 ## 3. Phase status (from spec §18)
@@ -54,7 +54,7 @@ modules/               Service layer, one folder per bounded context
   scope-notes/         per-tier template CRUD
   committee/           T3 batched review + decisions
   communication/       ack state machine, #made-it-happen post composer, reactions/comments, TZ-aware recipient DM scheduler
-  dashboard/           per-role view assemblers; manager-view.ts returns pool + pacing + pending count + recent recognitions
+  dashboard/           per-role view assemblers; manager-view.ts returns pool (with close-grace support) + pacing + Tier 1 pending count + recent recognitions
   employees/           Zoho-shaped mock data; manager graph; getEmployeeById; setRecognitionPreference
   roles/               role resolution (manager / dept head / people team rep / committee)
   values/              four value IDs (constant set)

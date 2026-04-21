@@ -168,6 +168,31 @@ async function fetchRewardsByNomination(
   return out
 }
 
+// Count-only variant scoped to Tier 1 (manager dashboard). Avoids the full
+// hydration that listPendingApprovalsForEmployee does just to get a count,
+// and narrows semantics so a mixed-role viewer (manager + dept head) sees
+// only their Tier 1 pending items next to the Tier 1 pool card. Tier 2/3
+// counts belong on the dept-head / People-team dashboards (Phase 7B/C/D).
+export async function countPendingTier1ForApprover(
+  employeeId: string
+): Promise<number> {
+  if (useMock()) {
+    return listAllMock().filter(
+      (n) =>
+        n.current_tier === 1 &&
+        n.current_approver_id === employeeId &&
+        (n.status === 'submitted' || n.status === 'approved')
+    ).length
+  }
+  return db.nomination.count({
+    where: {
+      current_tier: 1,
+      current_approver_id: employeeId,
+      status: { in: ['submitted', 'approved'] },
+    },
+  })
+}
+
 function isPendingForEmployee(n: NominationRecord, employeeId: string): boolean {
   if (
     n.current_tier === 1 &&

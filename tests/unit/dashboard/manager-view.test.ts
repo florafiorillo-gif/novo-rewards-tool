@@ -1,14 +1,12 @@
 /** @jest-environment node */
 process.env.USE_MOCK_DATA = 'true'
 
-import {
-  getManagerDashboardView,
-  pacingCopy,
-} from '@/modules/dashboard/manager-view'
+import { getManagerDashboardView } from '@/modules/dashboard/manager-view'
 import { allocatePools } from '@/modules/budget/allocation'
 import {
   activatePeriod,
   approvePeriod,
+  closePeriod,
   createPeriod,
 } from '@/modules/budget/periods'
 import {
@@ -20,8 +18,12 @@ import { createNomination } from '@/modules/nominations/service'
 import { resetMockNominations } from '@/modules/nominations/mock-store'
 import {
   approveNomination,
+  denyNomination,
+  proposeUpgrade,
+  undoApproval,
   resetMockApprovalActions,
 } from '@/modules/approvals/service'
+import { MOCK_EMPLOYEES } from '@/modules/employees/mock-data'
 
 // Reusable seed: Q2 2026 active period with pools allocated from the mock
 // org. Committee are emp_001 (Rares) and emp_002 (Flora); the managers in
@@ -30,6 +32,8 @@ import {
 const PERIOD_START = new Date('2026-04-01')
 const PERIOD_END = new Date('2026-06-30')
 const MIDPOINT = new Date('2026-05-15')
+const AFTER_END = new Date('2026-07-05') // 5 days after close
+const AFTER_GRACE = new Date('2026-08-01') // > 14 days after close
 
 async function seedActivePeriod() {
   const created = await createPeriod({
@@ -58,15 +62,19 @@ beforeEach(() => {
   resetMockBudget()
   resetMockNominations()
   resetMockApprovalActions()
+  // In-mock-data counter lives on the module object; reset between tests so
+  // a prior test's dept-head toggle doesn't bleed into the next one.
+  for (const e of MOCK_EMPLOYEES) {
+    e.tier2_assignments_count = 0
+  }
 })
 
-describe('getManagerDashboardView', () => {
-  it('returns pool + pacing + recent for a manager with an allocated pool', async () => {
+describe('getManagerDashboardView — basic shape', () => {
+  it('returns pool + pacing for a manager with an allocated pool', async () => {
     const periodId = await seedActivePeriod()
     const pool = listMockPoolsForPeriod(periodId).find(
       (p) => p.pool_type === 'manager_tier1' && p.owner_id === 'emp_005'
     )!
-    // Spend ~50% to land in on_track at the 50% mark.
     const half = Math.round(pool.allocated_amount_usd * 0.5 * 100) / 100
     updateMockPool(pool.id, {
       spent_amount_usd: half,
@@ -75,36 +83,20 @@ describe('getManagerDashboardView', () => {
 
     const view = await getManagerDashboardView('emp_005', MIDPOINT)
     expect(view.period?.id).toBe(periodId)
+    expect(view.in_grace).toBe(false)
+    expect(view.grace_ends_at).toBeNull()
     expect(view.pool).not.toBeNull()
     expect(view.pool!.pool_type).toBe('manager_tier1')
     expect(view.pool!.owner_id).toBe('emp_005')
     expect(view.pacing).toBe('on_track')
-    expect(view.pending_count).toBe(0)
+    expect(view.pending_tier1_count).toBe(0)
     expect(view.recent).toEqual([])
   })
 
   it('flags under_utilized for a manager who has not spent by mid-period', async () => {
     await seedActivePeriod()
-    // Fresh allocation, zero spend at 50% elapsed → drift = -50% < -20%.
     const view = await getManagerDashboardView('emp_005', MIDPOINT)
     expect(view.pacing).toBe('under_utilized')
-  })
-
-  it('returns null pool for an individual contributor', async () => {
-    await seedActivePeriod()
-    // emp_006 (Alex) is a direct report, not a manager — no manager_tier1 pool.
-    const view = await getManagerDashboardView('emp_006', MIDPOINT)
-    expect(view.pool).toBeNull()
-    expect(view.pacing).toBeNull()
-    expect(view.period).not.toBeNull() // period still visible
-  })
-
-  it('returns null period and null pool when nothing is active', async () => {
-    // No seed — nothing allocated.
-    const view = await getManagerDashboardView('emp_005', MIDPOINT)
-    expect(view.period).toBeNull()
-    expect(view.pool).toBeNull()
-    expect(view.pacing).toBeNull()
   })
 
   it('flips pacing to running_hot when spent outpaces elapsed', async () => {
@@ -112,7 +104,6 @@ describe('getManagerDashboardView', () => {
     const pool = listMockPoolsForPeriod(periodId).find(
       (p) => p.pool_type === 'manager_tier1' && p.owner_id === 'emp_005'
     )!
-    // Force spend to 80% with only 50% elapsed → well above +15% threshold.
     const eighty = Math.round(pool.allocated_amount_usd * 0.8 * 100) / 100
     updateMockPool(pool.id, {
       spent_amount_usd: eighty,
@@ -123,7 +114,50 @@ describe('getManagerDashboardView', () => {
     expect(view.pacing).toBe('running_hot')
   })
 
-  it('counts pending approvals for this viewer', async () => {
+  it('returns null pool for an individual contributor', async () => {
+    await seedActivePeriod()
+    const view = await getManagerDashboardView('emp_006', MIDPOINT)
+    expect(view.pool).toBeNull()
+    expect(view.pacing).toBeNull()
+    expect(view.period).not.toBeNull()
+  })
+
+  it('returns null period and null pool when nothing is active', async () => {
+    const view = await getManagerDashboardView('emp_005', MIDPOINT)
+    expect(view.period).toBeNull()
+    expect(view.pool).toBeNull()
+    expect(view.pacing).toBeNull()
+    expect(view.in_grace).toBe(false)
+  })
+})
+
+describe('getManagerDashboardView — close-grace window (fix #2)', () => {
+  it('still surfaces the pool during the 14-day close-grace window', async () => {
+    const periodId = await seedActivePeriod()
+    // Committee member closes the period 5 days before our clock.
+    await closePeriod(periodId, 'emp_001', new Date('2026-06-30'))
+
+    const view = await getManagerDashboardView('emp_005', AFTER_END)
+    expect(view.period?.id).toBe(periodId)
+    expect(view.in_grace).toBe(true)
+    expect(view.grace_ends_at).toBeInstanceOf(Date)
+    expect(view.pool).not.toBeNull()
+    expect(view.pacing).not.toBeNull()
+  })
+
+  it('drops the period once the 14-day grace has expired', async () => {
+    const periodId = await seedActivePeriod()
+    await closePeriod(periodId, 'emp_001', new Date('2026-06-30'))
+
+    const view = await getManagerDashboardView('emp_005', AFTER_GRACE)
+    expect(view.period).toBeNull()
+    expect(view.pool).toBeNull()
+    expect(view.in_grace).toBe(false)
+  })
+})
+
+describe('getManagerDashboardView — pending_tier1_count (fix #3)', () => {
+  it('counts Tier 1 pending approvals for the viewer', async () => {
     await seedActivePeriod()
     // emp_007 (Jamie) nominates emp_006 (Alex); both report to emp_005 (Sarah),
     // so Sarah is the Tier 1 approver (peer-manager routing).
@@ -134,13 +168,40 @@ describe('getManagerDashboardView', () => {
     if (!created.ok) throw new Error('nom seed failed')
 
     const view = await getManagerDashboardView('emp_005', MIDPOINT)
-    expect(view.pending_count).toBe(1)
+    expect(view.pending_tier1_count).toBe(1)
   })
 
+  it('does NOT include Tier 2 items for a manager who is also a dept head', async () => {
+    await seedActivePeriod()
+
+    // Create a Tier 1 peer nomination → Sarah (emp_005) is approver. Then
+    // upgrade it to Tier 2. After upgrade, current_tier=2 and Sarah is the
+    // snapshot dept_head for Engineering/US.
+    const created = await createNomination(
+      { ...validNomination, nominee_id: 'emp_006' },
+      'emp_007'
+    )
+    if (!created.ok) throw new Error('nom seed failed')
+    const up = await proposeUpgrade({
+      nomination_id: created.nomination.id,
+      actor_id: 'emp_005',
+      to_tier: 2,
+      reasoning:
+        'This is a cross-team impact that warrants Tier 2 recognition — needs more weight.',
+    })
+    expect(up.ok).toBe(true)
+
+    // Sarah is now a Tier 2 approver (dept head for US Engineering). If we
+    // conflated tiers this would surface as pending_tier1_count=1.
+    const view = await getManagerDashboardView('emp_005', MIDPOINT)
+    expect(view.pending_tier1_count).toBe(0)
+  })
+})
+
+describe('getManagerDashboardView — recent list semantics', () => {
   it('includes recent recognitions the viewer approved, newest first', async () => {
     await seedActivePeriod()
 
-    // Two nominations, both approved by emp_005.
     const n1 = await createNomination(
       { ...validNomination, nominee_id: 'emp_006' },
       'emp_007'
@@ -150,8 +211,7 @@ describe('getManagerDashboardView', () => {
       nomination_id: n1.nomination.id,
       actor_id: 'emp_005',
     })
-    // Mock actions use Date.now() — stagger so the sort order is deterministic.
-    await new Promise((r) => setTimeout(r, 5))
+    await new Promise((r) => setTimeout(r, 10))
 
     const n2 = await createNomination(
       {
@@ -172,27 +232,21 @@ describe('getManagerDashboardView', () => {
 
     const view = await getManagerDashboardView('emp_005', MIDPOINT)
     expect(view.recent).toHaveLength(2)
-    // Newest first — n2 was approved after n1.
     expect(view.recent[0].nomination.id).toBe(n2.nomination.id)
     expect(view.recent[1].nomination.id).toBe(n1.nomination.id)
     expect(view.recent[0].nominee?.id).toBe('emp_007')
     expect(view.recent[0].value?.id).toBe('val_run_for_the_bus')
   })
 
-  it('does not include recognitions approved by a different actor', async () => {
+  it('excludes recognitions approved by a different actor', async () => {
     await seedActivePeriod()
-
-    // emp_008 (Priya, India engineering manager) approves a peer nomination
-    // routed to her — shouldn't appear in emp_005's dashboard.
     const created = await createNomination(
-      {
-        ...validNomination,
-        nominee_id: 'emp_009',
-      },
+      { ...validNomination, nominee_id: 'emp_009' },
       'emp_008'
     )
     if (!created.ok) throw new Error('seed failed')
-    // Self-approval requires a reflection.
+    // emp_009 reports to emp_008 in the mock org, so this is a self-approval
+    // (nominator = approver) which requires a reflection_type.
     await approveNomination({
       nomination_id: created.nomination.id,
       actor_id: 'emp_008',
@@ -202,12 +256,93 @@ describe('getManagerDashboardView', () => {
     const view = await getManagerDashboardView('emp_005', MIDPOINT)
     expect(view.recent).toEqual([])
   })
-})
 
-describe('pacingCopy', () => {
-  it('maps each indicator to a tone + warm-tone label', () => {
-    expect(pacingCopy('on_track').tone).toBe('green')
-    expect(pacingCopy('running_hot').tone).toBe('amber')
-    expect(pacingCopy('under_utilized').tone).toBe('gray')
+  it('excludes denied nominations (#11)', async () => {
+    await seedActivePeriod()
+    const created = await createNomination(
+      { ...validNomination, nominee_id: 'emp_006' },
+      'emp_007'
+    )
+    if (!created.ok) throw new Error('seed failed')
+    const denied = await denyNomination({
+      nomination_id: created.nomination.id,
+      actor_id: 'emp_005',
+      reason_structured: 'insufficient_detail',
+      reason_text: 'Could you add a specific moment?',
+    })
+    expect(denied.ok).toBe(true)
+
+    const view = await getManagerDashboardView('emp_005', MIDPOINT)
+    expect(view.recent).toEqual([])
+  })
+
+  it('excludes undone approvals (#10, spec §13.3)', async () => {
+    await seedActivePeriod()
+    const created = await createNomination(
+      { ...validNomination, nominee_id: 'emp_006' },
+      'emp_007'
+    )
+    if (!created.ok) throw new Error('seed failed')
+    const approved = await approveNomination({
+      nomination_id: created.nomination.id,
+      actor_id: 'emp_005',
+    })
+    expect(approved.ok).toBe(true)
+    const undone = await undoApproval({
+      nomination_id: created.nomination.id,
+      actor_id: 'emp_005',
+    })
+    expect(undone.ok).toBe(true)
+
+    const view = await getManagerDashboardView('emp_005', MIDPOINT)
+    expect(view.recent).toEqual([])
+  })
+
+  it('excludes a nomination that was upgraded by the manager (#9)', async () => {
+    await seedActivePeriod()
+    const created = await createNomination(
+      { ...validNomination, nominee_id: 'emp_006' },
+      'emp_007'
+    )
+    if (!created.ok) throw new Error('seed failed')
+    // Manager proposes upgrade instead of approving — no approve action
+    // from emp_005, and current_tier is now 2.
+    const up = await proposeUpgrade({
+      nomination_id: created.nomination.id,
+      actor_id: 'emp_005',
+      to_tier: 2,
+      reasoning:
+        'This is a cross-team impact that warrants Tier 2 recognition — needs more weight.',
+    })
+    expect(up.ok).toBe(true)
+
+    const view = await getManagerDashboardView('emp_005', MIDPOINT)
+    expect(view.recent).toEqual([])
+  })
+
+  it('caps the recent list at RECENT_LIMIT (5) (#23)', async () => {
+    await seedActivePeriod()
+    // Seed 7 nominations, all approved by emp_005. Interleave with small
+    // waits so the sort order is deterministic.
+    for (let i = 0; i < 7; i++) {
+      const created = await createNomination(
+        {
+          ...validNomination,
+          nominee_id: i % 2 === 0 ? 'emp_006' : 'emp_007',
+          behavior_text: `Iteration ${i} — did the work across time zones with care.`,
+          outcome_text: `Iteration ${i} — kept the release unblocked for the team.`,
+        },
+        i % 2 === 0 ? 'emp_007' : 'emp_006'
+      )
+      if (!created.ok) throw new Error(`seed ${i} failed`)
+      await approveNomination({
+        nomination_id: created.nomination.id,
+        actor_id: 'emp_005',
+      })
+      await new Promise((r) => setTimeout(r, 5))
+    }
+
+    const view = await getManagerDashboardView('emp_005', MIDPOINT)
+    expect(view.recent).toHaveLength(5)
   })
 })

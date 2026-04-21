@@ -93,6 +93,24 @@ write" more obvious.
 null, the raw `val_run_for_the_bus` leaks to the user. Pin the four
 values as exhaustive and drop the fallback, or show "—".
 
+### `next build` fails on `/nominations/submitted` page-data collection
+**Ref:** Surfaced during Phase 7A quality review. `USE_MOCK_DATA=true
+npm run build` errors out with:
+
+> A "use server" file can only export async functions, found object.
+> Failed to collect page data for /nominations/submitted
+
+Reproduces on `a73e737` (pre-7A), so it's pre-existing — not a Phase 7A
+regression. `tsc --noEmit` and `next lint` both pass, which is why it
+wasn't caught by prior phases. Unit tests don't touch the Next.js build
+pipeline. Either the page file is re-exporting a non-function from a
+`"use server"` module, or a server action is exported as a plain object.
+
+**Fix sketch:** inspect `app/nominations/submitted/page.tsx` and any
+`app/nominations/submitted/actions.ts` for non-async exports; narrow
+the `"use server"` directive to the specific server actions. Tracks
+until v1 launch — the app still runs under `next dev`.
+
 ### `/approvals/queue` ambiguity for unauthorized viewers
 **Ref:** Audit A6. Empty state and "not an approver" state render the
 same copy. Rubina's pre-launch copy pass should split them. Propose:

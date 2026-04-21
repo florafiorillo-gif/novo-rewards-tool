@@ -20,7 +20,7 @@ export default async function DashboardPage() {
     isPeopleTeamRep(employeeId),
   ])
 
-  const { period, pool, pacing, pending_count, recent } = view
+  const { period, in_grace, grace_ends_at, pool, pacing, pending_tier1_count, recent } = view
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-6 py-12">
@@ -37,16 +37,22 @@ export default async function DashboardPage() {
 
       <div className="space-y-6">
         {pool && period && pacing && (
-          <ManagerPoolCard period={period} pool={pool} pacing={pacing} />
+          <ManagerPoolCard
+            period={period}
+            pool={pool}
+            pacing={pacing}
+            in_grace={in_grace}
+            grace_ends_at={grace_ends_at}
+          />
         )}
 
-        {pending_count > 0 && (
+        {pending_tier1_count > 0 && (
           <section className="rounded-lg border border-gray-200 bg-white p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-sm font-medium text-gray-500">Waiting on you</h2>
                 <p className="mt-1 text-lg font-semibold text-gray-900">
-                  {pending_count} nomination{pending_count === 1 ? '' : 's'} to review
+                  {pending_tier1_count} nomination{pending_tier1_count === 1 ? '' : 's'} to review
                 </p>
               </div>
               <Link
@@ -59,7 +65,7 @@ export default async function DashboardPage() {
           </section>
         )}
 
-        {pool && <RecentRecognitions items={recent} />}
+        {(pool || recent.length > 0) && <RecentRecognitions items={recent} />}
 
         <section className="flex flex-wrap gap-3">
           <Link
@@ -68,7 +74,7 @@ export default async function DashboardPage() {
           >
             Recognize a teammate
           </Link>
-          {pending_count === 0 && (
+          {pending_tier1_count === 0 && (
             <Link
               href="/approvals/queue"
               className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"

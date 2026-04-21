@@ -14,7 +14,7 @@ import type {
   CreatePeriodInput,
   PeriodResult,
 } from './types'
-import { DEFAULT_ALLOCATION_CONFIG } from './types'
+import { CLOSE_GRACE_MS, DEFAULT_ALLOCATION_CONFIG } from './types'
 
 const useMock = () => process.env.USE_MOCK_DATA === 'true'
 
@@ -152,6 +152,50 @@ export async function getActivePeriod(
     orderBy: { start_date: 'desc' },
   })
   return row ? hydratePeriodRow(row) : null
+}
+
+// Dashboards need the period visible during the 14-day close-grace window
+// (spec §10.4 + ONBOARDING.md §7 invariant). Reward selection is still
+// valid in-grace, so pool numbers, pacing, and "waiting on you" counts
+// still matter. Returns the active period first; falls back to the most
+// recent `closed` period whose `closed_at + CLOSE_GRACE_MS > now`.
+export interface DisplayablePeriod {
+  period: BudgetPeriodRecord
+  in_grace: boolean
+  grace_ends_at: Date | null
+}
+
+export async function getDisplayablePeriod(
+  now: Date = new Date()
+): Promise<DisplayablePeriod | null> {
+  const active = await getActivePeriod(now)
+  if (active) return { period: active, in_grace: false, grace_ends_at: null }
+
+  const graceCutoff = new Date(now.getTime() - CLOSE_GRACE_MS)
+  if (useMock()) {
+    const candidate = listMockPeriods().find(
+      (p) => p.status === 'closed' && p.closed_at && p.closed_at > graceCutoff
+    )
+    if (!candidate || !candidate.closed_at) return null
+    return {
+      period: candidate,
+      in_grace: true,
+      grace_ends_at: new Date(candidate.closed_at.getTime() + CLOSE_GRACE_MS),
+    }
+  }
+
+  const row = await db.budgetPeriod.findFirst({
+    where: { status: 'closed', closed_at: { gt: graceCutoff } },
+    orderBy: { closed_at: 'desc' },
+  })
+  if (!row) return null
+  const period = hydratePeriodRow(row)
+  if (!period.closed_at) return null
+  return {
+    period,
+    in_grace: true,
+    grace_ends_at: new Date(period.closed_at.getTime() + CLOSE_GRACE_MS),
+  }
 }
 
 export async function getPeriod(period_id: string): Promise<BudgetPeriodRecord | null> {
