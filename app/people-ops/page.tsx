@@ -23,6 +23,15 @@ export default async function PeopleOpsHomePage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Link
+          href="/people-ops/dashboard"
+          className="rounded-lg border border-gray-200 bg-white p-6 hover:bg-gray-50"
+        >
+          <p className="text-sm font-medium text-gray-900">Program dashboard</p>
+          <p className="mt-1 text-xs text-gray-500">
+            Pools by geo, reserve draws, SLA misses for the current quarter.
+          </p>
+        </Link>
+        <Link
           href="/people-ops/fulfillment"
           className="rounded-lg border border-gray-200 bg-white p-6 hover:bg-gray-50"
         >

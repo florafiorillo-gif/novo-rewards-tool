@@ -5,9 +5,10 @@ import {
   getEmployeesByIds,
 } from '@/modules/employees/service'
 import type { Employee } from '@/modules/employees/types'
+import { SYSTEM_EMPLOYEE_ID } from '@/modules/employees/mock-data'
 import { getValueById } from '@/modules/values/constants'
 import type { ValueDef } from '@/modules/values/constants'
-import { listApprovalActionsForNominations } from './service'
+import { listApprovalActions, listApprovalActionsForNominations } from './service'
 import type { ApprovalActionRecord } from './types'
 import { getRewardForNomination } from '@/modules/rewards/service'
 import type { RewardRecord } from '@/modules/rewards/types'
@@ -216,6 +217,101 @@ export async function countPendingTier2ForDeptHead(
       status: { in: ['under_review', 'approved'] },
     },
   })
+}
+
+// SLA misses for the People team surface (Phase 7C). A nomination counts
+// as a miss when the SLA sweep either escalated it (last_escalation_at
+// set) or auto-denied it (system actor wrote a deny action). Scoped to
+// nominations submitted within the period so closed quarters don't bleed
+// into the current-quarter view. Excludes Tier 3 per spec §7.6.
+export interface SlaMissRecord {
+  nomination: NominationRecord
+  kind: 'escalated' | 'auto_denied'
+  event_at: Date
+}
+
+export async function listSlaMissesForPeriod(
+  period_start: Date,
+  period_end: Date
+): Promise<SlaMissRecord[]> {
+  const within = (d: Date | null): boolean =>
+    d !== null && d >= period_start && d <= period_end
+
+  if (useMock()) {
+    const out: SlaMissRecord[] = []
+    const actions = new Map<string, ApprovalActionRecord[]>()
+    for (const nom of listAllMock()) {
+      if (nom.current_tier === 3) continue
+      if (!within(nom.submitted_at)) continue
+      if (nom.last_escalation_at && within(nom.last_escalation_at)) {
+        out.push({
+          nomination: nom,
+          kind: 'escalated',
+          event_at: nom.last_escalation_at,
+        })
+      }
+      if (nom.status === 'denied') {
+        if (!actions.has(nom.id)) {
+          actions.set(nom.id, await listApprovalActions(nom.id))
+        }
+        const sysDeny = actions
+          .get(nom.id)!
+          .find((a) => a.action === 'deny' && a.actor_id === SYSTEM_EMPLOYEE_ID)
+        if (sysDeny && within(sysDeny.created_at)) {
+          out.push({
+            nomination: nom,
+            kind: 'auto_denied',
+            event_at: sysDeny.created_at,
+          })
+        }
+      }
+    }
+    return out.sort((a, b) => b.event_at.getTime() - a.event_at.getTime())
+  }
+
+  // Prisma path. Fetch candidates in a single query, then resolve the
+  // system-deny rows in a batched action lookup so we don't round-trip per
+  // nomination.
+  const nominations = (await db.nomination.findMany({
+    where: {
+      current_tier: { in: [1, 2] },
+      submitted_at: { gte: period_start, lte: period_end },
+      OR: [
+        { last_escalation_at: { gte: period_start, lte: period_end } },
+        { status: 'denied' },
+      ],
+    },
+  })) as unknown as NominationRecord[]
+  if (nominations.length === 0) return []
+
+  const deniedIds = nominations.filter((n) => n.status === 'denied').map((n) => n.id)
+  const sysDenies = deniedIds.length
+    ? ((await db.approvalAction.findMany({
+        where: {
+          nomination_id: { in: deniedIds },
+          action: 'deny',
+          actor_id: SYSTEM_EMPLOYEE_ID,
+          created_at: { gte: period_start, lte: period_end },
+        },
+      })) as unknown as ApprovalActionRecord[])
+    : []
+  const sysDenyByNom = new Map(sysDenies.map((a) => [a.nomination_id, a]))
+
+  const out: SlaMissRecord[] = []
+  for (const nom of nominations) {
+    if (nom.last_escalation_at && within(nom.last_escalation_at)) {
+      out.push({
+        nomination: nom,
+        kind: 'escalated',
+        event_at: nom.last_escalation_at,
+      })
+    }
+    const deny = sysDenyByNom.get(nom.id)
+    if (deny) {
+      out.push({ nomination: nom, kind: 'auto_denied', event_at: deny.created_at })
+    }
+  }
+  return out.sort((a, b) => b.event_at.getTime() - a.event_at.getTime())
 }
 
 function isPendingForEmployee(n: NominationRecord, employeeId: string): boolean {
