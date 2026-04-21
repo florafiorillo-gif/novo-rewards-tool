@@ -1,8 +1,5 @@
-import {
-  acknowledgeNomination,
-  firePostIfReady,
-  stubPostSender,
-} from '@/modules/communication/ack'
+import { acknowledgeNomination, firePostIfReady } from '@/modules/communication/ack'
+import { realPostSender } from '@/modules/communication/post'
 import { getSlackClient } from '../client'
 import { ACTION_ACKNOWLEDGE_RECOGNITION } from '../blocks/recipient-dm'
 import type { SlackInteractivityPayload } from '../payloads'
@@ -38,7 +35,7 @@ export async function onAcknowledgeButton(
   // Idempotent — re-clicks (e.g. between DM refreshes) still land here
   // but acknowledgeNomination treated it as already-ack'd and firePostIfReady
   // will see post_fired_at already set.
-  await firePostIfReady(nominationId, stubPostSender)
+  await firePostIfReady(nominationId, realPostSender)
 
   const channel = payload.container?.channel_id ?? payload.channel?.id
   const ts = payload.container?.message_ts ?? payload.message?.ts

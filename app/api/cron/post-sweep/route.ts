@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { runPostSweep, stubPostSender } from '@/modules/communication/ack'
+import { runPostSweep } from '@/modules/communication/ack'
+import { realPostSender } from '@/modules/communication/post'
 
 export const runtime = 'nodejs'
 
 // Spec §9.8 — fires the #made-it-happen post for any approved nomination
 // whose recipient hasn't acknowledged within 24 hours of their reward DM.
 // Intended to run every ~15 minutes; idempotent (runPostSweep skips any
-// nomination whose post_fired_at is already set). Phase 6C replaces the
-// stubPostSender with the real channel-post implementation.
+// nomination whose post_fired_at is already set).
 export async function POST(req: NextRequest) {
   return handle(req)
 }
@@ -29,6 +29,6 @@ async function handle(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
-  const result = await runPostSweep(stubPostSender)
+  const result = await runPostSweep(realPostSender)
   return NextResponse.json({ ok: true, ...result })
 }
