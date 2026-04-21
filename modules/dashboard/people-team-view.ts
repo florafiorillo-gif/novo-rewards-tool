@@ -94,7 +94,16 @@ export async function getPeopleTeamDashboardView(
 ): Promise<PeopleTeamDashboardView> {
   const authorized = await isPeopleTeamRep(employeeId)
   if (!authorized) return EMPTY_VIEW
+  return buildProgramView(now)
+}
 
+// Role-agnostic core. The People-team wrapper gates on is_people_team_rep
+// before calling; the committee-view wrapper calls directly because
+// committee members get this visibility regardless of the rep flag
+// (spec §10.5 "committee sees the full program dashboard plus Tier 3").
+export async function buildProgramView(
+  now: Date = new Date()
+): Promise<PeopleTeamDashboardView> {
   const displayable = await getDisplayablePeriod(now)
   const period = displayable?.period ?? null
   if (!period) {

@@ -21,6 +21,7 @@ import type { ApprovalActionRecord } from '@/modules/approvals/types'
 import {
   insertMockDecision,
   listMockDecisionsForNomination,
+  listMockDecisionsInRange,
 } from './mock-store'
 import type {
   CommitteeDecideInput,
@@ -387,6 +388,21 @@ export async function listCommitteeQueue(
       prior_decisions: decisionsByNom.get(nomination.id) ?? [],
     }
   })
+}
+
+// Committee dashboard (Phase 7D): decisions in a time window, newest
+// first. Returns just the decision rows; callers hydrate nominations +
+// nominees on their own to avoid N+1 when a page already has those maps.
+export async function listCommitteeDecisionsInRange(
+  start: Date,
+  end: Date
+): Promise<CommitteeDecisionRecord[]> {
+  if (useMock()) return listMockDecisionsInRange(start, end)
+  const rows = (await db.committeeDecision.findMany({
+    where: { decided_at: { gte: start, lte: end } },
+    orderBy: { decided_at: 'desc' },
+  })) as unknown as CommitteeDecisionRecord[]
+  return rows
 }
 
 async function listCommitteeDecisionsForNominations(
