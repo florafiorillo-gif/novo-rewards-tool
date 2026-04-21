@@ -2,13 +2,15 @@ import { getSlackClient } from './client'
 import { getEmployeeById } from '@/modules/employees/service'
 import { getValueById } from '@/modules/values/constants'
 import { getNominationById } from '@/modules/nominations/service'
+import { buildRecipientDMBlocks } from './blocks/recipient-dm'
 import type { RewardRecord } from '@/modules/rewards/types'
 
-// Spec §9.4 — recipient gets a short DM when the reward is issued.
-// Phase 5 fires immediately on status=issued; Phase 6 adds the active-
-// aware timing ("when Slack presence is active, or auto-fire at 24h").
-// Respects recipient.recognition_preference — private recipients only
-// get the DM (no channel post), which is Phase 6's concern anyway.
+// Spec §9.4 — recipient gets a short DM when the reward is issued, with a
+// "React to acknowledge" button (spec §9.8). Clicking fires the
+// #made-it-happen post; a 24h timer auto-fires the post regardless.
+// Phase 5 fired immediately on status=issued; Phase 6E adds presence-aware
+// timing. This module only composes and sends the DM — ack state lives in
+// modules/communication/ack.ts.
 
 function slackEnabled(): boolean {
   return Boolean(process.env.SLACK_BOT_TOKEN)
@@ -47,15 +49,26 @@ export async function sendRecipientRewardDM(args: {
   const rewardLine = describeReward(args.reward, nominee.geo)
   const deliveryLine = describeDelivery(args.reward)
 
+  const blocks = buildRecipientDMBlocks({
+    nomination_id: nomination.id,
+    nominee_name: nominee.name,
+    nominator_name: nominator.name,
+    value_name: value?.name ?? 'a Novo value',
+    behavior_text: nomination.behavior_text,
+    reward_line: rewardLine,
+    delivery_line: deliveryLine,
+    already_acknowledged: Boolean(nomination.acknowledged_at),
+  })
+
   try {
     await getSlackClient().chat.postMessage({
       channel,
+      blocks,
+      // Fallback text for clients that can't render blocks (and for
+      // Slack's own notification preview text).
       text:
-        `${nominee.name}, you've been recognized.\n` +
-        `${nominator.name} saw you live ${value?.name ?? 'a Novo value'}:\n` +
-        `"${nomination.behavior_text}"\n` +
-        `Your reward: ${rewardLine}.\n` +
-        deliveryLine,
+        `${nominee.name}, you've been recognized. ` +
+        `${nominator.name} saw you live ${value?.name ?? 'a Novo value'}.`,
     })
   } catch (err) {
     console.error('[slack] recipient reward DM failed', err)

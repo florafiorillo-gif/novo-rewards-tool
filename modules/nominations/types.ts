@@ -32,6 +32,11 @@ export interface NominationRecord {
   last_escalation_at: Date | null
   approved_at: Date | null
   denied_at: Date | null
+  // Phase 6B/6C — set when recipient acknowledges and when #made-it-happen
+  // post fires, respectively. Both null until the fulfillment stage.
+  acknowledged_at: Date | null
+  post_fired_at: Date | null
+  post_message_ts: string | null
   created_at: Date
   updated_at: Date
 }

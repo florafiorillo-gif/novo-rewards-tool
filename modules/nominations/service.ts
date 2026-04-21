@@ -118,6 +118,9 @@ export async function createNomination(
     last_escalation_at: null,
     approved_at: null,
     denied_at: null,
+    acknowledged_at: null,
+    post_fired_at: null,
+    post_message_ts: null,
     created_at: now,
     updated_at: now,
   }

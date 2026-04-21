@@ -261,6 +261,15 @@ model Nomination {
   // queries can filter by decision time without a join).
   approved_at              DateTime?
   denied_at                DateTime?
+  // Spec §9.8 — recipient clicks "React to acknowledge" on their DM. If still
+  // null 24h after recipient DM was sent, post fires anyway (Phase 6B sweep).
+  acknowledged_at          DateTime?
+  // Spec §9.6 — timestamp of the #made-it-happen post. Set once and never
+  // revised; treat its presence as "do not re-post" (idempotency).
+  post_fired_at            DateTime?
+  // Slack thread identifier for the #made-it-happen post. Populated in 6C.
+  // Phase 6D reads this to map reaction/message events back to a nomination.
+  post_message_ts          String?
   created_at               DateTime         @default(now())
   updated_at               DateTime         @updatedAt
 

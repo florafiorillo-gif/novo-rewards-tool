@@ -8,6 +8,10 @@ import {
   onReviewAndDecideButton,
   onUndoButton,
 } from './approver-buttons'
+import {
+  ACTION_ACKNOWLEDGE_RECOGNITION,
+  onAcknowledgeButton,
+} from './recipient-buttons'
 import { ACTION_VALUE } from '../modal/nomination-modal'
 import {
   handleNominationModalValueSelect,
@@ -59,6 +63,10 @@ async function dispatchBlockAction(
   }
   if (action.action_id === ACTION_UNDO_APPROVAL) {
     await onUndoButton(payload)
+    return
+  }
+  if (action.action_id === ACTION_ACKNOWLEDGE_RECOGNITION) {
+    await onAcknowledgeButton(payload)
     return
   }
 }
