@@ -64,8 +64,8 @@ export async function recordReaction(input: {
   const now = input.now ?? new Date()
   if (useMock()) {
     const key = reactionKey(input)
-    for (const [k, r] of mockReactions) {
-      if (k === key) return r
+    for (const r of mockReactions.values()) {
+      if (reactionKey(r) === key) return r
     }
     const record: ReactionRecord = {
       id: `rxn_${randomUUID()}`,

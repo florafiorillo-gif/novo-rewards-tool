@@ -10,9 +10,9 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 
 ## 2. Where we are
 
-- **Last commit:** Phase 5F (`7f1971c`) — unit + integration test coverage for Phase 5.
-- **Phases 1–5 complete.** Phase 6 (communication layer) is the next scoped chunk.
-- **Build state:** `npm run typecheck` clean. `npm test` green (153 tests / 25 suites). `npm run test:integration` skips cleanly without `DATABASE_URL` (expected; Prisma suites are opt-in).
+- **Last commit:** Phase 6F (in-session; hash written in next commit) — unit + integration test coverage for Phase 6.
+- **Phases 1–6 complete.** Phase 7 (dashboards) is the next scoped chunk.
+- **Build state:** `npm run typecheck` clean. `npm test` green (205 tests / 30 suites). `npm run test:integration` skips cleanly without `DATABASE_URL` (expected; Prisma suites are opt-in — 13 tests across 6 suites when wired).
 - **Data source:** everything runs on mock data in `modules/employees/mock-data.ts` and in-memory `mock-store.ts` files. `USE_MOCK_DATA=true` is the dev default. Prisma schema is complete and integration tests exist for when a real DB is wired.
 
 ## 3. Phase status (from spec §18)
@@ -24,8 +24,8 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 | 3 | Approvals: T1 one-click, T1 self-approval, T2 two-approver, T3 committee, SLA cron | done |
 | 4 | Budget engine: pools, allocation, reserve, exceptions, pacing, period lifecycle | done |
 | 5 | Rewards: catalog, reward selection, vendor stub, tax gross-up, CSV/Zoho exports, scope notes, recipient DM, People Ops manual queue, tests | done |
-| 6 | Communication: #made-it-happen post, acknowledge-before-post, reactions, comments, timezone-aware recipient notifs | **next** |
-| 7 | Dashboards per role | pending |
+| 6 | Communication: visibility prefs, ack-before-post, #made-it-happen post, reactions/comments, TZ-aware recipient DM | done |
+| 7 | Dashboards per role | **next** |
 | 8 | Monthly digest | pending |
 | 9 | Integrations & ops: Zoho live, Airbase export, edge-case polish, admin tools | pending |
 | 10 | Pre-launch: copy pass, manager training, catalog seeding | pending |
@@ -36,7 +36,7 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 app/                   Next.js app-router pages + API routes
   api/auth/            NextAuth v5 + Google SSO
   api/slack/{commands,events,interactivity}   Slack app surfaces
-  api/cron/{sla,digest,zoho-sync}             Scheduled jobs
+  api/cron/{sla,digest,zoho-sync,post-sweep,recipient-dm-sweep}   Scheduled jobs
   api/people-ops/exports/justworks-cash       CSV download endpoint
   approvals/{queue,[id],[id]/reward}          Approver web surfaces
   nominations/{new,submitted}                 Web fallback flow
@@ -53,7 +53,8 @@ modules/               Service layer, one folder per bounded context
   fulfillment/         routing (geo × reward_type → mechanism), tax gross-up, exports (JustWorks CSV / Zoho instructions / Colombia manual), stub vendor adapter
   scope-notes/         per-tier template CRUD
   committee/           T3 batched review + decisions
-  employees/           Zoho-shaped mock data; manager graph; getEmployeeById
+  communication/       ack state machine, #made-it-happen post composer, reactions/comments, TZ-aware recipient DM scheduler
+  employees/           Zoho-shaped mock data; manager graph; getEmployeeById; setRecognitionPreference
   roles/               role resolution (manager / dept head / people team rep / committee)
   values/              four value IDs (constant set)
 
@@ -107,6 +108,9 @@ npm run db:seed          # tsx prisma/seed.ts
 - **Undo is Tier 1 only, 10-minute window.** (TODO.md flags that the service should reject T2/T3 in defense-in-depth — not yet implemented.)
 - **SLA auto-deny uses synthetic `system@novo.co` employee** as `actor_id` on ApprovalAction rows. Needs a line in the framework doc (tracked in spec §19 item 9 / TODO.md A1).
 - **Nomination text validation:** `behavior_text` and `outcome_text` are `min(30).max(500)` chars after trim. Tests must seed strings ≥30 chars.
+- **#made-it-happen post never fires twice** — `Nomination.post_fired_at` is set-once. Both the Slack ack button and the 24h sweep route through `markPostFired`, which is idempotent.
+- **Recipient DM 24h fallback clock starts at `Reward.recipient_dm_scheduled_at`**; post-ack 24h clock starts at `Reward.recipient_dm_sent_at`. These are two separate timers.
+- **team_only falls back to private in v1** — team channels aren't wired. `sendMadeItHappenPost` returns `skipped_team_only` and the public post is suppressed. Flip when team channels land.
 
 ## 8. Deferred items
 
@@ -127,14 +131,9 @@ See `TODO.md` for the running list. Headline items:
 
 Two viable paths depending on user intent:
 
-**A. Start Phase 6 (communication layer).** Biggest remaining scope. Needs:
-- #made-it-happen Slack post after recipient acknowledges (or 24h timeout).
-- Acknowledge-before-post UI (Slack DM button + 24h auto-fire).
-- Reaction + Comment capture (schema already exists).
-- Time-zone-aware recipient notification timing (spec §9.4: Slack presence or activity in last 15 min; 24h fallback).
-- Visibility preference plumbing (public / team_only / private on Employee).
+**A. Start Phase 7 (role-scoped dashboards, spec §10.5 + §14).** Needs per-role views for managers (own Tier 1 pool + program-health indicator), department heads (Tier 2 pool + their managers' Tier 1 pools on demand), People team (full program dashboard), committee (full + Tier 3 pool detail). No leaderboards, no cross-comparison. Pre-Phase-7 decision: which dashboard surface first? Manager view is the highest-frequency user.
 
-**B. Clear pre-launch must-fix list before more features.** Small, high-leverage fixes from TODO.md. Good if user wants to tighten before moving forward.
+**B. Clear pre-launch must-fix list before more features.** Small, high-leverage fixes from TODO.md. Good if the user wants to tighten before moving forward.
 
 Ask the user which to pursue unless they've directed already.
 
