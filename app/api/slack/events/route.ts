@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySlackSignature } from '@/modules/integrations/slack/signing'
+import { handleSlackEvent } from '@/modules/integrations/slack/handlers/events'
 
 export const runtime = 'nodejs'
 
-// Slack Events API endpoint. Today only handles the url_verification
-// handshake. Phase 6 will add real event subscriptions (reaction_added,
-// message.channels) for the #made-it-happen channel; the signing check
-// below is required for that path and harmless for url_verification.
+// Slack Events API endpoint. Handles the url_verification handshake, then
+// dispatches event_callback payloads to handleSlackEvent (reaction_added,
+// reaction_removed, and thread-reply message events tied to the
+// #made-it-happen post). Spec §11.2.
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
   const signingSecret = process.env.SLACK_SIGNING_SECRET
@@ -35,7 +36,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ challenge: body.challenge })
   }
 
-  // Phase 6 will dispatch event_callback payloads through a handler here.
-  // Acknowledge everything else with a 200 so Slack doesn't retry.
+  if (body.type === 'event_callback') {
+    // Slack expects a 200 within 3s; the handler is fire-and-forget
+    // (it awaits internally but Slack won't retry on slow handlers since
+    // we return the ack first).
+    try {
+      await handleSlackEvent((body as { event?: unknown }).event)
+    } catch (err) {
+      console.error('[slack] event dispatch failed', err)
+    }
+  }
+
   return NextResponse.json({ ok: true })
 }
