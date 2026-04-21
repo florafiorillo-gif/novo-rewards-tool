@@ -181,7 +181,47 @@ export async function confirmRewardFromQueueAction(
   const actorId = await requireActorId()
   const rewardId = (formData.get('reward_id') ?? '').toString()
   if (!rewardId) return
-  await confirmReward({ reward_id: rewardId, actor_id: actorId })
+  const result = await confirmReward({ reward_id: rewardId, actor_id: actorId })
+  if (result.ok) {
+    // Fire the vendor stub + recipient DM for non-manual paths.
+    const { isManualDelivery } = await import('@/modules/fulfillment/routing')
+    if (!isManualDelivery(result.reward.delivery_mechanism)) {
+      const { getVendorAdapter } = await import('@/modules/fulfillment/stubs')
+      const { markRewardIssued } = await import('@/modules/rewards/service')
+      const { sendRecipientRewardDM } = await import(
+        '@/modules/integrations/slack/recipient'
+      )
+      const nom = await getNominationById(result.reward.nomination_id)
+      const nominee = nom ? await getEmployeeById(nom.nominee_id) : null
+      if (nom && nominee) {
+        const adapter = getVendorAdapter()
+        const callArgs = {
+          recipient_email: nominee.email,
+          recipient_name: nominee.name,
+          amount_usd: result.reward.amount_usd,
+          geo: nominee.geo,
+          reward_type: result.reward.reward_type,
+          vendor_hint: result.reward.vendor ?? undefined,
+        }
+        try {
+          if (result.reward.reward_type === 'experience') await adapter.issueExperience(callArgs)
+          else await adapter.issueGiftCard(callArgs)
+          const issued = await markRewardIssued({
+            reward_id: result.reward.id,
+            vendor_reference_id: null,
+          })
+          if (issued.ok) {
+            await sendRecipientRewardDM({
+              reward: issued.reward,
+              nomination_id: issued.reward.nomination_id,
+            })
+          }
+        } catch (err) {
+          console.error('[rewards] confirm → vendor stub failed', err)
+        }
+      }
+    }
+  }
   revalidatePath('/approvals/queue')
 }
 

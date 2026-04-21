@@ -100,10 +100,9 @@ async function fireVendorStub(
   rewardType: RewardType,
   _actorId: string
 ): Promise<void> {
-  const { getRewardForNomination, getReward } = await import('@/modules/rewards/service')
+  const { getReward } = await import('@/modules/rewards/service')
   const reward = await getReward(rewardId)
   if (!reward) return
-  const { getNominationById } = await import('@/modules/nominations/service')
   const nom = await getNominationById(reward.nomination_id)
   if (!nom) return
   const nominee = await getEmployeeById(nom.nominee_id)
@@ -123,12 +122,20 @@ async function fireVendorStub(
     else if (rewardType === 'experience') await adapter.issueExperience(callArgs)
     else if (rewardType === 'cash') await adapter.issueCash(callArgs)
     else if (rewardType === 'l_and_d') await adapter.issueGiftCard(callArgs)
-    await markRewardIssued({ reward_id: rewardId, vendor_reference_id: null })
+    const issued = await markRewardIssued({ reward_id: rewardId, vendor_reference_id: null })
+    // Fire recipient DM on transition to issued (spec §9.4).
+    if (issued.ok) {
+      const { sendRecipientRewardDM } = await import(
+        '@/modules/integrations/slack/recipient'
+      )
+      await sendRecipientRewardDM({
+        reward: issued.reward,
+        nomination_id: issued.reward.nomination_id,
+      })
+    }
   } catch (err) {
     console.error('[rewards] vendor stub call failed', err)
   }
-  // Silence unused-import lint for getRewardForNomination in some test paths.
-  void getRewardForNomination
 }
 
 export type SelectRewardState =
