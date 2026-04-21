@@ -31,8 +31,6 @@ export type SubmitState = {
   formError?: string
 }
 
-const INITIAL: SubmitState = { ok: false }
-
 function errorStateForIssue(path: string, message: string): SubmitState {
   const field = path as keyof NonNullable<SubmitState['fieldErrors']>
   return { ok: false, fieldErrors: { [field]: message } as SubmitState['fieldErrors'] }
@@ -152,8 +150,6 @@ function mapCreateError(error: { code: string; issues?: unknown[] }): SubmitStat
       return { ok: false, formError: "We couldn't submit that. Please try again." }
   }
 }
-
-export const submitNominationInitialState: SubmitState = INITIAL
 
 // Used by the confirmation page's "cancel within 24h" button.
 export async function cancelNominationAction(nominationId: string): Promise<void> {

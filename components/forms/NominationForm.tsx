@@ -2,10 +2,13 @@
 
 import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
-import {
-  submitNominationAction,
-  submitNominationInitialState,
-} from '@/app/nominations/actions'
+import type { SubmitState } from '@/app/nominations/actions'
+import { submitNominationAction } from '@/app/nominations/actions'
+
+// The initial state lives here, not in actions.ts. Next requires every
+// runtime export from a "use server" file to be an async function, so a
+// plain object constant breaks `next build`.
+const INITIAL_STATE: SubmitState = { ok: false }
 
 interface EmployeeOption {
   id: string
@@ -52,7 +55,7 @@ const MAX_LEN = 500
 export function NominationForm({ employees, values, currentEmployeeId }: Props) {
   const [state, formAction] = useFormState(
     submitNominationAction,
-    submitNominationInitialState
+    INITIAL_STATE
   )
   const [selectedNomineeId, setSelectedNomineeId] = useState('')
   const [selectedValueId, setSelectedValueId] = useState('')
