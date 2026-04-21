@@ -4,7 +4,12 @@ import { VALUES } from '../modules/values/constants'
 
 const db = new PrismaClient()
 
-async function main() {
+// Prod seeds the directory (values + employees) and creates Q2 2026 in draft
+// so committee approves the first real period through /committee/budget.
+// Dev additionally flips the period to active for local demos.
+const SEED_MODE = process.env.SEED_MODE === 'prod' ? 'prod' : 'dev'
+
+async function seedValues() {
   console.log('Seeding values...')
   for (const value of VALUES) {
     await db.value.upsert({
@@ -18,10 +23,11 @@ async function main() {
     })
   }
   console.log(`  ✓ ${VALUES.length} values seeded`)
+}
 
+async function seedEmployees() {
   console.log('Seeding mock employees (including the inactive System actor)...')
   // Seed managers before direct reports to satisfy the FK constraint.
-  // Sort: null manager_id first, then by manager_id presence.
   const sorted = [...MOCK_EMPLOYEES].sort((a, b) => {
     if (!a.manager_id && b.manager_id) return -1
     if (a.manager_id && !b.manager_id) return 1
@@ -51,37 +57,54 @@ async function main() {
     })
   }
   console.log(`  ✓ ${MOCK_EMPLOYEES.length} employees seeded`)
+}
 
-  console.log('Seeding Q2 2026 budget period (for local dev demos)...')
+async function seedQ2Period() {
+  console.log(`Seeding Q2 2026 budget period (mode: ${SEED_MODE})...`)
   const existing = await db.budgetPeriod.findFirst({
     where: { period_label: 'Q2 2026' },
   })
   if (existing) {
     console.log('  · Q2 2026 already seeded; skipping')
-  } else {
-    const { createPeriod } = await import('../modules/budget/periods')
-    const { allocatePools } = await import('../modules/budget/allocation')
-    const { DEFAULT_ALLOCATION_CONFIG } = await import('../modules/budget/types')
-    const result = await createPeriod({
-      period_label: 'Q2 2026',
-      start_date: new Date('2026-04-01'),
-      end_date: new Date('2026-06-30'),
-      total_allocation_usd: 100_000,
-      allocation_config: DEFAULT_ALLOCATION_CONFIG,
-    })
-    if (!result.ok) throw new Error('seed: createPeriod failed')
-    const alloc = await allocatePools(result.period.id, DEFAULT_ALLOCATION_CONFIG)
-    if (!alloc.ok) throw new Error('seed: allocatePools failed')
-    // Flip directly to active for the mock demo; real periods require
-    // committee approval via /committee/budget.
-    await db.budgetPeriod.update({
-      where: { id: result.period.id },
-      data: { status: 'active', approved_at: new Date() },
-    })
-    console.log(
-      `  ✓ Q2 2026 period active with ${alloc.result.pools.length} pools`
-    )
+    return
   }
+
+  const { createPeriod } = await import('../modules/budget/periods')
+  const { allocatePools } = await import('../modules/budget/allocation')
+  const { DEFAULT_ALLOCATION_CONFIG } = await import('../modules/budget/types')
+  const result = await createPeriod({
+    period_label: 'Q2 2026',
+    start_date: new Date('2026-04-01'),
+    end_date: new Date('2026-06-30'),
+    total_allocation_usd: 100_000,
+    allocation_config: DEFAULT_ALLOCATION_CONFIG,
+  })
+  if (!result.ok) throw new Error('seed: createPeriod failed')
+  const alloc = await allocatePools(result.period.id, DEFAULT_ALLOCATION_CONFIG)
+  if (!alloc.ok) throw new Error('seed: allocatePools failed')
+
+  if (SEED_MODE === 'prod') {
+    console.log(
+      `  ✓ Q2 2026 period draft with ${alloc.result.pools.length} pools — committee approves via /committee/budget`
+    )
+    return
+  }
+
+  // Dev: flip straight to active so local demos can nominate + approve
+  // without walking the committee approval flow every reset.
+  await db.budgetPeriod.update({
+    where: { id: result.period.id },
+    data: { status: 'active', approved_at: new Date() },
+  })
+  console.log(
+    `  ✓ Q2 2026 period active with ${alloc.result.pools.length} pools`
+  )
+}
+
+async function main() {
+  await seedValues()
+  await seedEmployees()
+  await seedQ2Period()
 }
 
 main()
