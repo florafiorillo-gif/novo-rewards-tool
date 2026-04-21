@@ -5,9 +5,14 @@ import {
 } from '@/modules/nominations/mock-store'
 import type { NominationRecord } from '@/modules/nominations/types'
 import { SYSTEM_EMPLOYEE_ID } from '@/modules/employees/mock-data'
+import { getEmployeeById } from '@/modules/employees/service'
+import { sendNominatorDenialDM } from '@/modules/integrations/slack/notifications'
 import { recordAction } from './service'
 
 const useMock = () => process.env.USE_MOCK_DATA === 'true'
+
+const AUTO_DENY_REASON_TEXT =
+  'No action was taken on this nomination within 21 days, so the recognition tool auto-closed it. You can resubmit with any added context you think would help.'
 
 // Spec §7.6. Tier 3 has no SLA (committee cadence governs).
 export const NUDGE_THRESHOLD_MS = 72 * 60 * 60 * 1000
@@ -71,6 +76,22 @@ async function autoDeny(nom: NominationRecord, now: Date): Promise<void> {
     reason_structured: 'other',
     reason_text: 'No action taken within 21 days (spec §7.6 auto-deny)',
   })
+
+  // Spec §7.6 — "Nominator notified." Mirrors the manual-denial DM so the
+  // nominator gets a warm close rather than silence. Slack helpers no-op
+  // in dev/test without SLACK_BOT_TOKEN, so this is safe to always call.
+  const [nominator, nominee] = await Promise.all([
+    getEmployeeById(nom.nominator_id),
+    getEmployeeById(nom.nominee_id),
+  ])
+  if (nominator && nominee) {
+    await sendNominatorDenialDM({
+      nominator_email: nominator.email,
+      nominee_name: nominee.name,
+      approver_name: 'Novo recognition tool',
+      reason_text: AUTO_DENY_REASON_TEXT,
+    })
+  }
 }
 
 async function loadOpenNominations(): Promise<NominationRecord[]> {

@@ -1,6 +1,12 @@
 /** @jest-environment node */
 process.env.USE_MOCK_DATA = 'true'
 
+// Mock the Slack notifications module so we can assert the auto-deny
+// DM was invoked. Jest hoists jest.mock above imports.
+jest.mock('@/modules/integrations/slack/notifications', () => ({
+  sendNominatorDenialDM: jest.fn().mockResolvedValue(undefined),
+}))
+
 import {
   AUTO_DENY_THRESHOLD_MS,
   ESCALATION_THRESHOLD_MS,
@@ -14,6 +20,11 @@ import {
   resetMockNominations,
   updateMock,
 } from '@/modules/nominations/mock-store'
+import { sendNominatorDenialDM } from '@/modules/integrations/slack/notifications'
+
+const mockedDM = sendNominatorDenialDM as jest.MockedFunction<
+  typeof sendNominatorDenialDM
+>
 
 const baseInput = {
   value_id: 'val_run_for_the_bus',
@@ -37,6 +48,7 @@ async function seedAndAge(msAgo: number) {
 beforeEach(() => {
   resetMockNominations()
   resetMockApprovalActions()
+  mockedDM.mockClear()
 })
 
 describe('runSlaSweep (spec §7.6)', () => {
@@ -78,6 +90,26 @@ describe('runSlaSweep (spec §7.6)', () => {
     const after = findByIdMock(nom.id)
     expect(after?.status).toBe('denied')
     expect(after?.denied_at).toBeInstanceOf(Date)
+  })
+
+  // Spec §7.6 — nominator gets a DM when an auto-deny fires. Surfaced
+  // in the Phase 3 audit and deferred to this pre-launch pass.
+  it('DMs the nominator when auto-denying (spec §7.6)', async () => {
+    await seedAndAge(AUTO_DENY_THRESHOLD_MS + 60 * 1000)
+    await runSlaSweep()
+    expect(mockedDM).toHaveBeenCalledTimes(1)
+    const call = mockedDM.mock.calls[0][0]
+    // emp_007 is the nominator in seedAndAge; emp_006 is the nominee.
+    expect(call.nominator_email).toContain('jamie') // emp_007 Jamie Kim
+    expect(call.nominee_name).toContain('Alex') // emp_006 Alex Rivera
+    expect(call.approver_name).toMatch(/recognition/i)
+    expect(call.reason_text).toMatch(/21 days/)
+  })
+
+  it('does not DM the nominator on escalation (only on auto-deny)', async () => {
+    await seedAndAge(ESCALATION_THRESHOLD_MS + 60 * 1000)
+    await runSlaSweep()
+    expect(mockedDM).not.toHaveBeenCalled()
   })
 
   it('exempts Tier 3 nominations from all SLA actions', async () => {

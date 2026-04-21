@@ -107,10 +107,7 @@ describe('getRecipientDashboardView — visibility', () => {
     expect(view.items).toEqual([])
 
     // Cancellation too.
-    await cancelNomination({
-      nomination_id: r.nomination.id,
-      actor_id: 'emp_007',
-    })
+    await cancelNomination(r.nomination.id, 'emp_007')
     const view2 = await getRecipientDashboardView('emp_006')
     expect(view2.items).toEqual([])
   })
@@ -189,8 +186,8 @@ describe('getRecipientDashboardView — shape discipline (spec §2 principles 1+
       budget_exception: false,
     })
     if (!sel.ok) throw new Error('seed reward')
-    await markRewardIssued({ reward_id: sel.reward.id, actor_id: 'emp_004' })
-    await markRewardDelivered({ reward_id: sel.reward.id, actor_id: 'emp_004' })
+    await markRewardIssued({ reward_id: sel.reward.id, vendor_reference_id: null })
+    await markRewardDelivered({ reward_id: sel.reward.id })
 
     const view = await getRecipientDashboardView('emp_006')
     expect(view.items[0].reward?.status).toBe('delivered')

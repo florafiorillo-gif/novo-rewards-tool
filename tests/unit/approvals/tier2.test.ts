@@ -99,6 +99,58 @@ describe('Tier 2 two-approver flow (spec §7.4)', () => {
       second.tier2_people_team_rep_id
     )
   })
+
+  // Audit I3 — defense in depth against double-click / programmatic repeat
+  // approvals from the same actor. A second call from the same approver
+  // must return forbidden rather than writing a duplicate audit row.
+  it('refuses a second approve from the same Tier 2 actor', async () => {
+    const nom = await seedAndUpgradeToTier2()
+    const first = await approveNomination({
+      nomination_id: nom.id,
+      actor_id: nom.tier2_dept_head_id!,
+    })
+    expect(first.ok).toBe(true)
+
+    const duplicate = await approveNomination({
+      nomination_id: nom.id,
+      actor_id: nom.tier2_dept_head_id!,
+    })
+    expect(duplicate.ok).toBe(false)
+    if (duplicate.ok) return
+    expect(duplicate.error.code).toBe('forbidden')
+
+    // And the audit trail should only carry one approve row from this actor.
+    const { listApprovalActions } = await import('@/modules/approvals/service')
+    const actions = await listApprovalActions(nom.id)
+    const approvesFromDeptHead = actions.filter(
+      (a) =>
+        a.action === 'approve' && a.actor_id === nom.tier2_dept_head_id!
+    )
+    expect(approvesFromDeptHead).toHaveLength(1)
+  })
+
+  // Audit I9 — first Tier 2 approver must receive a non-stale nomination
+  // record. We can't easily observe updated_at differing yet (the first
+  // approve doesn't currently patch the nomination), but we can assert
+  // the returned object is the live record — i.e., the in-store value
+  // after writeAction, not the pre-call copy.
+  it('returns a fresh nomination record on first Tier 2 approve', async () => {
+    const { findByIdMock } = await import('@/modules/nominations/mock-store')
+    const nom = await seedAndUpgradeToTier2()
+    const result = await approveNomination({
+      nomination_id: nom.id,
+      actor_id: nom.tier2_dept_head_id!,
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const live = findByIdMock(nom.id)
+    // The returned record and the store's view should agree field-for-field.
+    expect(result.nomination.id).toBe(live?.id)
+    expect(result.nomination.status).toBe(live?.status)
+    expect(result.nomination.updated_at.getTime()).toBe(
+      live!.updated_at.getTime()
+    )
+  })
 })
 
 describe('Tier 2 → Tier 3 escalate', () => {

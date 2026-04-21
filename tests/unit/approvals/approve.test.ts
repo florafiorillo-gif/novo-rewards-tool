@@ -154,4 +154,24 @@ describe('undoApproval (10-minute window, spec §13.3)', () => {
     if (undone.ok) return
     expect(undone.error.code).toBe('forbidden')
   })
+
+  // Audit I4 / spec §13.3 — undo is Tier 1 only. No UI reaches this
+  // today, but the service has to reject Tier 2/3 in case a programmatic
+  // caller finds it.
+  it('refuses undo on a Tier 2 approved nomination', async () => {
+    const { updateMock } = await import('@/modules/nominations/mock-store')
+    const nom = await seedPeerNomination()
+    await approveNomination({ nomination_id: nom.id, actor_id: 'emp_005' })
+    // Force the record into a tier-2, approved state to simulate a
+    // programmatic caller reaching undoApproval past the UI.
+    updateMock(nom.id, { current_tier: 2 })
+
+    const undone = await undoApproval({
+      nomination_id: nom.id,
+      actor_id: 'emp_005',
+    })
+    expect(undone.ok).toBe(false)
+    if (undone.ok) return
+    expect(undone.error.code).toBe('forbidden')
+  })
 })

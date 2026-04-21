@@ -3,6 +3,7 @@ import type {
   ApproveResult,
 } from './types'
 import {
+  hasActorAlreadyApprovedAtCurrentTier,
   isActorAuthorizedToApprove,
   isTier2FullyApproved,
   loadNomination,
@@ -59,6 +60,13 @@ export async function approveNomination(
 
   // ── Tier 2 ────────────────────────────────────────────────────────────────
   if (nom.current_tier === 2) {
+    // Audit I3: block repeat approvals from the same actor before writing
+    // the second audit row. The UI hides the button after first approve,
+    // but a double-click or programmatic caller would otherwise slip
+    // through.
+    if (await hasActorAlreadyApprovedAtCurrentTier(nom, input.actor_id)) {
+      return { ok: false, error: { code: 'forbidden' } }
+    }
     const action = await writeAction({
       nomination_id: nom.id,
       actor_id: input.actor_id,
@@ -79,7 +87,10 @@ export async function approveNomination(
       return { ok: true, nomination: updated, action, became_final: true }
     }
     // Keep under_review; the other snapshot approver still has to act.
-    return { ok: true, nomination: nom, action, became_final: false }
+    // Audit I9: re-read so the returned record reflects any write the
+    // writeAction path (or a concurrent process) touched.
+    const fresh = (await loadNomination(nom.id)) ?? nom
+    return { ok: true, nomination: fresh, action, became_final: false }
   }
 
   // ── Tier 3 ────────────────────────────────────────────────────────────────

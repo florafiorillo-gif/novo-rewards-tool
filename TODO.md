@@ -38,38 +38,21 @@ and flag contractor vs employee for the People team's instruction.
 
 ## Pre-launch must-fix
 
-### Tier 2 service should reject repeat approvals from the same actor
-**Ref:** Audit I3.
-Right now `isActorAuthorizedToApprove` at Tier 2 only checks membership in
-the snapshot pair. The UI hides the Approve button after the viewer has
-approved, but a double-click (or any programmatic caller) writes
-duplicate `approve` ApprovalAction rows. `isTier2FullyApproved` uses a
-`Set` so status stays correct; the audit trail doesn't.
+_All four items in this section were landed in the pre-launch hardening
+pass. Regression tests live alongside each fix:_
 
-**Fix sketch:** in `modules/approvals/shared.ts` extend
-`isActorAuthorizedToApprove` with "and the actor hasn't already
-approved at the current tier," returning `forbidden` on the second
-click.
-
-### `undoApproval` should reject tiers other than 1
-**Ref:** Audit I4. Spec §13.3 is explicit: undo is Tier 1 only. The
-service currently allows undo on any `approved` nomination within the
-10-minute window. No UI path reaches Tier 2/3 undo today, but defense
-in depth: add `if (nom.current_tier !== 1) return { ok: false, error: { code: 'forbidden' } }`
-to `modules/approvals/undo.ts`.
-
-### Tier 2 first-approver response returns the pre-update record
-**Ref:** Audit I9.
-`modules/approvals/approve.ts` returns `nomination: nom` on the first
-Tier 2 approve — the load-time copy, so `updated_at` is stale. Harmless
-today (no caller inspects it) but surprising. Re-read or patch before
-returning.
-
-### SLA auto-deny should notify the nominator
-**Ref:** spec §7.6 ("Nominator notified"). Surfaced during the audit
-but not in the initial scope. Auto-deny currently writes the deny row
-and sets status but doesn't DM the nominator. Add a call to
-`sendNominatorDenialDM` in `modules/approvals/sla.ts` `autoDeny`.
+- ~~Tier 2 repeat-approval guard (Audit I3)~~ — `hasActorAlreadyApprovedAtCurrentTier`
+  in `modules/approvals/shared.ts`, gate in `approve.ts` T2 branch;
+  `tests/unit/approvals/tier2.test.ts`.
+- ~~`undoApproval` tier guard (Audit I4, spec §13.3)~~ — early
+  `current_tier !== 1 → forbidden` in `modules/approvals/undo.ts`;
+  `tests/unit/approvals/approve.test.ts`.
+- ~~Tier 2 first-approver stale response (Audit I9)~~ — re-read after
+  `writeAction` in the T2 non-final branch of `approve.ts`;
+  `tests/unit/approvals/tier2.test.ts`.
+- ~~SLA auto-deny must DM the nominator (spec §7.6)~~ —
+  `sendNominatorDenialDM` call in `sla.ts` `autoDeny`;
+  `tests/unit/approvals/sla.test.ts`.
 
 ## Minor polish
 

@@ -133,6 +133,20 @@ export async function isTier2FullyApproved(
   )
 }
 
+// Defense-in-depth for Tier 2: the UI hides the Approve button after a
+// given approver signs, but a double-click or any programmatic caller
+// would still reach the service. `isTier2FullyApproved` treats the
+// approver set as a Set so state stays correct, but the audit trail
+// would accumulate duplicate `approve` rows from the same actor. Block
+// the second call here. (Audit I3 / TODO.md pre-launch must-fix.)
+export async function hasActorAlreadyApprovedAtCurrentTier(
+  nom: NominationRecord,
+  actorId: string
+): Promise<boolean> {
+  const actions = await listActions(nom.id)
+  return actions.some((a) => a.action === 'approve' && a.actor_id === actorId)
+}
+
 // ─── Record-action convenience ───────────────────────────────────────────────
 // Used by callers that don't need the approve/deny/upgrade state machines,
 // namely committee/service.ts (mirroring CommitteeDecision into the audit

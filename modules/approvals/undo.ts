@@ -17,6 +17,12 @@ export async function undoApproval(input: UndoInput): Promise<UndoResult> {
   if (nom.status !== 'approved' || !nom.approved_at) {
     return { ok: false, error: { code: 'nothing_to_undo' } }
   }
+  // Spec §13.3 — undo is Tier 1 only. Tier 2/3 reversal is a People-team
+  // manual process. Audit I4 defense in depth: no UI reaches this today,
+  // but a programmatic caller would otherwise slip through.
+  if (nom.current_tier !== 1) {
+    return { ok: false, error: { code: 'forbidden' } }
+  }
 
   const now = input.now ?? new Date()
   if (now.getTime() - nom.approved_at.getTime() > UNDO_WINDOW_MS) {

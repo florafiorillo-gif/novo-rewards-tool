@@ -10,9 +10,9 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 
 ## 2. Where we are
 
-- **Last commit:** 02faf2e Phase 7E — recipient personal view at `/dashboard/me`. Phase 7 is complete across all five role surfaces: manager (7A/7A.1 `5721c65` → dec5052), dept head (7B `5721c65`), People team at `/people-ops/dashboard` (7C `651cea7`), committee at `/committee/dashboard` (7D `b3f15f9`), and recipient at `/dashboard/me` (7E `adf293d`). Recipient view deliberately strips tier labels and dollar amounts server-side per spec §2 principles 1+2.
+- **Last commit:** d23e138 pre-launch must-fix — Tier 2 repeat-approval guard (Audit I3), `undoApproval` Tier 1 guard (I4 / spec §13.3), Tier 2 first-approver fresh record (I9), SLA auto-deny nominator DM (spec §7.6). All four pre-launch must-fix items in TODO.md are now closed.
 - **Phases 1–7 complete. Phase 8–10 still pending.**
-- **Build state:** `npm run typecheck` clean. `npm test` green (252 tests / 35 suites). `npm run test:integration` registers 18 tests across 7 suites; skips cleanly without `DATABASE_URL`. `next build` has a pre-existing failure on `/nominations/submitted` tracked in TODO.md (not a Phase 7 regression). `npm run lint` is unconfigured (interactive prompt on first run; has never been wired).
+- **Build state:** `npm run typecheck` clean. `npm test` green (257 tests / 35 suites). `npm run test:integration` registers 18 tests across 7 suites; skips cleanly without `DATABASE_URL`. `next build` has a pre-existing failure on `/nominations/submitted` tracked in TODO.md (not a Phase 7 regression). `npm run lint` is unconfigured (interactive prompt on first run; has never been wired).
 - **Data source:** everything runs on mock data in `modules/employees/mock-data.ts` and in-memory `mock-store.ts` files. `USE_MOCK_DATA=true` is the dev default. Prisma schema is complete and integration tests exist for when a real DB is wired.
 
 ## 3. Phase status (from spec §18)
@@ -138,7 +138,7 @@ Phase 7 is complete. Remaining pre-launch work:
 
 **Phase 10 — Pre-launch.** Rubina copy pass across all user-facing strings (warm-tone placeholders today), manager training module, catalog seeding per geo.
 
-**Parallel pre-launch must-fix** (TODO.md): Tier 2 repeat-approval guard (Audit I3), undoApproval tier guard (I4 / spec §13.3), Tier 2 first-approver stale response (I9), SLA auto-deny must DM the nominator (spec §7.6). Any of these is a good one-session chunk and doesn't depend on Phase 8/9/10 order.
+**Remaining TODO.md items** are the "minor polish" tier (pre-existing `next build` failure on `/nominations/submitted`, raw `value_id` fallback, defer→ApprovalAction mirror mismatch, copy-pass splits) plus the Phase 4/5 deferred items. None block Phase 8/9/10; schedule as cleanup passes.
 
 ## 10. Cold-start checklist for a new session
 
