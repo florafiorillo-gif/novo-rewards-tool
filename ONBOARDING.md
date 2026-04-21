@@ -10,7 +10,7 @@ A Novo-specific recognition tool that operationalizes the Rewards & Recognition 
 
 ## 2. Where we are
 
-- **Last commit:** 4884a10 — fix `next build` failure on `/nominations/submitted`. Previous: d23e138 pre-launch must-fix (I3/I4/I9 + §7.6 SLA DM).
+- **Last commit:** 8f6c433 — Novo brand token port (Archivo Black display + 6-page pass). Previous: 4884a10 next-build fix on `/nominations/submitted`.
 - **Phases 1–7 complete. Phase 8–10 still pending.** Pre-launch must-fix items closed.
 - **Build state:** `npm run typecheck` clean. `npm test` green (257 tests / 35 suites). `npm run test:integration` registers 18 tests across 7 suites; skips cleanly without `DATABASE_URL`. `next build` **succeeds** (verified with stub `AUTH_SECRET` + `GOOGLE_CLIENT_*` env vars and `USE_MOCK_DATA=true`) — the `/nominations/submitted` blocker is fixed. `npm run lint` is unconfigured (interactive prompt on first run; has never been wired).
 - **Deploy readiness:** ready for a Vercel deploy in principle. Open items before a team feedback demo: (a) provision Postgres + run migrations + seed; (b) set real `AUTH_SECRET`, `GOOGLE_CLIENT_*`, and `DATABASE_URL` env vars in Vercel; (c) add Vercel domain to Google OAuth authorized redirect URIs; (d) decide on seeded team emails vs mock directory. Slack and cron jobs gracefully no-op without config — skip for v1 demo.
