@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 import type { SubmitState } from '@/app/nominations/actions'
 import { submitNominationAction } from '@/app/nominations/actions'
+import { Button } from '@/components/ui/Button'
 
-// The initial state lives here, not in actions.ts. Next requires every
-// runtime export from a "use server" file to be an async function, so a
-// plain object constant breaks `next build`.
+// Client form for /nominations/new. Same server action, same field names,
+// same submit payload — only the visual treatment changes. Zod schema is
+// untouched; all validation copy still flows through SubmitState.fieldErrors.
+
 const INITIAL_STATE: SubmitState = { ok: false }
 
 interface EmployeeOption {
@@ -22,18 +24,15 @@ interface ValueOption {
   id: string
   name: string
   behavior_placeholder: string
+  description?: string
 }
 
 interface Props {
   employees: EmployeeOption[]
   values: ValueOption[]
-  // If the selected nominee's manager_id matches this, the reflection
-  // dropdown appears and is required (spec §7.2 self-approval).
   currentEmployeeId: string
 }
 
-// Spec §7.2 — captured for pattern analysis; values must match the
-// ReflectionType enum in prisma/schema.prisma.
 const REFLECTION_OPTIONS: { value: string; label: string }[] = [
   { value: 'FIRST_RECOGNITION', label: 'First recognition for this person' },
   {
@@ -73,21 +72,28 @@ export function NominationForm({ employees, values, currentEmployeeId }: Props) 
   const err = state.fieldErrors ?? {}
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="space-y-10">
       {state.formError && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-md border border-novo-coral/30 bg-novo-pink-tint px-4 py-3 text-sm text-novo-oxblood">
           {state.formError}
-        </p>
+        </div>
       )}
 
-      <Field label="Who are you recognizing?" htmlFor="nominee_id" error={err.nominee_id}>
+      {/* ── Nominee ────────────────────────────────────────────────── */}
+      <section aria-labelledby="nominee-label" className="space-y-3">
+        <FieldLabel
+          id="nominee-label"
+          title="Who are you recognizing?"
+          step={1}
+          total={3}
+        />
         <select
           id="nominee_id"
           name="nominee_id"
           required
           value={selectedNomineeId}
           onChange={(e) => setSelectedNomineeId(e.target.value)}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-0"
+          className="block h-11 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm text-novo-ink transition focus:border-novo-ink"
         >
           <option value="" disabled>
             Pick a teammate
@@ -98,159 +104,296 @@ export function NominationForm({ employees, values, currentEmployeeId }: Props) 
             </option>
           ))}
         </select>
-      </Field>
+        {err.nominee_id && <FieldError>{err.nominee_id}</FieldError>}
+        {isSelfApprovalPath && (
+          <p className="text-xs text-novo-subtle">
+            This person reports to you — we&rsquo;ll collapse this into a single
+            step so you can approve your own recognition inline.
+          </p>
+        )}
+      </section>
 
-      <Field label="Which value did they live?" htmlFor="value_id" error={err.value_id}>
-        <select
-          id="value_id"
-          name="value_id"
-          required
-          value={selectedValueId}
-          onChange={(e) => setSelectedValueId(e.target.value)}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-0"
-        >
-          <option value="" disabled>
-            Choose one
-          </option>
-          {values.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.name}
-            </option>
-          ))}
-        </select>
-      </Field>
+      {/* ── Value cards ────────────────────────────────────────────── */}
+      <section aria-labelledby="value-label" className="space-y-3">
+        <FieldLabel
+          id="value-label"
+          title="Which value did they live?"
+          step={2}
+          total={3}
+          hint="One per nomination. The one you&rsquo;d point to if asked."
+        />
+        <ValueCardGrid
+          values={values}
+          selectedId={selectedValueId}
+          onSelect={setSelectedValueId}
+        />
+        {err.value_id && <FieldError>{err.value_id}</FieldError>}
+      </section>
 
-      <Field
-        label="What specifically did they do?"
-        htmlFor="behavior_text"
-        error={err.behavior_text}
-        hint={`${behavior.length}/${MAX_LEN} · min ${MIN_LEN}`}
-      >
-        <textarea
+      {/* ── Narrative ──────────────────────────────────────────────── */}
+      <section aria-labelledby="story-label" className="space-y-6">
+        <FieldLabel
+          id="story-label"
+          title="Tell the story"
+          step={3}
+          total={3}
+          hint="Specific beats general. A sentence or two is plenty."
+        />
+
+        <TextAreaField
+          label="What specifically did they do?"
           id="behavior_text"
           name="behavior_text"
+          placeholder={behaviorPlaceholder}
           required
           minLength={MIN_LEN}
           maxLength={MAX_LEN}
           value={behavior}
-          onChange={(e) => setBehavior(e.target.value)}
-          placeholder={behaviorPlaceholder}
+          onChange={setBehavior}
+          error={err.behavior_text}
           rows={4}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-0"
         />
-      </Field>
 
-      <Field
-        label="What was the outcome?"
-        htmlFor="outcome_text"
-        error={err.outcome_text}
-        hint={`${outcome.length}/${MAX_LEN} · min ${MIN_LEN}`}
-      >
-        <textarea
+        <TextAreaField
+          label="What was the outcome?"
           id="outcome_text"
           name="outcome_text"
+          placeholder={OUTCOME_PLACEHOLDER}
           required
           minLength={MIN_LEN}
           maxLength={MAX_LEN}
           value={outcome}
-          onChange={(e) => setOutcome(e.target.value)}
-          placeholder={OUTCOME_PLACEHOLDER}
+          onChange={setOutcome}
+          error={err.outcome_text}
           rows={3}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-0"
         />
-      </Field>
+      </section>
 
+      {/* ── Self-approval reflection ───────────────────────────────── */}
       {isSelfApprovalPath && (
-        <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-          <p className="mb-3 text-xs uppercase tracking-wide text-gray-500">
-            You're recognizing one of your direct reports
-          </p>
-          <Field
-            label="A quick reflection"
-            htmlFor="reflection_type"
-            error={err.reflection_type}
-            hint="Captured for pattern analysis. Not shown publicly."
+        <section className="space-y-3 rounded-lg border border-novo-border bg-novo-hover/40 p-5">
+          <div>
+            <p className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+              One quick reflection
+            </p>
+            <p className="mt-1 text-sm text-novo-ink">
+              You&rsquo;re recognizing one of your directs. Help us see patterns
+              in manager-to-direct recognition — this is not shown publicly.
+            </p>
+          </div>
+          <select
+            id="reflection_type"
+            name="reflection_type"
+            required={isSelfApprovalPath}
+            defaultValue=""
+            className="block h-10 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm text-novo-ink focus:border-novo-ink"
           >
-            <select
-              id="reflection_type"
-              name="reflection_type"
-              required={isSelfApprovalPath}
-              defaultValue=""
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-0"
-            >
-              <option value="" disabled>
-                Pick one
+            <option value="" disabled>
+              Pick one
+            </option>
+            {REFLECTION_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
               </option>
-              {REFLECTION_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+            ))}
+          </select>
+          {err.reflection_type && <FieldError>{err.reflection_type}</FieldError>}
+        </section>
       )}
 
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-gray-900">
-          Evidence links (optional)
-        </legend>
-        <p className="text-xs text-gray-500">Up to three — a PR, doc, or Slack thread.</p>
-        {[1, 2, 3].map((n) => (
-          <input
-            key={n}
-            type="url"
-            name={`evidence_${n}`}
-            placeholder="https://…"
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none focus:ring-0"
-          />
-        ))}
-        {err.evidence_links && (
-          <p className="text-sm text-red-600">{err.evidence_links}</p>
-        )}
-      </fieldset>
+      {/* ── Evidence (optional) ────────────────────────────────────── */}
+      <section className="space-y-3">
+        <FieldLabel
+          id="evidence-label"
+          title="Evidence links"
+          optional
+          hint="Up to three — a PR, doc, or Slack thread. Helps approvers act quickly."
+        />
+        <div className="space-y-2">
+          {[1, 2, 3].map((n) => (
+            <input
+              key={n}
+              type="url"
+              name={`evidence_${n}`}
+              placeholder="https://…"
+              className="block h-10 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm text-novo-ink placeholder:text-novo-muted focus:border-novo-ink"
+            />
+          ))}
+        </div>
+        {err.evidence_links && <FieldError>{err.evidence_links}</FieldError>}
+      </section>
 
-      <SubmitButton />
+      {/* ── Footer ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between border-t border-novo-border pt-6">
+        <p className="text-xs text-novo-subtle">
+          Submissions route to an approver automatically. You can cancel within
+          24 hours.
+        </p>
+        <SubmitButton />
+      </div>
     </form>
   )
 }
 
-function Field({
-  label,
-  htmlFor,
-  error,
+// ─── Subcomponents ────────────────────────────────────────────────────────
+
+function FieldLabel({
+  id,
+  title,
   hint,
-  children,
+  step,
+  total,
+  optional,
 }: {
-  label: string
-  htmlFor: string
-  error?: string
+  id: string
+  title: string
   hint?: string
-  children: React.ReactNode
+  step?: number
+  total?: number
+  optional?: boolean
 }) {
   return (
     <div>
-      <div className="mb-1 flex items-baseline justify-between">
-        <label htmlFor={htmlFor} className="text-sm font-medium text-gray-900">
-          {label}
+      <div className="flex items-baseline gap-2">
+        {step != null && total != null && (
+          <span className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted tabular">
+            {step}/{total}
+          </span>
+        )}
+        <label id={id} className="text-sm font-semibold text-novo-ink">
+          {title}
         </label>
-        {hint && <span className="text-xs text-gray-400">{hint}</span>}
+        {optional && (
+          <span className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+            Optional
+          </span>
+        )}
       </div>
-      {children}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {hint && <p className="mt-1 text-xs text-novo-subtle">{hint}</p>}
     </div>
   )
+}
+
+function TextAreaField({
+  label,
+  id,
+  name,
+  placeholder,
+  required,
+  minLength,
+  maxLength,
+  value,
+  onChange,
+  error,
+  rows,
+}: {
+  label: string
+  id: string
+  name: string
+  placeholder: string
+  required?: boolean
+  minLength: number
+  maxLength: number
+  value: string
+  onChange: (v: string) => void
+  error?: string
+  rows: number
+}) {
+  const len = value.length
+  const belowMin = len > 0 && len < minLength
+  const counterTone = belowMin ? 'text-novo-coral' : 'text-novo-muted'
+
+  return (
+    <div>
+      <div className="mb-1 flex items-baseline justify-between gap-3">
+        <label htmlFor={id} className="text-sm font-medium text-novo-ink">
+          {label}
+        </label>
+        <span className={`text-2xs tabular ${counterTone}`}>
+          {len}/{maxLength}
+          {belowMin && <span className="ml-1">· min {minLength}</span>}
+        </span>
+      </div>
+      <textarea
+        id={id}
+        name={name}
+        required={required}
+        minLength={minLength}
+        maxLength={maxLength}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="block w-full rounded-md border border-novo-border bg-novo-paper px-3 py-2.5 text-sm leading-6 text-novo-ink placeholder:text-novo-muted focus:border-novo-ink"
+      />
+      {error && <FieldError>{error}</FieldError>}
+    </div>
+  )
+}
+
+function ValueCardGrid({
+  values,
+  selectedId,
+  onSelect,
+}: {
+  values: ValueOption[]
+  selectedId: string
+  onSelect: (id: string) => void
+}) {
+  return (
+    <fieldset className="grid gap-2 sm:grid-cols-2">
+      {/* Hidden input so the server receives the selection under the expected
+          form-field name without us having to build a custom submit path. */}
+      <input type="hidden" name="value_id" value={selectedId} required />
+      {values.map((v) => {
+        const active = v.id === selectedId
+        return (
+          <label
+            key={v.id}
+            className={`flex cursor-pointer flex-col rounded-lg border p-4 transition ${
+              active
+                ? 'border-novo-ink bg-novo-ink text-novo-paper shadow-card'
+                : 'border-novo-border bg-novo-paper text-novo-ink hover:border-novo-border-strong hover:bg-novo-hover/50'
+            }`}
+          >
+            <input
+              type="radio"
+              name="value_id_radio"
+              value={v.id}
+              checked={active}
+              onChange={() => onSelect(v.id)}
+              className="sr-only"
+            />
+            <span
+              className={`text-[15px] font-semibold ${
+                active ? 'text-novo-paper' : 'text-novo-ink'
+              }`}
+            >
+              {v.name}
+            </span>
+            <span
+              className={`mt-1 text-xs leading-5 ${
+                active ? 'text-white/70' : 'text-novo-subtle'
+              }`}
+            >
+              {v.description ?? v.behavior_placeholder}
+            </span>
+          </label>
+        )
+      })}
+    </fieldset>
+  )
+}
+
+function FieldError({ children }: { children: React.ReactNode }) {
+  return <p className="text-xs text-novo-coral">{children}</p>
 }
 
 function SubmitButton() {
   const { pending } = useFormStatus()
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="inline-flex items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
-    >
+    <Button type="submit" disabled={pending} size="lg">
       {pending ? 'Submitting…' : 'Submit nomination'}
-    </button>
+    </Button>
   )
 }

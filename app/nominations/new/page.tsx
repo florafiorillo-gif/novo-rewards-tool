@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { getAllActiveEmployees } from '@/modules/employees/service'
 import { VALUES } from '@/modules/values/constants'
 import { NominationForm } from '@/components/forms/NominationForm'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,16 +23,13 @@ export default async function NewNominationPage() {
     }))
 
   return (
-    <main className="mx-auto min-h-screen max-w-xl px-6 py-12">
-      <header className="mb-8">
-        <h1 className="font-display text-3xl uppercase tracking-tight text-novo-ink">
-          Recognize a teammate
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Every nomination is an observation of a Novo value being lived. Thank you for
-          noticing.
-        </p>
-      </header>
+    <main className="mx-auto max-w-content px-6 py-10 lg:py-16">
+      <PageHeader
+        back={{ href: '/dashboard', label: 'Dashboard' }}
+        eyebrow="Recognition"
+        title="Recognize a teammate"
+        description="Every nomination is an observation of a Novo value being lived. Keep it specific. The smallest acknowledgment is the one most often skipped."
+      />
 
       <NominationForm
         employees={employees}
@@ -39,9 +37,17 @@ export default async function NewNominationPage() {
           id: v.id,
           name: v.name,
           behavior_placeholder: v.behavior_placeholder,
+          description: shortDescription(v.description),
         }))}
         currentEmployeeId={currentEmployeeId}
       />
     </main>
   )
+}
+
+// VALUES.description is a paragraph; card UI wants a taut single line. Take
+// the first sentence and drop trailing clause-joiners so it reads cleanly.
+function shortDescription(raw: string): string {
+  const firstSentence = raw.split(/\.\s/)[0].trim()
+  return firstSentence.endsWith('.') ? firstSentence : `${firstSentence}.`
 }
