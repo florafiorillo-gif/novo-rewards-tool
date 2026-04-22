@@ -182,14 +182,14 @@ export async function countPendingTier1ForApprover(
       (n) =>
         n.current_tier === 1 &&
         n.current_approver_id === employeeId &&
-        (n.status === 'submitted' || n.status === 'approved')
+        n.status === 'submitted'
     ).length
   }
   return db.nomination.count({
     where: {
       current_tier: 1,
       current_approver_id: employeeId,
-      status: { in: ['submitted', 'approved'] },
+      status: 'submitted',
     },
   })
 }
