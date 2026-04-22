@@ -1,4 +1,9 @@
-import type { BudgetPeriodRecord, BudgetPoolRecord, PacingIndicator } from '@/modules/budget/types'
+import type {
+  BudgetPeriodRecord,
+  BudgetPoolRecord,
+  PacingIndicator,
+} from '@/modules/budget/types'
+import { Card } from '@/components/ui/Card'
 
 interface Props {
   period: BudgetPeriodRecord
@@ -8,27 +13,24 @@ interface Props {
   grace_ends_at?: Date | null
 }
 
-// UI-layer concern: tone palette + warm-tone placeholder copy per indicator.
-// Lives next to the component that renders it so the service layer stays
-// free of tailwind classes. Rubina's copy pass owns the final strings.
 function pacingChip(p: PacingIndicator): {
   label: string
-  tone: 'green' | 'amber' | 'gray'
+  tone: 'positive' | 'warning' | 'neutral'
   hint: string
 } {
   switch (p) {
     case 'on_track':
-      return { label: 'On track', tone: 'green', hint: 'Pacing matches the quarter.' }
+      return { label: 'On track', tone: 'positive', hint: 'Pacing matches the quarter.' }
     case 'running_hot':
       return {
         label: 'Running hot',
-        tone: 'amber',
+        tone: 'warning',
         hint: 'Spending ahead of pace — worth a look before quarter-end.',
       }
     case 'under_utilized':
       return {
         label: 'Under-utilized',
-        tone: 'gray',
+        tone: 'neutral',
         hint: 'There is room to recognize more this quarter.',
       }
     default: {
@@ -38,66 +40,95 @@ function pacingChip(p: PacingIndicator): {
   }
 }
 
-export function ManagerPoolCard({ period, pool, pacing, in_grace, grace_ends_at }: Props) {
+export function ManagerPoolCard({
+  period,
+  pool,
+  pacing,
+  in_grace,
+  grace_ends_at,
+}: Props) {
   const remaining = Math.max(0, pool.remaining_amount_usd)
   const spent = pool.spent_amount_usd
   const allocated = pool.allocated_amount_usd
-  const spentPct = allocated > 0 ? Math.min(100, Math.round((spent / allocated) * 100)) : 0
+  const spentPct =
+    allocated > 0 ? Math.min(100, Math.round((spent / allocated) * 100)) : 0
   const chip = pacingChip(pacing)
 
   const graceDaysLeft =
     in_grace && grace_ends_at
       ? Math.max(
           0,
-          Math.ceil((grace_ends_at.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+          Math.ceil(
+            (grace_ends_at.getTime() - Date.now()) / (24 * 60 * 60 * 1000)
+          )
         )
       : null
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-6">
-      <div className="mb-4 flex items-start justify-between gap-4">
+    <Card>
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-medium text-gray-500">Your recognition pool</h2>
-          <p className="mt-1 text-lg font-semibold text-gray-900">
-            ${remaining.toLocaleString()} remaining
+          <p className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+            Your pool · {period.period_label}
           </p>
-          <p className="text-xs text-gray-500">
-            of ${allocated.toLocaleString()} for {period.period_label}
+          <p className="mt-1 text-2xl font-semibold text-novo-ink tabular">
+            ${remaining.toLocaleString()}
+          </p>
+          <p className="text-xs text-novo-subtle">
+            remaining of ${allocated.toLocaleString()}
           </p>
         </div>
-        <span
-          className={
-            'rounded-full px-3 py-1 text-xs font-medium ' +
-            (chip.tone === 'green'
-              ? 'bg-green-50 text-green-700'
-              : chip.tone === 'amber'
-              ? 'bg-amber-50 text-amber-800'
-              : 'bg-gray-100 text-gray-600')
-          }
-          title={chip.hint}
-        >
-          {chip.label}
-        </span>
+        <PacingChip tone={chip.tone} label={chip.label} hint={chip.hint} />
       </div>
 
-      <div className="mb-2 h-2 overflow-hidden rounded-full bg-gray-100">
+      <div
+        className="mt-4 h-1.5 overflow-hidden rounded-full bg-novo-hover"
+        aria-label={`${spentPct}% of pool spent`}
+      >
         <div
-          className="h-full bg-gray-900 transition-all"
+          className="h-full rounded-full bg-novo-ink transition-all"
           style={{ width: `${spentPct}%` }}
-          aria-label={`${spentPct}% of pool spent`}
         />
       </div>
-      <p className="text-xs text-gray-500">${spent.toLocaleString()} used</p>
-      <p className="mt-3 text-xs text-gray-500">{chip.hint}</p>
+      <p className="mt-2 text-2xs text-novo-muted tabular">
+        ${spent.toLocaleString()} used · {spentPct}%
+      </p>
 
       {graceDaysLeft !== null && (
-        <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          {period.period_label} has closed —{' '}
+        <p className="mt-4 rounded-md border border-novo-border bg-novo-hover px-3 py-2 text-xs text-novo-subtle">
+          <span className="font-medium text-novo-ink">
+            {period.period_label} has closed.
+          </span>{' '}
           {graceDaysLeft === 0
-            ? 'the last day to finish pending reward selections is today.'
+            ? 'Finish pending reward selections today.'
             : `${graceDaysLeft} day${graceDaysLeft === 1 ? '' : 's'} left to finish pending reward selections.`}
         </p>
       )}
-    </section>
+    </Card>
+  )
+}
+
+function PacingChip({
+  tone,
+  label,
+  hint,
+}: {
+  tone: 'positive' | 'warning' | 'neutral'
+  label: string
+  hint: string
+}) {
+  const toneClasses =
+    tone === 'positive'
+      ? 'bg-emerald-50 text-emerald-800 border-emerald-100'
+      : tone === 'warning'
+        ? 'bg-amber-50 text-amber-800 border-amber-100'
+        : 'bg-novo-hover text-novo-subtle border-novo-border'
+  return (
+    <span
+      title={hint}
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-2xs font-medium ${toneClasses}`}
+    >
+      {label}
+    </span>
   )
 }
