@@ -1,3 +1,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-novo-surface text-novo-ink font-sans text-base;
+    font-feature-settings:
+      'cv02' on,
+      'cv03' on,
+      'cv04' on,
+      'cv11' on;
+  }
+  /* Consistent focus ring — same style across links, buttons, inputs. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-novo-ink/80 ring-offset-2 ring-offset-novo-surface;
+  }
+  /* Form inputs: remove browser chrome so the Tailwind styles are the only
+     source of truth. */
+  input,
+  select,
+  textarea,
+  button {
+    font-family: inherit;
+  }
+  textarea {
+    @apply resize-none;
+  }
+  /* Numeric content (budget amounts, counts, timestamps) reads better with
+     tabular figures — prevents cell-width wobble in tables. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Subtle divider line that matches the warm neutral palette. */
+  .hairline {
+    @apply border-novo-border;
+  }
+}
