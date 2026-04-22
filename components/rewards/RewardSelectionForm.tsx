@@ -7,10 +7,8 @@ import {
   selectRewardInitialState,
 } from '@/app/approvals/[id]/reward/actions'
 import type { Geo } from '@/modules/employees/types'
+import { Button } from '@/components/ui/Button'
 
-// Placeholder rates mirrored here so the client can show the net/cost
-// live without a round-trip. Single source is modules/fulfillment/tax.ts —
-// keep in sync when Finance delivers real rates.
 const PLACEHOLDER_GROSS_UP_PCT: Record<Geo, number> = {
   US: 30,
   India: 35,
@@ -83,10 +81,10 @@ export function RewardSelectionForm({
 
   const effectiveAmount =
     choiceKind === 'catalog'
-      ? selectedCatalogItem?.amount_usd ?? 0
+      ? (selectedCatalogItem?.amount_usd ?? 0)
       : choiceKind === 'cash'
-      ? cashGrossUp?.cost ?? 0
-      : customAmount
+        ? (cashGrossUp?.cost ?? 0)
+        : customAmount
 
   const wouldExceedPool = effectiveAmount > poolRemaining && !budgetException
   const canSubmit =
@@ -100,29 +98,34 @@ export function RewardSelectionForm({
       <input type="hidden" name="choice_kind" value={choiceKind} />
 
       {!state.ok && state.error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-md border border-novo-coral/30 bg-novo-pink-tint px-4 py-3 text-sm text-novo-oxblood">
           {state.error}
         </p>
       )}
 
-      <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600">
+      <p className="rounded-md border border-novo-border bg-novo-hover px-3 py-2 text-xs text-novo-subtle">
         Tax gross-up rates are placeholders (
-        {PLACEHOLDER_GROSS_UP_PCT[nomineeGeo]}% for {nomineeGeo}). Finance
-        delivers real rates before launch.
+        <span className="tabular">{PLACEHOLDER_GROSS_UP_PCT[nomineeGeo]}%</span>{' '}
+        for {nomineeGeo}). Finance delivers real rates before launch.
       </p>
 
-      {/* Choice picker */}
-      <div className="flex gap-2">
+      {/* Choice tabs */}
+      <div
+        role="tablist"
+        className="inline-flex rounded-md border border-novo-border bg-novo-paper p-0.5"
+      >
         {(['catalog', 'cash', 'custom'] as const).map((k) => (
           <button
             key={k}
             type="button"
+            role="tab"
+            aria-selected={choiceKind === k}
             onClick={() => setChoiceKind(k)}
             className={
-              'rounded-md px-3 py-1.5 text-sm ' +
+              'h-8 rounded px-3 text-xs font-medium transition ' +
               (choiceKind === k
-                ? 'bg-gray-900 text-white'
-                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50')
+                ? 'bg-novo-ink text-novo-paper'
+                : 'text-novo-subtle hover:text-novo-ink')
             }
           >
             {k === 'catalog' ? 'Catalog' : k === 'cash' ? 'Cash' : 'Custom'}
@@ -130,26 +133,29 @@ export function RewardSelectionForm({
         ))}
       </div>
 
-      {/* Catalog choice */}
+      {/* Catalog */}
       {choiceKind === 'catalog' && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {catalog.length === 0 ? (
-            <p className="text-sm text-gray-500">
+            <p className="rounded-md border border-dashed border-novo-border px-4 py-6 text-center text-sm text-novo-subtle">
               No catalog items available for this geo + tier. Use cash or
               custom, or ask People Ops to add options.
             </p>
           ) : (
             <>
-              <input type="hidden" name="catalog_item_id" value={catalogItemId} />
+              <input
+                type="hidden"
+                name="catalog_item_id"
+                value={catalogItemId}
+              />
               {catalog.map((item) => (
                 <label
                   key={item.id}
-                  className={
-                    'flex cursor-pointer items-start gap-3 rounded-md border p-3 ' +
-                    (catalogItemId === item.id
-                      ? 'border-gray-900 bg-gray-50'
-                      : 'border-gray-200 hover:bg-gray-50')
-                  }
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
+                    catalogItemId === item.id
+                      ? 'border-novo-ink bg-novo-hover/50'
+                      : 'border-novo-border bg-novo-paper hover:border-novo-border-strong'
+                  }`}
                 >
                   <input
                     type="radio"
@@ -158,15 +164,22 @@ export function RewardSelectionForm({
                     onChange={() => setCatalogItemId(item.id)}
                     className="mt-1"
                   />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      {item.name} · ${item.amount_usd}
-                    </p>
-                    <p className="text-xs text-gray-500">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-medium text-novo-ink">
+                        {item.name}
+                      </p>
+                      <p className="text-sm font-semibold text-novo-ink tabular">
+                        ${item.amount_usd}
+                      </p>
+                    </div>
+                    <p className="mt-0.5 text-xs text-novo-muted">
                       {item.reward_type}
                       {item.vendor ? ` · ${item.vendor}` : ''}
                     </p>
-                    <p className="mt-1 text-xs text-gray-600">{item.description}</p>
+                    <p className="mt-1.5 text-xs text-novo-subtle">
+                      {item.description}
+                    </p>
                   </div>
                 </label>
               ))}
@@ -175,12 +188,15 @@ export function RewardSelectionForm({
         </div>
       )}
 
-      {/* Cash choice */}
+      {/* Cash */}
       {choiceKind === 'cash' && (
         <div className="space-y-3">
-          <label className="block text-sm">
-            <span className="text-gray-900">
-              Net to recipient (USD) · ${range.min}–${range.max}
+          <label className="block">
+            <span className="text-sm font-medium text-novo-ink">
+              Net to recipient (USD)
+            </span>
+            <span className="ml-2 text-xs text-novo-muted tabular">
+              ${range.min}–${range.max}
             </span>
             <input
               type="number"
@@ -189,26 +205,37 @@ export function RewardSelectionForm({
               max={range.max}
               step={25}
               value={cashAmount}
-              onChange={(e) => setCashAmount(Number.parseFloat(e.target.value) || 0)}
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2"
+              onChange={(e) =>
+                setCashAmount(Number.parseFloat(e.target.value) || 0)
+              }
+              className="mt-1 block h-10 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm tabular text-novo-ink focus:border-novo-ink"
             />
           </label>
           {cashGrossUp && (
-            <p className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
-              Net to recipient: ${cashGrossUp.net.toLocaleString()} · Cost to
-              program (with {cashGrossUp.rate}% gross-up): $
-              {cashGrossUp.cost.toLocaleString()}
-            </p>
+            <div className="rounded-md border border-novo-border bg-novo-hover px-3 py-2 text-xs text-novo-subtle">
+              Net to recipient:{' '}
+              <span className="tabular text-novo-ink">
+                ${cashGrossUp.net.toLocaleString()}
+              </span>{' '}
+              · Cost to program (with{' '}
+              <span className="tabular">{cashGrossUp.rate}%</span> gross-up):{' '}
+              <span className="tabular text-novo-ink">
+                ${cashGrossUp.cost.toLocaleString()}
+              </span>
+            </div>
           )}
         </div>
       )}
 
-      {/* Custom choice */}
+      {/* Custom */}
       {choiceKind === 'custom' && (
         <div className="space-y-3">
-          <label className="block text-sm">
-            <span className="text-gray-900">
-              Amount (USD) · ${range.min}–${range.max}
+          <label className="block">
+            <span className="text-sm font-medium text-novo-ink">
+              Amount (USD)
+            </span>
+            <span className="ml-2 text-xs text-novo-muted tabular">
+              ${range.min}–${range.max}
             </span>
             <input
               type="number"
@@ -217,20 +244,24 @@ export function RewardSelectionForm({
               max={range.max}
               step={25}
               value={customAmount}
-              onChange={(e) => setCustomAmount(Number.parseFloat(e.target.value) || 0)}
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2"
+              onChange={(e) =>
+                setCustomAmount(Number.parseFloat(e.target.value) || 0)
+              }
+              className="mt-1 block h-10 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm tabular text-novo-ink focus:border-novo-ink"
             />
           </label>
-          <label className="block text-sm">
-            <span className="text-gray-900">Short description</span>
+          <label className="block">
+            <span className="text-sm font-medium text-novo-ink">
+              Short description
+            </span>
             <textarea
               name="custom_description"
               rows={2}
               placeholder="What should People Ops source?"
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2"
+              className="mt-1 block w-full rounded-md border border-novo-border bg-novo-paper px-3 py-2 text-sm text-novo-ink placeholder:text-novo-muted focus:border-novo-ink"
             />
           </label>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-novo-muted">
             Custom routes to People Ops for manual sourcing.
           </p>
         </div>
@@ -238,9 +269,16 @@ export function RewardSelectionForm({
 
       {/* Scope note */}
       <div className="space-y-2">
-        <label htmlFor="scope_note_template_id" className="block text-sm font-medium text-gray-900">
+        <label
+          htmlFor="scope_note_template_id"
+          className="block text-sm font-medium text-novo-ink"
+        >
           Scope note
         </label>
+        <p className="text-xs text-novo-subtle">
+          A line or two of context attached to the reward. Shown on the channel
+          post.
+        </p>
         <select
           id="scope_note_template_id"
           name="scope_note_template_id"
@@ -250,7 +288,7 @@ export function RewardSelectionForm({
             const chosen = scopeNotes.find((t) => t.id === e.target.value)
             if (chosen) setScopeNoteText(chosen.template_text)
           }}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+          className="block h-10 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm text-novo-ink focus:border-novo-ink"
         >
           <option value="">Start with a template…</option>
           {scopeNotes.map((t) => (
@@ -266,14 +304,13 @@ export function RewardSelectionForm({
           rows={3}
           value={scopeNoteText}
           onChange={(e) => setScopeNoteText(e.target.value)}
-          placeholder="Edit the template or write your own. Shown on the channel post."
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+          placeholder="Edit the template or write your own."
+          className="block w-full rounded-md border border-novo-border bg-novo-paper px-3 py-2 text-sm text-novo-ink placeholder:text-novo-muted focus:border-novo-ink"
         />
       </div>
 
-      {/* Budget exception */}
       {wouldExceedPool && (
-        <label className="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <label className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           <input
             type="checkbox"
             name="budget_exception"
@@ -283,8 +320,9 @@ export function RewardSelectionForm({
           />
           <span>
             This reward exceeds the remaining pool balance ($
-            {poolRemaining.toLocaleString()}). Check to approve as a budget
-            exception — the reward will draw from reserve.
+            <span className="tabular">{poolRemaining.toLocaleString()}</span>).
+            Check to approve as a budget exception — the reward will draw from
+            reserve.
           </span>
         </label>
       )}
@@ -292,7 +330,12 @@ export function RewardSelectionForm({
         <input type="hidden" name="budget_exception" value="on" />
       )}
 
-      <SubmitButton disabled={!canSubmit} />
+      <div className="flex items-center justify-between border-t border-novo-border pt-6">
+        <p className="text-xs text-novo-subtle">
+          Budget commits on save.{tier === 2 ? ' People team rep confirms.' : ''}
+        </p>
+        <SubmitButton disabled={!canSubmit} />
+      </div>
     </form>
   )
 }
@@ -300,12 +343,8 @@ export function RewardSelectionForm({
 function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus()
   return (
-    <button
-      type="submit"
-      disabled={disabled || pending}
-      className="inline-flex items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
-    >
+    <Button type="submit" disabled={disabled || pending} size="lg">
       {pending ? 'Confirming…' : 'Confirm reward'}
-    </button>
+    </Button>
   )
 }
