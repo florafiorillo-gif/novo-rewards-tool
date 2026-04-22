@@ -1,9 +1,11 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { getEmployeeById } from '@/modules/employees/service'
 import type { RecognitionPreference } from '@/modules/employees/types'
 import { updateRecognitionPreferenceAction } from './actions'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,56 +45,56 @@ export default async function SettingsPage() {
   const current = employee.recognition_preference
 
   return (
-    <main className="mx-auto min-h-screen max-w-2xl px-6 py-12">
-      <header className="mb-8">
-        <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-700">
-          ← Dashboard
-        </Link>
-        <h1 className="mt-2 text-xl font-semibold text-gray-900">Settings</h1>
-      </header>
+    <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
+      <PageHeader
+        back={{ href: '/dashboard', label: 'Dashboard' }}
+        eyebrow="Settings"
+        title="Visibility preferences"
+        description="Controls how public your recognition is. You can change this any time — the next nomination you receive will respect whatever this is at the moment it's approved."
+      />
 
-      <section className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-sm font-medium text-gray-900">
-          When you&apos;re recognized
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Controls how public your recognition is. You can change this any time.
-        </p>
-
-        <form action={updateRecognitionPreferenceAction} className="mt-5 space-y-3">
-          {OPTIONS.map((opt) => (
-            <label
-              key={opt.value}
-              className="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 p-3 hover:border-gray-300"
-            >
-              <input
-                type="radio"
-                name="preference"
-                value={opt.value}
-                defaultChecked={current === opt.value}
-                className="mt-1"
-              />
-              <span>
-                <span className="block text-sm font-medium text-gray-900">
-                  {opt.label}
+      <Card>
+        <form action={updateRecognitionPreferenceAction} className="space-y-3">
+          {OPTIONS.map((opt) => {
+            const selected = current === opt.value
+            return (
+              <label
+                key={opt.value}
+                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
+                  selected
+                    ? 'border-novo-ink bg-novo-hover/40'
+                    : 'border-novo-border bg-novo-paper hover:border-novo-border-strong'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="preference"
+                  value={opt.value}
+                  defaultChecked={selected}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-novo-ink">
+                    {opt.label}
+                  </span>
+                  <span className="mt-1 block text-xs text-novo-subtle">
+                    {opt.description}
+                  </span>
                 </span>
-                <span className="block text-sm text-gray-500">
-                  {opt.description}
-                </span>
-              </span>
-            </label>
-          ))}
+              </label>
+            )
+          })}
 
-          <div className="pt-2">
-            <button
-              type="submit"
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-            >
-              Save
-            </button>
+          <div className="flex items-center justify-end border-t border-novo-border pt-4">
+            <Button type="submit">Save</Button>
           </div>
         </form>
-      </section>
+      </Card>
+
+      <p className="mt-6 text-xs text-novo-muted">
+        Signed in as {employee.name}{' '}
+        <span className="tabular">· {employee.email}</span> · {employee.role_title}
+      </p>
     </main>
   )
 }

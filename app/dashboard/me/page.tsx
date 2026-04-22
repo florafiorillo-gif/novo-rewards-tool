@@ -1,15 +1,15 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { getRecipientDashboardView } from '@/modules/dashboard/recipient-view'
 import { RecipientRecognitionList } from '@/components/dashboard/RecipientRecognitionList'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 export const dynamic = 'force-dynamic'
 
-// Personal recognition history for the signed-in employee. Visible to
-// everyone (spec §17 phase 7 "recipient web view"); access control is just
-// "must be signed in." Tier and dollar amounts are deliberately stripped
-// server-side in recipient-view.ts.
+// Personal recognition history. Spec §17 / Phase 7 "recipient web view" —
+// tiers and dollars are stripped server-side in recipient-view.ts.
 export default async function RecipientDashboardPage() {
   const session = await auth()
   const employeeId = session?.user?.employeeId
@@ -18,26 +18,31 @@ export default async function RecipientDashboardPage() {
   const view = await getRecipientDashboardView(employeeId)
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-6 py-12">
-      <header className="mb-8">
-        <h1 className="font-display text-3xl uppercase tracking-tight text-novo-ink">
-          Your recognitions
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          What teammates have noticed and called out.
-        </p>
-      </header>
+    <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
+      <PageHeader
+        back={{ href: '/dashboard', label: 'Dashboard' }}
+        eyebrow="Your recognitions"
+        title="Noticed"
+        description="What teammates have called out. Tiers and dollar amounts are kept private — this is about the story, not the size."
+      />
 
-      <RecipientRecognitionList items={view.items} />
+      {view.items.length === 0 ? (
+        <EmptyState
+          title="Nothing here yet"
+          description="When a teammate recognizes you for living one of the values, it lands here. Visible only to you."
+        />
+      ) : (
+        <RecipientRecognitionList items={view.items} />
+      )}
 
-      <div className="mt-8">
+      <p className="mt-10 text-center text-xs text-novo-muted">
         <Link
           href="/settings"
-          className="text-xs text-gray-500 underline hover:text-gray-700"
+          className="underline underline-offset-2 hover:text-novo-ink"
         >
           Recognition preferences
         </Link>
-      </div>
+      </p>
     </main>
   )
 }

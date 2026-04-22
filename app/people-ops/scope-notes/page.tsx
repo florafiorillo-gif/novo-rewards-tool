@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { isPeopleTeamRep } from '@/modules/roles/service'
@@ -7,6 +6,9 @@ import {
   createScopeNoteAction,
   toggleScopeNoteActiveAction,
 } from './actions'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,89 +26,102 @@ export default async function ScopeNotesPage() {
   } as const
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-6 py-12">
-      <header className="mb-6">
-        <Link href="/people-ops" className="text-sm text-gray-500 hover:text-gray-700">
-          ← People Ops
-        </Link>
-        <h1 className="mt-2 text-xl font-semibold text-gray-900">Scope note templates</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Shown as a dropdown at reward selection. Approvers pick one and can
-          edit before committing — templates are starting points, not final copy.
-        </p>
-      </header>
+    <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
+      <PageHeader
+        back={{ href: '/people-ops', label: 'People Ops' }}
+        eyebrow="People Ops"
+        title="Scope note templates"
+        description="Shown as a dropdown at reward selection. Approvers pick one and can edit before committing — templates are starting points, not final copy."
+      />
 
-      {([1, 2, 3] as const).map((tier) => (
-        <section key={tier} className="mb-8">
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">
-            Tier {tier}
-          </h2>
-          <div className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">
-            {byTier[tier].length === 0 && (
-              <p className="p-4 text-sm text-gray-500">None yet.</p>
-            )}
-            {byTier[tier].map((t) => (
-              <div
-                key={t.id}
-                className="flex items-start justify-between gap-4 p-4 text-sm"
-              >
-                <p
-                  className={
-                    'flex-1 ' + (t.active ? 'text-gray-900' : 'text-gray-400')
-                  }
-                >
-                  {t.template_text}
-                  {!t.active && (
-                    <span className="ml-2 text-xs uppercase">inactive</span>
-                  )}
-                </p>
-                <form action={toggleScopeNoteActiveAction}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <input type="hidden" name="active" value={t.active ? 'false' : 'true'} />
-                  <button
-                    type="submit"
-                    className="rounded-md border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
+      <div className="space-y-8">
+        {([1, 2, 3] as const).map((tier) => (
+          <section key={tier}>
+            <header className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+                Tier {tier}
+              </h2>
+              <span className="text-2xs tabular text-novo-muted">
+                {byTier[tier].length}
+              </span>
+            </header>
+            {byTier[tier].length === 0 ? (
+              <p className="rounded-lg border border-dashed border-novo-border px-4 py-6 text-center text-sm text-novo-subtle">
+                No templates for Tier {tier} yet.
+              </p>
+            ) : (
+              <ul className="divide-y divide-novo-border rounded-lg border border-novo-border bg-novo-elevated shadow-card">
+                {byTier[tier].map((t) => (
+                  <li
+                    key={t.id}
+                    className="flex items-start justify-between gap-4 p-4"
                   >
-                    {t.active ? 'Deactivate' : 'Reactivate'}
-                  </button>
-                </form>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+                    <p
+                      className={`flex-1 text-sm leading-6 ${
+                        t.active ? 'text-novo-ink' : 'text-novo-muted'
+                      }`}
+                    >
+                      {t.template_text}
+                      {!t.active && (
+                        <span className="ml-2 inline-flex items-center rounded border border-novo-border bg-novo-hover px-1.5 py-0.5 text-2xs uppercase tracking-wide text-novo-muted">
+                          Inactive
+                        </span>
+                      )}
+                    </p>
+                    <form action={toggleScopeNoteActiveAction}>
+                      <input type="hidden" name="id" value={t.id} />
+                      <input
+                        type="hidden"
+                        name="active"
+                        value={t.active ? 'false' : 'true'}
+                      />
+                      <Button
+                        type="submit"
+                        variant={t.active ? 'ghost' : 'secondary'}
+                        size="sm"
+                      >
+                        {t.active ? 'Deactivate' : 'Reactivate'}
+                      </Button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))}
 
-      <section className="mt-10 rounded-lg border border-gray-200 bg-gray-50 p-4">
-        <h3 className="mb-3 text-sm font-medium text-gray-900">Add template</h3>
-        <form action={createScopeNoteAction} className="space-y-3">
-          <select
-            name="tier"
-            required
-            defaultValue=""
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-          >
-            <option value="" disabled>
-              Choose tier
-            </option>
-            <option value="1">Tier 1 — Spot</option>
-            <option value="2">Tier 2 — Impact</option>
-            <option value="3">Tier 3 — Value Share</option>
-          </select>
-          <textarea
-            name="template_text"
-            required
-            rows={3}
-            placeholder="Short, warm. Rubina's copy pass will finalize these pre-launch."
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-          >
-            Create
-          </button>
-        </form>
-      </section>
+        <Card>
+          <h3 className="text-sm font-semibold text-novo-ink">Add template</h3>
+          <p className="mt-1 text-xs text-novo-subtle">
+            Short, warm. Rubina&rsquo;s copy pass will finalize these pre-launch.
+          </p>
+          <form action={createScopeNoteAction} className="mt-4 space-y-3">
+            <select
+              name="tier"
+              required
+              defaultValue=""
+              className="block h-10 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm text-novo-ink focus:border-novo-ink"
+            >
+              <option value="" disabled>
+                Choose tier
+              </option>
+              <option value="1">Tier 1 — Spot</option>
+              <option value="2">Tier 2 — Impact</option>
+              <option value="3">Tier 3 — Value Share</option>
+            </select>
+            <textarea
+              name="template_text"
+              required
+              rows={3}
+              placeholder="Draft the template copy."
+              className="block w-full rounded-md border border-novo-border bg-novo-paper px-3 py-2 text-sm text-novo-ink placeholder:text-novo-muted focus:border-novo-ink"
+            />
+            <div className="flex justify-end">
+              <Button type="submit">Create</Button>
+            </div>
+          </form>
+        </Card>
+      </div>
     </main>
   )
 }

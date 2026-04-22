@@ -8,6 +8,9 @@ import {
   markFailedAction,
   markIssuedAction,
 } from './actions'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,74 +41,108 @@ export default async function FulfillmentQueuePage() {
   const failed = items.filter((i) => i.reward.status === 'failed')
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-6 py-12">
-      <header className="mb-8">
-        <Link href="/people-ops" className="text-sm text-gray-500 hover:text-gray-700">
-          ← People Ops
-        </Link>
-        <h1 className="mt-2 text-xl font-semibold text-gray-900">
-          Manual fulfillment queue
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {items.length === 0
-            ? 'Nothing waiting right now.'
-            : `${items.length} reward${items.length === 1 ? '' : 's'} needing People Ops action.`}
-        </p>
-      </header>
+    <main className="mx-auto max-w-shell px-6 py-10 lg:py-12">
+      <PageHeader
+        back={{ href: '/people-ops', label: 'People Ops' }}
+        eyebrow="People Ops"
+        title="Manual fulfillment"
+        description={
+          items.length === 0
+            ? "Nothing waiting. We'll surface rewards here when they need human action."
+            : `${items.length} reward${items.length === 1 ? '' : 's'} needing People Ops action.`
+        }
+      />
 
-      {usCashPending.length > 0 && (
-        <section className="mb-8">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-xs font-medium uppercase tracking-wide text-gray-500">
-              US cash · JustWorks batch ({usCashPending.length})
-            </h2>
-            <Link
-              href="/api/people-ops/exports/justworks-cash"
-              className="text-xs text-gray-700 underline underline-offset-2 hover:text-gray-900"
+      {items.length === 0 ? (
+        <EmptyState
+          title="Queue is clear"
+          description="When a reward routes to manual fulfillment — US cash, India cash, Colombia, custom items, or anything that fails — it lands here."
+          footnote="A quiet queue means the automated paths are doing their job."
+        />
+      ) : (
+        <div className="space-y-8">
+          {usCashPending.length > 0 && (
+            <QueueSection
+              title="US cash · JustWorks batch"
+              count={usCashPending.length}
+              action={
+                <Link
+                  href="/api/people-ops/exports/justworks-cash"
+                  className="text-xs text-novo-ink underline underline-offset-2 hover:opacity-80"
+                >
+                  Download CSV
+                </Link>
+              }
             >
-              Download CSV
-            </Link>
-          </div>
-          <Group items={usCashPending} />
-        </section>
-      )}
-
-      {indiaCash.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">
-            India cash · Zoho payroll ({indiaCash.length})
-          </h2>
-          <Group items={indiaCash} showInstruction="zoho" />
-        </section>
-      )}
-
-      {colombia.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">
-            Colombia · manual ({colombia.length})
-          </h2>
-          <Group items={colombia} showInstruction="colombia" />
-        </section>
-      )}
-
-      {custom.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">
-            Custom rewards · manual sourcing ({custom.length})
-          </h2>
-          <Group items={custom} />
-        </section>
-      )}
-
-      {failed.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-red-700">
-            Failed · needs People Ops attention ({failed.length})
-          </h2>
-          <Group items={failed} />
-        </section>
+              <Group items={usCashPending} />
+            </QueueSection>
+          )}
+          {indiaCash.length > 0 && (
+            <QueueSection
+              title="India cash · Zoho payroll"
+              count={indiaCash.length}
+            >
+              <Group items={indiaCash} showInstruction="zoho" />
+            </QueueSection>
+          )}
+          {colombia.length > 0 && (
+            <QueueSection title="Colombia · manual" count={colombia.length}>
+              <Group items={colombia} showInstruction="colombia" />
+            </QueueSection>
+          )}
+          {custom.length > 0 && (
+            <QueueSection
+              title="Custom rewards · manual sourcing"
+              count={custom.length}
+            >
+              <Group items={custom} />
+            </QueueSection>
+          )}
+          {failed.length > 0 && (
+            <QueueSection
+              title="Failed · needs People Ops attention"
+              count={failed.length}
+              tone="critical"
+            >
+              <Group items={failed} />
+            </QueueSection>
+          )}
+        </div>
       )}
     </main>
+  )
+}
+
+function QueueSection({
+  title,
+  count,
+  action,
+  tone,
+  children,
+}: {
+  title: string
+  count: number
+  action?: React.ReactNode
+  tone?: 'critical'
+  children: React.ReactNode
+}) {
+  return (
+    <section>
+      <header className="mb-3 flex items-baseline justify-between gap-4">
+        <div className="flex items-baseline gap-3">
+          <h2
+            className={`text-sm font-semibold ${
+              tone === 'critical' ? 'text-novo-coral' : 'text-novo-ink'
+            }`}
+          >
+            {title}
+          </h2>
+          <span className="text-2xs tabular text-novo-muted">{count}</span>
+        </div>
+        {action}
+      </header>
+      {children}
+    </section>
   )
 }
 
@@ -117,34 +154,34 @@ function Group({
   showInstruction?: 'zoho' | 'colombia'
 }) {
   return (
-    <div className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">
+    <div className="divide-y divide-novo-border rounded-lg border border-novo-border bg-novo-elevated shadow-card">
       {items.map((item) => (
-        <div key={item.reward.id} className="p-4 text-sm">
-          <div className="flex items-baseline justify-between">
-            <p className="font-medium text-gray-900">
-              {item.nominee.name} ·{' '}
-              <span className="text-gray-500">
+        <article key={item.reward.id} className="p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-medium text-novo-ink">
+              {item.nominee.name}
+              <span className="ml-2 text-xs font-normal text-novo-muted">
                 {item.nominee.employment_type === 'contractor'
                   ? 'contractor'
                   : 'employee'}
                 , {item.nominee.geo}
               </span>
             </p>
-            <span className="text-xs uppercase text-gray-500">
+            <span className="inline-flex items-center rounded border border-novo-border bg-novo-surface px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-novo-subtle">
               {item.reward.status}
             </span>
           </div>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-novo-subtle">
             {item.reward.reward_type}
-            {item.reward.vendor ? ` · ${item.reward.vendor}` : ''} · ${' '}
-            {fmtUsd(item.reward.amount_usd)}
+            {item.reward.vendor ? ` · ${item.reward.vendor}` : ''} ·{' '}
+            <span className="tabular">{fmtUsd(item.reward.amount_usd)}</span>
           </p>
-          <p className="mt-2 text-xs text-gray-600">
-            {item.value?.name} · "{item.nomination.behavior_text.slice(0, 120)}
-            {item.nomination.behavior_text.length > 120 ? '…' : ''}"
+          <p className="mt-2 text-xs italic text-novo-subtle">
+            &ldquo;{item.nomination.behavior_text.slice(0, 140)}
+            {item.nomination.behavior_text.length > 140 ? '…' : ''}&rdquo;
           </p>
           {showInstruction === 'zoho' && (
-            <pre className="mt-2 whitespace-pre-wrap rounded-md bg-gray-50 p-3 text-xs text-gray-700">
+            <pre className="mt-3 whitespace-pre-wrap rounded-md border border-novo-border bg-novo-hover p-3 text-2xs text-novo-subtle">
               {`Payee: ${item.nominee.name} (${item.nominee.email})
 Employee ID: ${item.nominee.id}
 Net to recipient: $${item.reward.amount_usd.toFixed(2)} USD
@@ -153,7 +190,7 @@ Nomination: ${item.reward.nomination_id}`}
             </pre>
           )}
           {showInstruction === 'colombia' && (
-            <pre className="mt-2 whitespace-pre-wrap rounded-md bg-gray-50 p-3 text-xs text-gray-700">
+            <pre className="mt-3 whitespace-pre-wrap rounded-md border border-novo-border bg-novo-hover p-3 text-2xs text-novo-subtle">
               {`Payee: ${item.nominee.name} (${item.nominee.email})
 Employee ID: ${item.nominee.id}
 ${
@@ -167,54 +204,45 @@ Nomination: ${item.reward.nomination_id}`}
             </pre>
           )}
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {item.reward.status === 'selected' && (
               <form action={markIssuedAction}>
                 <input type="hidden" name="reward_id" value={item.reward.id} />
-                <button
-                  type="submit"
-                  className="rounded-md border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-                >
+                <Button type="submit" variant="secondary" size="sm">
                   Mark issued
-                </button>
+                </Button>
               </form>
             )}
             {item.reward.status === 'issued' && (
               <form action={markDeliveredAction}>
                 <input type="hidden" name="reward_id" value={item.reward.id} />
-                <button
-                  type="submit"
-                  className="rounded-md bg-gray-900 px-3 py-1 text-xs font-medium text-white hover:bg-gray-800"
-                >
+                <Button type="submit" size="sm">
                   Mark delivered
-                </button>
+                </Button>
               </form>
             )}
             {(item.reward.status === 'selected' ||
               item.reward.status === 'issued') && (
               <details className="inline-block">
-                <summary className="cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+                <summary className="cursor-pointer rounded-md border border-novo-border bg-novo-paper px-3 py-1.5 text-xs text-novo-subtle hover:text-novo-ink">
                   Mark failed
                 </summary>
-                <form action={markFailedAction} className="mt-2 space-y-1">
+                <form action={markFailedAction} className="mt-2 flex gap-2">
                   <input type="hidden" name="reward_id" value={item.reward.id} />
                   <input
                     name="reason"
                     required
                     placeholder="Reason"
-                    className="w-48 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                    className="h-8 w-48 rounded-md border border-novo-border bg-novo-paper px-2 text-xs text-novo-ink focus:border-novo-ink"
                   />
-                  <button
-                    type="submit"
-                    className="rounded-md border border-red-300 bg-white px-3 py-1 text-xs text-red-700 hover:bg-red-50"
-                  >
+                  <Button type="submit" variant="danger" size="sm">
                     Confirm fail
-                  </button>
+                  </Button>
                 </form>
               </details>
             )}
           </div>
-        </div>
+        </article>
       ))}
     </div>
   )

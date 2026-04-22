@@ -2,8 +2,40 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { isPeopleTeamRep } from '@/modules/roles/service'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export const dynamic = 'force-dynamic'
+
+const TILES: Array<{
+  href: string
+  title: string
+  description: string
+}> = [
+  {
+    href: '/people-ops/dashboard',
+    title: 'Program dashboard',
+    description:
+      'Pools by geo, reserve draws, SLA misses for the current quarter.',
+  },
+  {
+    href: '/people-ops/fulfillment',
+    title: 'Fulfillment queue',
+    description:
+      'Manual sourcing, cash batches, and failed rewards needing attention.',
+  },
+  {
+    href: '/people-ops/catalog',
+    title: 'Reward catalog',
+    description:
+      'Per-geo reward options. Approvers pick from here at selection time.',
+  },
+  {
+    href: '/people-ops/scope-notes',
+    title: 'Scope note templates',
+    description:
+      'Starting points approvers attach to rewards. One per tier, editable.',
+  },
+]
 
 export default async function PeopleOpsHomePage() {
   const session = await auth()
@@ -12,52 +44,33 @@ export default async function PeopleOpsHomePage() {
   if (!(await isPeopleTeamRep(employeeId))) notFound()
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-6 py-12">
-      <header className="mb-8">
-        <h1 className="text-xl font-semibold text-gray-900">People Ops</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Catalog + scope note maintenance. Manual fulfillment queue lands in
-          Phase 5 Commit E.
-        </p>
-      </header>
+    <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
+      <PageHeader
+        back={{ href: '/dashboard', label: 'Dashboard' }}
+        eyebrow="People Ops"
+        title="Operations"
+        description="Catalog, scope notes, fulfillment, and program-wide health. Everything People team needs to run the recognition program."
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link
-          href="/people-ops/dashboard"
-          className="rounded-lg border border-gray-200 bg-white p-6 hover:bg-gray-50"
-        >
-          <p className="text-sm font-medium text-gray-900">Program dashboard</p>
-          <p className="mt-1 text-xs text-gray-500">
-            Pools by geo, reserve draws, SLA misses for the current quarter.
-          </p>
-        </Link>
-        <Link
-          href="/people-ops/fulfillment"
-          className="rounded-lg border border-gray-200 bg-white p-6 hover:bg-gray-50"
-        >
-          <p className="text-sm font-medium text-gray-900">Fulfillment queue</p>
-          <p className="mt-1 text-xs text-gray-500">
-            Manual sourcing + cash batches + failed rewards.
-          </p>
-        </Link>
-        <Link
-          href="/people-ops/catalog"
-          className="rounded-lg border border-gray-200 bg-white p-6 hover:bg-gray-50"
-        >
-          <p className="text-sm font-medium text-gray-900">Catalog</p>
-          <p className="mt-1 text-xs text-gray-500">
-            Reward options per geo. Approvers pick from here at selection time.
-          </p>
-        </Link>
-        <Link
-          href="/people-ops/scope-notes"
-          className="rounded-lg border border-gray-200 bg-white p-6 hover:bg-gray-50"
-        >
-          <p className="text-sm font-medium text-gray-900">Scope notes</p>
-          <p className="mt-1 text-xs text-gray-500">
-            Templates approvers attach to rewards. One per tier, editable.
-          </p>
-        </Link>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {TILES.map((tile) => (
+          <Link
+            key={tile.href}
+            href={tile.href}
+            className="group rounded-lg border border-novo-border bg-novo-elevated p-5 shadow-card transition hover:bg-novo-hover"
+          >
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-semibold text-novo-ink">{tile.title}</p>
+              <span
+                aria-hidden
+                className="text-novo-muted transition group-hover:text-novo-ink"
+              >
+                →
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs text-novo-subtle">{tile.description}</p>
+          </Link>
+        ))}
       </div>
     </main>
   )
