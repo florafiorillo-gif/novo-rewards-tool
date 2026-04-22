@@ -1,16 +1,31 @@
 import { signIn, DEV_SIGNIN_ENABLED } from '@/auth'
+import { Button } from '@/components/ui/Button'
 
 export default function SignInPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-novo-paper">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-novo-paper p-8 shadow-sm">
-        <h1 className="mb-1 font-display text-2xl uppercase tracking-tight text-novo-ink">
-          Novo Rewards
-        </h1>
-        {DEV_SIGNIN_ENABLED ? (
-          <DevSignInForm />
-        ) : (
-          <GoogleSignInForm />
+    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-md items-center justify-center px-6 py-12">
+      <div className="w-full">
+        <div className="mb-8 text-center">
+          <p className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+            Novo Rewards
+          </p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-novo-ink">
+            Sign in
+          </h1>
+          <p className="mx-auto mt-2 max-w-xs text-sm text-novo-subtle">
+            Recognize the work happening around you. Route the right rewards to
+            the right people.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-novo-border bg-novo-elevated p-8 shadow-card">
+          {DEV_SIGNIN_ENABLED ? <DevSignInForm /> : <GoogleSignInForm />}
+        </div>
+
+        {DEV_SIGNIN_ENABLED && (
+          <p className="mt-6 text-center text-2xs uppercase tracking-[0.08em] text-novo-muted">
+            Development mode
+          </p>
         )}
       </div>
     </main>
@@ -20,7 +35,7 @@ export default function SignInPage() {
 function GoogleSignInForm() {
   return (
     <>
-      <p className="mb-8 text-sm text-gray-500">
+      <p className="mb-6 text-sm text-novo-subtle">
         Sign in with your Novo Google account.
       </p>
       <form
@@ -31,9 +46,9 @@ function GoogleSignInForm() {
       >
         <button
           type="submit"
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+          className="flex w-full items-center justify-center gap-3 rounded-md border border-novo-border bg-novo-paper px-4 py-2.5 text-sm font-medium text-novo-ink shadow-card transition hover:bg-novo-hover"
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+          <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               fill="#4285F4"
@@ -61,13 +76,23 @@ function GoogleSignInForm() {
 function DevSignInForm() {
   return (
     <>
-      <p className="mb-2 text-sm text-gray-500">
-        Dev mode: sign in as any seeded Novo employee.
+      <p className="mb-1 text-sm text-novo-ink">
+        Sign in as any seeded Novo employee.
       </p>
-      <p className="mb-6 text-xs text-gray-400">
-        Try <code className="rounded bg-gray-100 px-1 py-0.5">flora@novo.co</code>,{' '}
-        <code className="rounded bg-gray-100 px-1 py-0.5">rares@novo.co</code>,{' '}
-        <code className="rounded bg-gray-100 px-1 py-0.5">sakshi@novo.co</code>
+      <p className="mb-5 text-xs text-novo-subtle">
+        Try{' '}
+        <code className="rounded border border-novo-border bg-novo-hover px-1 py-0.5 text-2xs text-novo-ink">
+          flora@novo.co
+        </code>
+        ,{' '}
+        <code className="rounded border border-novo-border bg-novo-hover px-1 py-0.5 text-2xs text-novo-ink">
+          rares@novo.co
+        </code>
+        , or{' '}
+        <code className="rounded border border-novo-border bg-novo-hover px-1 py-0.5 text-2xs text-novo-ink">
+          sakshi@novo.co
+        </code>
+        .
       </p>
       <form
         action={async (formData: FormData) => {
@@ -75,24 +100,27 @@ function DevSignInForm() {
           const email = (formData.get('email') as string | null)?.trim() ?? ''
           await signIn('dev-email', { email, redirectTo: '/dashboard' })
         }}
+        className="space-y-3"
       >
-        <label className="block text-xs font-medium text-gray-700" htmlFor="email">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          placeholder="flora@novo.co"
-          className="mt-1 mb-4 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-novo-ink focus:outline-none"
-        />
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center rounded-lg bg-novo-ink px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
-        >
-          Sign in (dev)
-        </button>
+        <div>
+          <label
+            className="block text-xs font-medium text-novo-ink"
+            htmlFor="email"
+          >
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            placeholder="flora@novo.co"
+            className="mt-1 block h-10 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm text-novo-ink placeholder:text-novo-muted focus:border-novo-ink"
+          />
+        </div>
+        <Button type="submit" size="lg" className="w-full">
+          Sign in
+        </Button>
       </form>
     </>
   )
