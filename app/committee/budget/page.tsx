@@ -3,6 +3,9 @@ import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { isCommitteeMember } from '@/modules/roles/service'
 import { listPeriods } from '@/modules/budget/periods'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { LinkButton } from '@/components/ui/Button'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,59 +22,88 @@ export default async function BudgetPeriodsPage() {
   const periods = await listPeriods()
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-6 py-12">
-      <header className="mb-8 flex items-baseline justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Budget periods</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Quarterly allocations. Committee sign-off required before a period
-            becomes active.
-          </p>
-        </div>
-        <Link
-          href="/committee/budget/new"
-          className="inline-flex items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800"
-        >
-          New period
-        </Link>
-      </header>
+    <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
+      <PageHeader
+        back={{ href: '/committee/dashboard', label: 'Committee dashboard' }}
+        eyebrow="Committee · Budget"
+        title="Budget periods"
+        description="Quarterly allocations. Committee sign-off required before a period becomes active."
+        actions={
+          <LinkButton href="/committee/budget/new" variant="primary">
+            New period
+          </LinkButton>
+        }
+      />
 
-      <div className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">
-        {periods.length === 0 && (
-          <p className="p-6 text-sm text-gray-500">
-            No periods yet. Start with a new quarterly allocation.
-          </p>
-        )}
-        {periods.map((p) => (
-          <Link
-            key={p.id}
-            href={`/committee/budget/${p.id}`}
-            className="block p-6 transition hover:bg-gray-50"
-          >
-            <div className="flex items-baseline justify-between">
-              <p className="text-sm font-medium text-gray-900">{p.period_label}</p>
-              <span
-                className={
-                  'rounded-full px-2 py-0.5 text-xs ' +
-                  (p.status === 'active'
-                    ? 'bg-green-100 text-green-800'
-                    : p.status === 'approved'
-                    ? 'bg-blue-100 text-blue-800'
-                    : p.status === 'closed'
-                    ? 'bg-gray-100 text-gray-600'
-                    : 'bg-amber-100 text-amber-800')
-                }
-              >
-                {p.status}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-gray-500">
-              {p.start_date.toLocaleDateString()} → {p.end_date.toLocaleDateString()}{' '}
-              · total {fmtUsd(p.total_allocation_usd)}
-            </p>
-          </Link>
-        ))}
-      </div>
+      {periods.length === 0 ? (
+        <EmptyState
+          title="No periods yet"
+          description="Periods are the container for all pools and nominations in a quarter. Start with a new allocation."
+          action={
+            <LinkButton href="/committee/budget/new" variant="primary">
+              Create first period
+            </LinkButton>
+          }
+        />
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-novo-border bg-novo-elevated shadow-card">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-novo-border bg-novo-surface/60 text-left text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+                <th className="px-5 py-2.5">Label</th>
+                <th className="px-5 py-2.5">Dates</th>
+                <th className="px-5 py-2.5 text-right">Total</th>
+                <th className="px-5 py-2.5">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-novo-border">
+              {periods.map((p) => (
+                <tr
+                  key={p.id}
+                  className="group transition hover:bg-novo-hover/50"
+                >
+                  <td className="px-5 py-4">
+                    <Link
+                      href={`/committee/budget/${p.id}`}
+                      className="font-medium text-novo-ink group-hover:underline"
+                    >
+                      {p.period_label}
+                    </Link>
+                  </td>
+                  <td className="px-5 py-4 text-novo-subtle tabular">
+                    {p.start_date.toLocaleDateString()} →{' '}
+                    {p.end_date.toLocaleDateString()}
+                  </td>
+                  <td className="px-5 py-4 text-right text-novo-ink tabular">
+                    {fmtUsd(p.total_allocation_usd)}
+                  </td>
+                  <td className="px-5 py-4">
+                    <StatusPill status={p.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </main>
+  )
+}
+
+function StatusPill({ status }: { status: string }) {
+  const tone =
+    status === 'active'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+      : status === 'approved'
+        ? 'border-sky-200 bg-sky-50 text-sky-800'
+        : status === 'closed'
+          ? 'border-novo-border bg-novo-hover text-novo-subtle'
+          : 'border-amber-200 bg-amber-50 text-amber-800'
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-medium ${tone}`}
+    >
+      {status}
+    </span>
   )
 }

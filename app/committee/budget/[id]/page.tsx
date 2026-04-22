@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { isCommitteeMember, getCommitteeMembers } from '@/modules/roles/service'
@@ -13,6 +12,9 @@ import {
   approvePeriodAction,
   closePeriodAction,
 } from '../actions'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,172 +53,210 @@ export default async function BudgetPeriodDetailPage({
   }
 
   const canAllocate = period.status === 'draft'
-  const canApprove = period.status === 'draft' && !period.approved_by.includes(employeeId)
+  const canApprove =
+    period.status === 'draft' && !period.approved_by.includes(employeeId)
   const canActivate = period.status === 'approved'
   const canClose = period.status === 'active' || period.status === 'approved'
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-6 py-12">
-      <header className="mb-6">
-        <Link href="/committee/budget" className="text-sm text-gray-500 hover:text-gray-700">
-          ← Back to periods
-        </Link>
-        <div className="mt-2 flex items-baseline justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">{period.period_label}</h1>
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-            {period.status}
-          </span>
-        </div>
-        <p className="mt-1 text-sm text-gray-500">
-          {period.start_date.toLocaleDateString()} → {period.end_date.toLocaleDateString()}{' '}
-          · total {fmtUsd(period.total_allocation_usd)}
-        </p>
-        {period.closed_at && (
-          <p className="mt-1 text-xs text-gray-500">
-            Closed {period.closed_at.toLocaleDateString()}. Pools stay drawable
-            for 14 days for in-flight approvals.
+    <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
+      <PageHeader
+        back={{ href: '/committee/budget', label: 'Budget periods' }}
+        eyebrow="Committee · Budget"
+        title={period.period_label}
+        description={
+          <>
+            <span className="tabular">
+              {period.start_date.toLocaleDateString()} →{' '}
+              {period.end_date.toLocaleDateString()}
+            </span>{' '}
+            · total {fmtUsd(period.total_allocation_usd)}
+            {period.closed_at && (
+              <>
+                {' · '}Closed {period.closed_at.toLocaleDateString()}; pools stay
+                drawable for 14 days.
+              </>
+            )}
+          </>
+        }
+        actions={<StatusPill status={period.status} />}
+      />
+
+      <div className="space-y-6">
+        {/* Signoff */}
+        <Card>
+          <p className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+            Committee sign-off
           </p>
-        )}
-      </header>
-
-      {/* Approval status */}
-      <section className="mb-6 rounded-md border border-gray-200 p-4 text-sm text-gray-700">
-        <p className="font-medium text-gray-900">Committee sign-off</p>
-        <p className="mt-1 text-xs">
-          Approved: {approvers.map((a) => a.name).join(', ') || '—'}
-        </p>
-        {waitingOn.length > 0 && (
-          <p className="text-xs text-gray-500">
-            Waiting on: {waitingOn.map((a) => a.name).join(', ')}
+          <p className="mt-2 text-sm text-novo-ink">
+            Approved: {approvers.map((a) => a.name).join(', ') || '—'}
           </p>
+          {waitingOn.length > 0 && (
+            <p className="mt-0.5 text-xs text-novo-subtle">
+              Waiting on: {waitingOn.map((a) => a.name).join(', ')}
+            </p>
+          )}
+        </Card>
+
+        {/* Allocation config */}
+        <Card>
+          <p className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+            Allocation split
+          </p>
+          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-5">
+            <ConfigRow label="Tier 3" value={`${config.tier3_pct}%`} />
+            <ConfigRow label="Reserve" value={`${config.reserve_pct}%`} />
+            <ConfigRow
+              label="Manager T1"
+              value={`${config.within_geo.manager_tier1_pct}%`}
+            />
+            <ConfigRow
+              label="Peer T1"
+              value={`${config.within_geo.peer_tier1_pct}%`}
+            />
+            <ConfigRow
+              label="Dept T2"
+              value={`${config.within_geo.dept_tier2_pct}%`}
+            />
+          </dl>
+        </Card>
+
+        {/* Pools */}
+        {pools.length > 0 ? (
+          <section>
+            <h2 className="mb-3 text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+              Pools
+            </h2>
+            <div className="space-y-2">
+              {poolsByType.reserve && (
+                <PoolRow label="Reserve" pool={poolsByType.reserve} period={period} />
+              )}
+              {poolsByType.committee_tier3 && (
+                <PoolRow
+                  label="Tier 3 · Committee"
+                  pool={poolsByType.committee_tier3}
+                  period={period}
+                />
+              )}
+              {poolsByType.peer_tier1.map((p) => (
+                <PoolRow
+                  key={p.id}
+                  label={`Peer Tier 1 · ${p.geo}`}
+                  pool={p}
+                  period={period}
+                />
+              ))}
+              {poolsByType.manager_tier1.map((p) => (
+                <PoolRow
+                  key={p.id}
+                  label={`Manager Tier 1 · ${
+                    ownersById.get(p.owner_id ?? '')?.name ?? p.owner_id
+                  }`}
+                  pool={p}
+                  period={period}
+                />
+              ))}
+              {poolsByType.department_tier2.map((p) => (
+                <PoolRow
+                  key={p.id}
+                  label={`Dept Tier 2 · ${p.department} · ${p.geo}`}
+                  pool={p}
+                  period={period}
+                />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <Card className="text-center">
+            <p className="text-sm text-novo-subtle">
+              No pools allocated yet. Run the allocation below.
+            </p>
+          </Card>
         )}
-      </section>
 
-      {/* Allocation preview / config */}
-      <section className="mb-6 rounded-md border border-gray-200 bg-gray-50 p-4 text-xs text-gray-700">
-        <p className="font-medium text-gray-900">Allocation split</p>
-        <p className="mt-1">
-          Tier 3: {config.tier3_pct}% · Reserve: {config.reserve_pct}% · Within
-          geo — Manager T1: {config.within_geo.manager_tier1_pct}% / Peer T1:{' '}
-          {config.within_geo.peer_tier1_pct}% / Dept T2:{' '}
-          {config.within_geo.dept_tier2_pct}%
-        </p>
-      </section>
-
-      {/* Pools */}
-      {pools.length > 0 ? (
-        <section className="mb-6 space-y-4">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-            Pools
-          </h2>
-          {poolsByType.reserve && (
-            <PoolRow label="Reserve" pool={poolsByType.reserve} period={period} />
+        {/* Actions */}
+        <section className="flex flex-wrap gap-3 border-t border-novo-border pt-6">
+          {canAllocate && (
+            <form action={allocatePoolsAction}>
+              <input type="hidden" name="period_id" value={period.id} />
+              <input type="hidden" name="tier3_pct" value={config.tier3_pct} />
+              <input type="hidden" name="reserve_pct" value={config.reserve_pct} />
+              <input
+                type="hidden"
+                name="manager_tier1_pct"
+                value={config.within_geo.manager_tier1_pct}
+              />
+              <input
+                type="hidden"
+                name="peer_tier1_pct"
+                value={config.within_geo.peer_tier1_pct}
+              />
+              <input
+                type="hidden"
+                name="dept_tier2_pct"
+                value={config.within_geo.dept_tier2_pct}
+              />
+              <Button type="submit">
+                {pools.length > 0 ? 'Re-allocate pools' : 'Allocate pools'}
+              </Button>
+            </form>
           )}
-          {poolsByType.committee_tier3 && (
-            <PoolRow
-              label="Tier 3 · Committee"
-              pool={poolsByType.committee_tier3}
-              period={period}
-            />
+          {canApprove && (
+            <form action={approvePeriodAction}>
+              <input type="hidden" name="period_id" value={period.id} />
+              <Button type="submit" variant="secondary">
+                Approve
+              </Button>
+            </form>
           )}
-          {poolsByType.peer_tier1.map((p) => (
-            <PoolRow
-              key={p.id}
-              label={`Peer Tier 1 · ${p.geo}`}
-              pool={p}
-              period={period}
-            />
-          ))}
-          {poolsByType.manager_tier1.map((p) => (
-            <PoolRow
-              key={p.id}
-              label={`Manager Tier 1 · ${
-                ownersById.get(p.owner_id ?? '')?.name ?? p.owner_id
-              }`}
-              pool={p}
-              period={period}
-            />
-          ))}
-          {poolsByType.department_tier2.map((p) => (
-            <PoolRow
-              key={p.id}
-              label={`Dept Tier 2 · ${p.department} · ${p.geo}`}
-              pool={p}
-              period={period}
-            />
-          ))}
+          {canActivate && (
+            <form action={activatePeriodAction}>
+              <input type="hidden" name="period_id" value={period.id} />
+              <Button type="submit" variant="secondary">
+                Activate
+              </Button>
+            </form>
+          )}
+          {canClose && (
+            <form action={closePeriodAction}>
+              <input type="hidden" name="period_id" value={period.id} />
+              <Button type="submit" variant="secondary">
+                Close
+              </Button>
+            </form>
+          )}
         </section>
-      ) : (
-        <p className="mb-6 text-sm text-gray-500">
-          No pools allocated yet. Run the allocation below.
-        </p>
-      )}
-
-      {/* Actions */}
-      <section className="flex flex-wrap gap-3">
-        {canAllocate && (
-          <form action={allocatePoolsAction}>
-            <input type="hidden" name="period_id" value={period.id} />
-            <input type="hidden" name="tier3_pct" value={config.tier3_pct} />
-            <input type="hidden" name="reserve_pct" value={config.reserve_pct} />
-            <input
-              type="hidden"
-              name="manager_tier1_pct"
-              value={config.within_geo.manager_tier1_pct}
-            />
-            <input
-              type="hidden"
-              name="peer_tier1_pct"
-              value={config.within_geo.peer_tier1_pct}
-            />
-            <input
-              type="hidden"
-              name="dept_tier2_pct"
-              value={config.within_geo.dept_tier2_pct}
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-            >
-              {pools.length > 0 ? 'Re-allocate pools' : 'Allocate pools'}
-            </button>
-          </form>
-        )}
-        {canApprove && (
-          <form action={approvePeriodAction}>
-            <input type="hidden" name="period_id" value={period.id} />
-            <button
-              type="submit"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Approve
-            </button>
-          </form>
-        )}
-        {canActivate && (
-          <form action={activatePeriodAction}>
-            <input type="hidden" name="period_id" value={period.id} />
-            <button
-              type="submit"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Activate
-            </button>
-          </form>
-        )}
-        {canClose && (
-          <form action={closePeriodAction}>
-            <input type="hidden" name="period_id" value={period.id} />
-            <button
-              type="submit"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Close
-            </button>
-          </form>
-        )}
-      </section>
+      </div>
     </main>
+  )
+}
+
+function StatusPill({ status }: { status: string }) {
+  const tone =
+    status === 'active'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+      : status === 'approved'
+        ? 'border-sky-200 bg-sky-50 text-sky-800'
+        : status === 'closed'
+          ? 'border-novo-border bg-novo-hover text-novo-subtle'
+          : 'border-amber-200 bg-amber-50 text-amber-800'
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-2xs font-medium uppercase tracking-wide ${tone}`}
+    >
+      {status}
+    </span>
+  )
+}
+
+function ConfigRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-2xs uppercase tracking-[0.08em] text-novo-muted">
+        {label}
+      </dt>
+      <dd className="text-sm font-medium text-novo-ink tabular">{value}</dd>
+    </div>
   )
 }
 
@@ -230,24 +270,31 @@ function PoolRow({
   period: Parameters<typeof computePacing>[0]['period']
 }) {
   const pacing = computePacing({ pool, period })
+  const pct =
+    pool.allocated_amount_usd > 0
+      ? Math.min(
+          100,
+          Math.round((pool.spent_amount_usd / pool.allocated_amount_usd) * 100)
+        )
+      : 0
+  const tone =
+    pacing === 'running_hot'
+      ? 'border-amber-200 bg-amber-50 text-amber-800'
+      : pacing === 'under_utilized'
+        ? 'border-novo-border bg-novo-hover text-novo-subtle'
+        : 'border-emerald-200 bg-emerald-50 text-emerald-800'
   return (
-    <div className="flex items-baseline justify-between rounded-md border border-gray-200 p-3 text-sm">
-      <div>
-        <p className="font-medium text-gray-900">{label}</p>
-        <p className="text-xs text-gray-500">
-          {fmtUsd(pool.remaining_amount_usd)} remaining of{' '}
-          {fmtUsd(pool.allocated_amount_usd)}
+    <div className="flex items-center justify-between rounded-lg border border-novo-border bg-novo-elevated px-4 py-3 shadow-card">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-novo-ink">{label}</p>
+        <p className="mt-0.5 text-xs text-novo-subtle tabular">
+          {fmtUsd(pool.remaining_amount_usd)} of{' '}
+          {fmtUsd(pool.allocated_amount_usd)} remaining ·{' '}
+          <span className="text-novo-muted">{pct}% spent</span>
         </p>
       </div>
       <span
-        className={
-          'rounded-full px-2 py-0.5 text-xs ' +
-          (pacing === 'running_hot'
-            ? 'bg-amber-100 text-amber-800'
-            : pacing === 'under_utilized'
-            ? 'bg-gray-100 text-gray-600'
-            : 'bg-green-100 text-green-800')
-        }
+        className={`ml-4 inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-2xs font-medium ${tone}`}
       >
         {pacing.replace('_', ' ')}
       </span>
