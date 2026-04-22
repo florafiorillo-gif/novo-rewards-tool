@@ -57,9 +57,21 @@ async function resolveEmployeeByEmail(
   }
 }
 
+// Dev-only mock signin. Gated behind USE_MOCK_DATA + non-prod so the
+// provider cannot register in a Vercel prod deploy even if the flag leaks.
+// When on, Google is skipped entirely — the signin page shows only the
+// email form and no OAuth redirect path exists.
+export const DEV_SIGNIN_ENABLED =
+  process.env.USE_MOCK_DATA === 'true' &&
+  process.env.NODE_ENV !== 'production'
+
 const providers = []
 
-if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
+if (
+  !DEV_SIGNIN_ENABLED &&
+  process.env.AUTH_GOOGLE_ID &&
+  process.env.AUTH_GOOGLE_SECRET
+) {
   providers.push(
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -67,12 +79,6 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
     })
   )
 }
-
-// Dev-only mock signin. Gated behind ALLOW_DEV_SIGNIN + non-prod so the
-// provider cannot register in a Vercel prod deploy even if the flag leaks.
-export const DEV_SIGNIN_ENABLED =
-  process.env.ALLOW_DEV_SIGNIN === 'true' &&
-  process.env.NODE_ENV !== 'production'
 
 if (DEV_SIGNIN_ENABLED) {
   providers.push(
