@@ -56,7 +56,13 @@ export default async function SubmittedPage({
         <p className="mt-6 text-sm text-gray-500">This nomination was cancelled.</p>
       )}
 
-      <div className="mt-8 flex items-center gap-3">
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800"
+        >
+          Back to dashboard
+        </Link>
         <Link
           href="/nominations/new"
           className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
