@@ -2,8 +2,20 @@ import type { NominationRecord } from './types'
 
 // In-memory backing store used when USE_MOCK_DATA=true. Lets local dev (and the unit
 // tests) exercise the nomination flow without Postgres. State resets on process restart.
+//
+// Pinned to globalThis so the Map survives across Next.js's server-component vs.
+// server-action module layers (action-browser vs. default app layer) — otherwise
+// a nomination inserted by the action handler isn't visible to the page that renders
+// the confirmation, and /nominations/submitted bounces back to /nominations/new.
 
-const store = new Map<string, NominationRecord>()
+const globalForNominations = globalThis as unknown as {
+  __novo_nomination_store?: Map<string, NominationRecord>
+}
+const store: Map<string, NominationRecord> =
+  globalForNominations.__novo_nomination_store ?? new Map()
+if (process.env.NODE_ENV !== 'production') {
+  globalForNominations.__novo_nomination_store = store
+}
 
 export function resetMockNominations(): void {
   store.clear()

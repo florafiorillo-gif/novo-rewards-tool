@@ -19,8 +19,18 @@ export const useMock = () => process.env.USE_MOCK_DATA === 'true'
 export const UNDO_WINDOW_MS = 10 * 60 * 1000
 
 // ─── Mock action store ───────────────────────────────────────────────────────
+// Pinned to globalThis so the Map is shared across Next.js's server-action
+// and server-component webpack layers; see modules/nominations/mock-store.ts
+// for the detailed rationale.
 
-const mockActions = new Map<string, ApprovalActionRecord>()
+const globalForApprovalActions = globalThis as unknown as {
+  __novo_approval_actions?: Map<string, ApprovalActionRecord>
+}
+const mockActions: Map<string, ApprovalActionRecord> =
+  globalForApprovalActions.__novo_approval_actions ?? new Map()
+if (process.env.NODE_ENV !== 'production') {
+  globalForApprovalActions.__novo_approval_actions = mockActions
+}
 
 export function resetMockApprovalActions(): void {
   mockActions.clear()

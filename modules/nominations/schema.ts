@@ -19,7 +19,19 @@ export const NominationInputSchema = z.object({
     .min(30, 'A little more detail helps — at least 30 characters.')
     .max(500, 'Keep it to 500 characters or fewer.'),
   evidence_links: z
-    .array(z.string().url('Each evidence link needs to be a valid URL.'))
+    .array(
+      z
+        .string()
+        .url('Each evidence link needs to be a valid URL.')
+        // Reject javascript:, data:, file:, vbscript: and similar schemes —
+        // Zod's .url() accepts them because WHATWG URL does, and we render
+        // these as <a href> in ApprovalCard / CommitteeCard (reviewer-side
+        // stored XSS vector otherwise).
+        .refine(
+          (v) => /^https?:\/\//i.test(v),
+          'Evidence links must start with http:// or https://.'
+        )
+    )
     .max(3, 'Up to three evidence links.')
     .optional()
     .default([]),

@@ -9,7 +9,18 @@ export interface ScopeNoteTemplateRecord {
 }
 
 const useMock = () => process.env.USE_MOCK_DATA === 'true'
-const mockStore = new Map<string, ScopeNoteTemplateRecord>()
+
+// Pinned to globalThis so the Map is shared across Next.js's server-action
+// and server-component webpack layers; see modules/nominations/mock-store.ts
+// for the detailed rationale.
+const globalForScopeNotes = globalThis as unknown as {
+  __novo_scope_notes_store?: Map<string, ScopeNoteTemplateRecord>
+}
+const mockStore: Map<string, ScopeNoteTemplateRecord> =
+  globalForScopeNotes.__novo_scope_notes_store ?? new Map()
+if (process.env.NODE_ENV !== 'production') {
+  globalForScopeNotes.__novo_scope_notes_store = mockStore
+}
 
 export function resetMockScopeNotes(): void {
   mockStore.clear()

@@ -1,6 +1,16 @@
 import type { RewardRecord } from './types'
 
-const store = new Map<string, RewardRecord>()
+// Pinned to globalThis so the Map is shared across Next.js's server-action
+// and server-component webpack layers; see modules/nominations/mock-store.ts
+// for the detailed rationale.
+const globalForRewards = globalThis as unknown as {
+  __novo_rewards_store?: Map<string, RewardRecord>
+}
+const store: Map<string, RewardRecord> =
+  globalForRewards.__novo_rewards_store ?? new Map()
+if (process.env.NODE_ENV !== 'production') {
+  globalForRewards.__novo_rewards_store = store
+}
 
 export function resetMockRewards(): void {
   store.clear()

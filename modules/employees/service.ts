@@ -7,7 +7,20 @@ const useMock = () => process.env.USE_MOCK_DATA === 'true'
 // Mock-mode only: recognition_preference changes from the settings UI
 // accumulate here rather than mutating MOCK_EMPLOYEES so the fixture
 // stays stable across tests. Applied in every Employee-returning reader.
-const mockRecognitionOverrides = new Map<string, RecognitionPreference>()
+//
+// Pinned to globalThis so the Map is shared across Next.js's server-action
+// and server-component webpack layers — otherwise a preference set by the
+// settings action isn't visible to the dashboard/nomination pages that
+// render using the mock override. See modules/nominations/mock-store.ts.
+const globalForRecognitionOverrides = globalThis as unknown as {
+  __novo_recognition_overrides?: Map<string, RecognitionPreference>
+}
+const mockRecognitionOverrides: Map<string, RecognitionPreference> =
+  globalForRecognitionOverrides.__novo_recognition_overrides ?? new Map()
+if (process.env.NODE_ENV !== 'production') {
+  globalForRecognitionOverrides.__novo_recognition_overrides =
+    mockRecognitionOverrides
+}
 
 export function resetMockRecognitionOverrides(): void {
   mockRecognitionOverrides.clear()

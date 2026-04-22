@@ -1,6 +1,16 @@
 import type { CommitteeDecisionRecord } from './types'
 
-const store = new Map<string, CommitteeDecisionRecord>()
+// Pinned to globalThis so the Map is shared across Next.js's server-action
+// and server-component webpack layers; see modules/nominations/mock-store.ts
+// for the detailed rationale.
+const globalForCommittee = globalThis as unknown as {
+  __novo_committee_store?: Map<string, CommitteeDecisionRecord>
+}
+const store: Map<string, CommitteeDecisionRecord> =
+  globalForCommittee.__novo_committee_store ?? new Map()
+if (process.env.NODE_ENV !== 'production') {
+  globalForCommittee.__novo_committee_store = store
+}
 
 export function resetMockCommitteeDecisions(): void {
   store.clear()

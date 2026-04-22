@@ -1,6 +1,16 @@
 import type { CatalogItemRecord } from './types'
 
-const store = new Map<string, CatalogItemRecord>()
+// Pinned to globalThis so the Map is shared across Next.js's server-action
+// and server-component webpack layers; see modules/nominations/mock-store.ts
+// for the detailed rationale.
+const globalForCatalog = globalThis as unknown as {
+  __novo_catalog_store?: Map<string, CatalogItemRecord>
+}
+const store: Map<string, CatalogItemRecord> =
+  globalForCatalog.__novo_catalog_store ?? new Map()
+if (process.env.NODE_ENV !== 'production') {
+  globalForCatalog.__novo_catalog_store = store
+}
 
 export function resetMockCatalog(): void {
   store.clear()

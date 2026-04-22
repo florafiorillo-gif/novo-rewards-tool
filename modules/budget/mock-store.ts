@@ -6,10 +6,28 @@ import type {
 
 // In-memory Maps for USE_MOCK_DATA=true. State resets on server restart,
 // which is fine for local dev; tests reset explicitly via the reset helpers.
+//
+// Pinned to globalThis so a single Map instance is shared across Next.js's
+// server-action (`action-browser`) and server-component (default `app`)
+// webpack layers — otherwise writes from actions aren't visible to reads
+// from pages. Same pattern as lib/db.ts for the Prisma client.
 
-const periods = new Map<string, BudgetPeriodRecord>()
-const pools = new Map<string, BudgetPoolRecord>()
-const exceptions = new Map<string, BudgetExceptionRecord>()
+const globalForBudget = globalThis as unknown as {
+  __novo_budget_periods?: Map<string, BudgetPeriodRecord>
+  __novo_budget_pools?: Map<string, BudgetPoolRecord>
+  __novo_budget_exceptions?: Map<string, BudgetExceptionRecord>
+}
+const periods: Map<string, BudgetPeriodRecord> =
+  globalForBudget.__novo_budget_periods ?? new Map()
+const pools: Map<string, BudgetPoolRecord> =
+  globalForBudget.__novo_budget_pools ?? new Map()
+const exceptions: Map<string, BudgetExceptionRecord> =
+  globalForBudget.__novo_budget_exceptions ?? new Map()
+if (process.env.NODE_ENV !== 'production') {
+  globalForBudget.__novo_budget_periods = periods
+  globalForBudget.__novo_budget_pools = pools
+  globalForBudget.__novo_budget_exceptions = exceptions
+}
 
 export function resetMockBudget(): void {
   periods.clear()

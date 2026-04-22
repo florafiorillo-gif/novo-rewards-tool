@@ -102,8 +102,14 @@ export async function submitNominationAction(
 
   // Peer / skip-level path — notify the nominee's manager over Slack if the
   // route has an approver. People-team-queue fallback has no DM recipient.
+  // Fire-and-forget: if the Slack DM path throws post-redirect, the rejection
+  // would escape into Node's unhandled-rejection handler and (on Node 20+ with
+  // default settings) crash the dev server. Catching here keeps the submit
+  // path bulletproof against Slack outages or misconfigured tokens.
   if (result.nomination.current_approver_id) {
-    void sendApproverDM(result.nomination)
+    sendApproverDM(result.nomination).catch((err) => {
+      console.error('[nominations] sendApproverDM failed (non-blocking):', err)
+    })
   }
 
   redirect(`/nominations/submitted?id=${result.nomination.id}`)

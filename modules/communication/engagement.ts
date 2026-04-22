@@ -26,9 +26,22 @@ export interface CommentRecord {
 }
 
 // ─── Mock stores ─────────────────────────────────────────────────────────────
+// Pinned to globalThis so the Maps are shared across Next.js's server-action
+// and server-component webpack layers; see modules/nominations/mock-store.ts
+// for the detailed rationale.
 
-const mockReactions = new Map<string, ReactionRecord>()
-const mockComments = new Map<string, CommentRecord>()
+const globalForEngagement = globalThis as unknown as {
+  __novo_engagement_reactions?: Map<string, ReactionRecord>
+  __novo_engagement_comments?: Map<string, CommentRecord>
+}
+const mockReactions: Map<string, ReactionRecord> =
+  globalForEngagement.__novo_engagement_reactions ?? new Map()
+const mockComments: Map<string, CommentRecord> =
+  globalForEngagement.__novo_engagement_comments ?? new Map()
+if (process.env.NODE_ENV !== 'production') {
+  globalForEngagement.__novo_engagement_reactions = mockReactions
+  globalForEngagement.__novo_engagement_comments = mockComments
+}
 
 function reactionKey(r: Pick<ReactionRecord, 'nomination_id' | 'user_id' | 'reaction_type'>) {
   return `${r.nomination_id}|${r.user_id}|${r.reaction_type}`
