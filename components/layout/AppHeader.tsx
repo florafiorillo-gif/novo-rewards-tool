@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { auth } from '@/auth'
 import { resolveRole } from '@/modules/roles/resolver'
 import { AppNav } from './AppNav'
+import { UserMenu } from './UserMenu'
 import { ViewSwitcher } from './ViewSwitcher'
 
 // Global header rendered once in app/layout.tsx. Wordmark + primary nav
@@ -38,7 +39,7 @@ export async function AppHeader() {
                 <span aria-hidden>+</span>
                 Recognize
               </Link>
-              <UserIndicator
+              <UserMenu
                 name={session.user.name ?? session.user.email ?? 'Signed in'}
                 email={session.user.email ?? null}
                 roleTitle={session.user.roleTitle ?? null}
@@ -48,44 +49,6 @@ export async function AppHeader() {
         </div>
       </div>
     </header>
-  )
-}
-
-function UserIndicator({
-  name,
-  email,
-  roleTitle,
-}: {
-  name: string
-  email: string | null
-  roleTitle: string | null
-}) {
-  const initials = name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('')
-
-  return (
-    <Link
-      href="/settings"
-      className="group flex items-center gap-2 rounded-md px-1.5 py-1 text-left text-xs hover:bg-novo-hover"
-      title={email ?? undefined}
-    >
-      <span
-        aria-hidden
-        className="flex h-7 w-7 items-center justify-center rounded-full bg-novo-ink text-2xs font-semibold text-novo-paper"
-      >
-        {initials || '·'}
-      </span>
-      <span className="hidden leading-tight sm:block">
-        <span className="block font-medium text-novo-ink">{name}</span>
-        {roleTitle && (
-          <span className="block text-2xs text-novo-muted">{roleTitle}</span>
-        )}
-      </span>
-    </Link>
   )
 }
 
