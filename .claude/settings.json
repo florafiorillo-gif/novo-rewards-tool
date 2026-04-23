@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(lsof -ti:3000)"
+    ],
+    "additionalDirectories": [
+      "/Users/florafiorillo/novo-rewards-tool/app/approvals/[id]"
+    ]
+  }
+}

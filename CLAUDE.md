@@ -1,49 +1,18 @@
 # CLAUDE.md
 
+General behavioral guidelines live in @.claude/WRITING_GUIDELINES.md — read those first (think-before-coding, simplicity, surgical changes, goal-driven execution, ticket-ID handling, and the non-technical-user communication rule). This file layers **project-specific** conventions on top; it does not repeat what's already in the guidelines.
+
 Working notes for Claude Code agents operating on this repo. These are conventions that have been locked in through actual work on the codebase, not a template. If something here conflicts with what you see in the code, the code wins — update this file.
 
 This repo is the **Novo Rewards** tool: an internal employee-recognition + reward-fulfillment app. Next.js 14 App Router, TypeScript, Tailwind, Prisma, NextAuth v5, optional Slack. Currently runs in dev with `USE_MOCK_DATA=true` by default — the service layer has a mock + Prisma path for every reader and writer.
 
 ---
 
-## Behavioral rules
+## Project-specific behavioral rules
 
-Bias toward caution over speed. For trivial tasks, use judgment.
+These extend (don't replace) @.claude/WRITING_GUIDELINES.md.
 
-### 1. Think before coding
-
-Don't assume. Don't hide confusion. Surface tradeoffs.
-
-- State assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them — don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
-
-### 2. Simplicity first
-
-Minimum code that solves the problem. Nothing speculative.
-
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-### 3. Surgical changes
-
-Touch only what you must. Clean up only your own mess.
-
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it — don't delete it.
-- Remove imports/variables/functions that *your* changes made unused; leave pre-existing dead code unless asked.
-
-Every changed line should trace directly to the user's request.
-
-### 4. Goal-driven execution
+### 1. Goal-driven execution in this repo
 
 Define success criteria. Verify. Then declare done.
 
@@ -54,7 +23,7 @@ Transform tasks into verifiable goals:
 
 No test suite lives in this repo right now ([see History](#history) below). Verification falls to typecheck + targeted curl/tsx smokes against the running dev server.
 
-### 5. Scope boundaries the user has set
+### 2. Scope boundaries the user has set
 
 These have come up multiple times. Respect them by default:
 
