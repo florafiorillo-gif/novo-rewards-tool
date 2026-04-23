@@ -1,9 +1,7 @@
 import Link from 'next/link'
 import { auth } from '@/auth'
-import {
-  isCommitteeMember,
-  isPeopleTeamRep,
-} from '@/modules/roles/service'
+import { resolveRole } from '@/modules/roles/resolver'
+import { ViewSwitcher } from './ViewSwitcher'
 
 // Global header rendered once in app/layout.tsx. Wordmark + primary nav +
 // user indicator. Nav items are filtered by role so the committee/people-ops
@@ -13,12 +11,11 @@ export async function AppHeader() {
   const session = await auth()
   const employeeId = session?.user?.employeeId ?? null
 
-  const [isCommittee, isPeopleOps] = employeeId
-    ? await Promise.all([
-        isCommitteeMember(employeeId),
-        isPeopleTeamRep(employeeId),
-      ])
-    : [false, false]
+  const role = employeeId
+    ? await resolveRole(employeeId)
+    : null
+  const isCommittee = role?.is_committee ?? false
+  const isPeopleOps = role?.is_people_team ?? false
 
   return (
     <header className="sticky top-0 z-40 border-b border-novo-border bg-novo-surface/90 backdrop-blur">
@@ -49,6 +46,7 @@ export async function AppHeader() {
         <div className="ml-auto flex items-center gap-3">
           {employeeId && session?.user ? (
             <>
+              {role && <ViewSwitcher role={role} />}
               <Link
                 href="/nominations/new"
                 className="inline-flex h-8 items-center gap-1.5 rounded-md bg-novo-ink px-3 text-xs font-medium text-novo-paper shadow-card hover:bg-novo-ink/90"
