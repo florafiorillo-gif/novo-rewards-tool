@@ -1,21 +1,18 @@
 import Link from 'next/link'
 import { auth } from '@/auth'
 import { resolveRole } from '@/modules/roles/resolver'
+import { AppNav } from './AppNav'
 import { ViewSwitcher } from './ViewSwitcher'
 
-// Global header rendered once in app/layout.tsx. Wordmark + primary nav +
-// user indicator. Nav items are filtered by role so the committee/people-ops
-// surfaces don't leak into a regular employee's nav.
-
+// Global header rendered once in app/layout.tsx. Wordmark + primary nav
+// + user indicator. The nav itself lives in AppNav (client) so it can
+// react to the demo view-switcher's ?view= query; the server-side role
+// resolution happens here and is handed down as a prop.
 export async function AppHeader() {
   const session = await auth()
   const employeeId = session?.user?.employeeId ?? null
 
-  const role = employeeId
-    ? await resolveRole(employeeId)
-    : null
-  const isCommittee = role?.is_committee ?? false
-  const isPeopleOps = role?.is_people_team ?? false
+  const role = employeeId ? await resolveRole(employeeId) : null
 
   return (
     <header className="sticky top-0 z-40 border-b border-novo-border bg-novo-surface/90 backdrop-blur">
@@ -28,20 +25,7 @@ export async function AppHeader() {
           <span className="hidden sm:inline">Novo Rewards</span>
         </Link>
 
-        {employeeId && (
-          <nav
-            aria-label="Primary"
-            className="hidden flex-1 items-center gap-1 text-sm md:flex"
-          >
-            <NavLink href="/dashboard">Home</NavLink>
-            <NavLink href="/review">Review</NavLink>
-            <NavLink href="/dashboard/me">Your recognitions</NavLink>
-            {isCommittee && (
-              <NavLink href="/leadership/dashboard">Leadership</NavLink>
-            )}
-            {isPeopleOps && <NavLink href="/people-ops">People Ops</NavLink>}
-          </nav>
-        )}
+        {role && <AppNav role={role} />}
 
         <div className="ml-auto flex items-center gap-3">
           {employeeId && session?.user ? (
@@ -64,17 +48,6 @@ export async function AppHeader() {
         </div>
       </div>
     </header>
-  )
-}
-
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="rounded-md px-2.5 py-1.5 text-sm text-novo-subtle transition hover:bg-novo-hover hover:text-novo-ink"
-    >
-      {children}
-    </Link>
   )
 }
 

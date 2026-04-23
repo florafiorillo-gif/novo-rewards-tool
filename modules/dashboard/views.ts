@@ -95,3 +95,66 @@ export function parseViewParam(raw: unknown): DashboardView | null {
 export function isSimulating(simulated: DashboardView | null): boolean {
   return simulated !== null
 }
+
+// ─── Role-aware navigation ──────────────────────────────────────────
+// Shared items bracket the nav: "Home" at the start, "My recognitions"
+// at the end, with the viewer's role-specific items sandwiched in
+// between. This matches the tester brief's spelled-out per-role nav
+// order (Manager: Home, Review, My team, My recognitions).
+//
+// Per-view additions render in a fixed outer order (manager →
+// people_ops → committee) so a multi-role viewer sees a stable
+// left-to-right sequence regardless of Set iteration.
+
+export interface NavLinkItem {
+  href: string
+  label: string
+}
+
+export const NAV_ITEM_HOME: NavLinkItem = { href: '/dashboard', label: 'Home' }
+export const NAV_ITEM_MY_RECOGNITIONS: NavLinkItem = {
+  href: '/dashboard/me',
+  label: 'My recognitions',
+}
+
+export const NAV_ITEMS_PER_VIEW: Record<DashboardView, readonly NavLinkItem[]> = {
+  employee: [], // shared-only; included for completeness
+  manager: [
+    { href: '/review', label: 'Review' },
+    { href: '/dashboard/team', label: 'My team' },
+  ],
+  people_ops: [
+    { href: '/people-ops/dashboard', label: 'Program' },
+    { href: '/people-ops', label: 'Admin' },
+  ],
+  committee: [{ href: '/leadership/dashboard', label: 'Leadership' }],
+}
+
+const VIEW_ORDER: readonly DashboardView[] = [
+  'manager',
+  'people_ops',
+  'committee',
+  'employee',
+] as const
+
+// Build the flattened nav list for the viewer's currently-active
+// views. Home leads; My recognitions trails; role-specific items
+// sit in the middle. Dedupes on href.
+export function navItemsForActiveViews(
+  views: Set<DashboardView>
+): NavLinkItem[] {
+  const seen = new Set<string>()
+  const items: NavLinkItem[] = []
+  const push = (item: NavLinkItem) => {
+    if (seen.has(item.href)) return
+    seen.add(item.href)
+    items.push(item)
+  }
+  push(NAV_ITEM_HOME)
+  for (const v of VIEW_ORDER) {
+    if (!views.has(v)) continue
+    for (const item of NAV_ITEMS_PER_VIEW[v]) push(item)
+  }
+  push(NAV_ITEM_MY_RECOGNITIONS)
+  return items
+}
