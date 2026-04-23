@@ -10,7 +10,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_020',
     name: 'Michael Brown',
-    email: 'michael.brown@novo.co',
+    email: 'lion@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
     role_title: 'Head of Product',
@@ -26,7 +26,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_021',
     name: 'Lauren Park',
-    email: 'lauren.park@novo.co',
+    email: 'panda@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
     role_title: 'Head of Marketing',
@@ -42,7 +42,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_022',
     name: 'David Kim',
-    email: 'david.kim@novo.co',
+    email: 'eagle@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
     role_title: 'VP Sales',
@@ -58,7 +58,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_023',
     name: 'Elena Vasquez',
-    email: 'elena.vasquez@novo.co',
+    email: 'hawk@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
     role_title: 'Director of Design',
@@ -74,7 +74,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_024',
     name: 'Thomas Wright',
-    email: 'thomas.wright@novo.co',
+    email: 'whale@novo.co',
     geo: 'US',
     manager_id: 'emp_005',
     role_title: 'Engineering Manager',
@@ -90,7 +90,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_025',
     name: 'Nina Rodriguez',
-    email: 'nina.rodriguez@novo.co',
+    email: 'dolphin@novo.co',
     geo: 'US',
     manager_id: 'emp_024',
     role_title: 'Senior Software Engineer',
@@ -106,7 +106,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_026',
     name: 'Marcus Johnson',
-    email: 'marcus.johnson@novo.co',
+    email: 'otter@novo.co',
     geo: 'US',
     manager_id: 'emp_020',
     role_title: 'Product Manager',
@@ -122,7 +122,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_027',
     name: 'Rachel Lee',
-    email: 'rachel.lee@novo.co',
+    email: 'seal@novo.co',
     geo: 'US',
     manager_id: 'emp_021',
     role_title: 'Marketing Manager',
@@ -138,7 +138,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_028',
     name: 'Chris Patel',
-    email: 'chris.patel@novo.co',
+    email: 'penguin@novo.co',
     geo: 'US',
     manager_id: 'emp_022',
     role_title: 'Account Executive',
@@ -154,7 +154,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_029',
     name: 'Tara Singh',
-    email: 'tara.singh@novo.co',
+    email: 'swan@novo.co',
     geo: 'US',
     manager_id: 'emp_023',
     role_title: 'Senior Product Designer',
@@ -170,7 +170,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_030',
     name: 'Ben Wilson',
-    email: 'ben.wilson@novo.co',
+    email: 'moose@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
     role_title: 'Head of Customer Success',
@@ -186,7 +186,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_031',
     name: 'Sophia Martinez',
-    email: 'sophia.martinez@novo.co',
+    email: 'elk@novo.co',
     geo: 'US',
     manager_id: 'emp_020',
     role_title: 'Data Analyst',
@@ -204,7 +204,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_040',
     name: 'Rohan Gupta',
-    email: 'rohan.gupta@novo.co',
+    email: 'horse@novo.co',
     geo: 'India',
     manager_id: 'emp_008',
     role_title: 'Engineering Manager',
@@ -220,7 +220,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_041',
     name: 'Ananya Singh',
-    email: 'ananya.singh@novo.co',
+    email: 'pony@novo.co',
     geo: 'India',
     manager_id: 'emp_040',
     role_title: 'Software Engineer',
@@ -236,7 +236,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_042',
     name: 'Vikram Rao',
-    email: 'vikram.rao@novo.co',
+    email: 'goat@novo.co',
     geo: 'India',
     manager_id: 'emp_040',
     role_title: 'Software Engineer',
@@ -252,7 +252,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_043',
     name: 'Deepak Kumar',
-    email: 'deepak.kumar@novo.co',
+    email: 'lamb@novo.co',
     geo: 'India',
     manager_id: 'emp_008',
     role_title: 'Software Engineer',
@@ -268,7 +268,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_044',
     name: 'Meera Iyer',
-    email: 'meera.iyer@novo.co',
+    email: 'cow@novo.co',
     geo: 'India',
     manager_id: 'emp_008',
     role_title: 'Senior Software Engineer',
@@ -284,7 +284,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_045',
     name: 'Kavya Nair',
-    email: 'kavya.nair@novo.co',
+    email: 'duck@novo.co',
     geo: 'India',
     manager_id: 'emp_008',
     role_title: 'QA Engineer',
@@ -300,7 +300,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_046',
     name: 'Suresh Menon',
-    email: 'suresh.menon@novo.co',
+    email: 'frog@novo.co',
     geo: 'India',
     manager_id: 'emp_001',
     role_title: 'Operations Manager',
@@ -316,7 +316,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_047',
     name: 'Anjali Desai',
-    email: 'anjali.desai@novo.co',
+    email: 'turtle@novo.co',
     geo: 'India',
     manager_id: 'emp_046',
     role_title: 'Operations Analyst',
@@ -332,7 +332,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_048',
     name: 'Neha Gupta',
-    email: 'neha.gupta@novo.co',
+    email: 'koala@novo.co',
     geo: 'India',
     manager_id: 'emp_001',
     role_title: 'Head of Customer Support',
@@ -348,7 +348,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_049',
     name: 'Varun Malhotra',
-    email: 'varun.malhotra@novo.co',
+    email: 'hedgehog@novo.co',
     geo: 'India',
     manager_id: 'emp_048',
     role_title: 'Support Specialist',
@@ -366,7 +366,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_050',
     name: 'Diego Ramirez',
-    email: 'diego.ramirez@novo.co',
+    email: 'squirrel@novo.co',
     geo: 'Colombia',
     manager_id: 'emp_010',
     role_title: 'Operations Analyst',
@@ -382,7 +382,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_051',
     name: 'Camila Silva',
-    email: 'camila.silva@novo.co',
+    email: 'raven@novo.co',
     geo: 'Colombia',
     manager_id: 'emp_010',
     role_title: 'Account Manager',
@@ -398,7 +398,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_052',
     name: 'Isabella Perez',
-    email: 'isabella.perez@novo.co',
+    email: 'sparrow@novo.co',
     geo: 'Colombia',
     manager_id: 'emp_010',
     role_title: 'Support Specialist',

@@ -89,7 +89,7 @@ if (DEV_SIGNIN_ENABLED) {
         email: {
           label: 'Novo email',
           type: 'email',
-          placeholder: 'flora@novo.co',
+          placeholder: 'cat@novo.co',
         },
       },
       async authorize(creds) {

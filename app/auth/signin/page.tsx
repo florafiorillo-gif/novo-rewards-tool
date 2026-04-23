@@ -82,15 +82,15 @@ function DevSignInForm() {
       <p className="mb-5 text-xs text-novo-subtle">
         Try{' '}
         <code className="rounded border border-novo-border bg-novo-hover px-1 py-0.5 text-2xs text-novo-ink">
-          flora@novo.co
+          cat@novo.co
         </code>
         ,{' '}
         <code className="rounded border border-novo-border bg-novo-hover px-1 py-0.5 text-2xs text-novo-ink">
-          rares@novo.co
+          dog@novo.co
         </code>
         , or{' '}
         <code className="rounded border border-novo-border bg-novo-hover px-1 py-0.5 text-2xs text-novo-ink">
-          sakshi@novo.co
+          owl@novo.co
         </code>
         .
       </p>
@@ -114,7 +114,7 @@ function DevSignInForm() {
             name="email"
             type="email"
             required
-            placeholder="flora@novo.co"
+            placeholder="cat@novo.co"
             className="mt-1 block h-10 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm text-novo-ink placeholder:text-novo-muted focus:border-novo-ink"
           />
         </div>

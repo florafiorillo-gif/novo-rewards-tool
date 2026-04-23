@@ -26,10 +26,10 @@ import { countDeniedInRange } from '@/modules/approvals/queries'
 import { getDisplayablePeriod } from '@/modules/budget/periods'
 
 const TARGETS = [
-  'flora@novo.co', // committee + people_team
-  'sarah.chen@novo.co', // manager + dept head
-  'rares@novo.co', // committee + (CEO)
-  'alex.rivera@novo.co', // employee-only
+  'cat@novo.co', // committee + people_team
+  'fox@novo.co', // manager + dept head
+  'dog@novo.co', // committee + (CEO)
+  'deer@novo.co', // employee-only
 ]
 
 async function main() {
