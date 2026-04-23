@@ -7,7 +7,13 @@ import { PageHeader } from '@/components/ui/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
-export default async function NewNominationPage() {
+export default async function NewNominationPage({
+  searchParams,
+}: {
+  // ?nominee=emp_xxx deep-links from the /dashboard/team "Recognize"
+  // buttons so the form opens with that teammate pre-selected.
+  searchParams?: { nominee?: string }
+}) {
   const session = await auth()
   if (!session?.user?.employeeId) redirect('/auth/signin')
   const currentEmployeeId = session.user.employeeId
@@ -21,6 +27,9 @@ export default async function NewNominationPage() {
       role_title: e.role_title,
       manager_id: e.manager_id,
     }))
+
+  const initialNomineeId =
+    typeof searchParams?.nominee === 'string' ? searchParams.nominee : undefined
 
   return (
     <main className="mx-auto max-w-content px-6 py-10 lg:py-16">
@@ -40,6 +49,7 @@ export default async function NewNominationPage() {
           description: shortDescription(v.description),
         }))}
         currentEmployeeId={currentEmployeeId}
+        initialNomineeId={initialNomineeId}
       />
     </main>
   )

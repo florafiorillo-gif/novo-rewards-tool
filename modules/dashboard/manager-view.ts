@@ -57,6 +57,11 @@ export interface TeamRhythmEntry {
   // window. Null means nothing in the window — the UI flags it as "not
   // recognized yet in the last 30 days" to cue the manager.
   last_recognized_at: Date | null
+  // Value id attached to the most-recent recognition, so the /dashboard/team
+  // page can render a value tag alongside the date. Null when there's no
+  // recognition in the window; the sidebar TeamRhythmCard ignores this
+  // field.
+  last_value_id: string | null
   count_in_window: number
 }
 
@@ -113,16 +118,22 @@ export async function getTeamRhythm(
   const reportIds = reports.map((r) => r.id)
   const recognitions = await listRecognitionsForNominees(reportIds, windowStart)
 
-  const byReport = new Map<string, { last: Date | null; count: number }>()
+  const byReport = new Map<
+    string,
+    { last: Date | null; last_value_id: string | null; count: number }
+  >()
   for (const r of reports) {
-    byReport.set(r.id, { last: null, count: 0 })
+    byReport.set(r.id, { last: null, last_value_id: null, count: 0 })
   }
   for (const nom of recognitions) {
     const at = nom.approved_at ?? nom.submitted_at
     const slot = byReport.get(nom.nominee_id)
     if (!slot) continue
     slot.count += 1
-    if (!slot.last || at > slot.last) slot.last = at
+    if (!slot.last || at > slot.last) {
+      slot.last = at
+      slot.last_value_id = nom.value_id
+    }
   }
 
   const entries: TeamRhythmEntry[] = reports
@@ -131,6 +142,7 @@ export async function getTeamRhythm(
       return {
         report,
         last_recognized_at: slot.last,
+        last_value_id: slot.last_value_id,
         count_in_window: slot.count,
       }
     })

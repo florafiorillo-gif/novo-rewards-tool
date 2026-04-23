@@ -31,6 +31,11 @@ interface Props {
   employees: EmployeeOption[]
   values: ValueOption[]
   currentEmployeeId: string
+  // Pre-select a nominee when the form is opened via a deep link such
+  // as /nominations/new?nominee=emp_042. Silently ignored if the id
+  // isn't in the employees list (e.g. the person became inactive
+  // between the deep link being rendered and the form being opened).
+  initialNomineeId?: string
 }
 
 const REFLECTION_OPTIONS: { value: string; label: string }[] = [
@@ -51,12 +56,21 @@ const DEFAULT_BEHAVIOR_PLACEHOLDER = 'What did they do? Be specific.'
 const MIN_LEN = 30
 const MAX_LEN = 500
 
-export function NominationForm({ employees, values, currentEmployeeId }: Props) {
+export function NominationForm({
+  employees,
+  values,
+  currentEmployeeId,
+  initialNomineeId,
+}: Props) {
   const [state, formAction] = useFormState(
     submitNominationAction,
     INITIAL_STATE
   )
-  const [selectedNomineeId, setSelectedNomineeId] = useState('')
+  const [selectedNomineeId, setSelectedNomineeId] = useState(
+    initialNomineeId && employees.some((e) => e.id === initialNomineeId)
+      ? initialNomineeId
+      : ''
+  )
   const [selectedValueId, setSelectedValueId] = useState('')
   const [behavior, setBehavior] = useState('')
   const [outcome, setOutcome] = useState('')
