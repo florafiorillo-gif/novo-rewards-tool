@@ -47,70 +47,101 @@ export default async function ApprovalsQueuePage() {
           footnote="Quiet inboxes are a feature. Notice someone instead."
         />
       ) : (
-        <div className="space-y-10">
+        // Visual hierarchy: primary decision work first (large,
+        // ink-weighted), reward-side follow-ups in the middle at
+        // standard weight, and "waiting on someone else" last as
+        // a muted informational strip behind a divider. Sections
+        // with zero items return null so empty buckets don't take
+        // up space.
+        <>
           <QueueSection
+            variant="primary"
             title="Awaiting your approval"
-            hint="Tier 1 & 2 reviews routed to you."
+            hint="Tier 1 & 2 reviews routed to you. These are the ones to clear first."
             items={byAction.approve}
             viewerEmployeeId={employeeId}
           />
-          <QueueSection
-            title="Pick a reward"
-            hint="Already approved — choose the reward to finish."
-            items={byAction.select_reward}
-            viewerEmployeeId={employeeId}
-          />
-          <QueueSection
-            title="Confirm the reward"
-            hint="Dept head picked; your sign-off commits the budget."
-            items={byAction.confirm_reward}
-            viewerEmployeeId={employeeId}
-          />
-          <QueueSection
-            title="Waiting on the other approver"
-            hint="No action from you right now — here for visibility."
-            items={byAction.wait}
-            viewerEmployeeId={employeeId}
-            muted
-          />
-        </div>
+
+          {(byAction.select_reward.length > 0 ||
+            byAction.confirm_reward.length > 0) && (
+            <div className="mt-12 space-y-10">
+              <QueueSection
+                variant="standard"
+                title="Pick a reward"
+                hint="Already approved — choose the reward to finish the handoff."
+                items={byAction.select_reward}
+                viewerEmployeeId={employeeId}
+              />
+              <QueueSection
+                variant="standard"
+                title="Confirm the reward"
+                hint="Dept head picked; your sign-off commits the budget."
+                items={byAction.confirm_reward}
+                viewerEmployeeId={employeeId}
+              />
+            </div>
+          )}
+
+          {byAction.wait.length > 0 && (
+            <div className="mt-16 border-t border-novo-border pt-8">
+              <QueueSection
+                variant="muted"
+                title="Waiting on the other approver"
+                hint="No action from you — here so you can see what's moving."
+                items={byAction.wait}
+                viewerEmployeeId={employeeId}
+              />
+            </div>
+          )}
+        </>
       )}
     </main>
   )
 }
 
+type SectionVariant = 'primary' | 'standard' | 'muted'
+
 function QueueSection({
+  variant,
   title,
   hint,
   items,
   viewerEmployeeId,
-  muted,
 }: {
+  variant: SectionVariant
   title: string
   hint: string
   items: Awaited<ReturnType<typeof listPendingApprovalsForEmployee>>
   viewerEmployeeId: string
-  muted?: boolean
 }) {
   if (items.length === 0) return null
+
+  const titleCls =
+    variant === 'primary'
+      ? 'text-xl font-semibold tracking-tight text-novo-ink'
+      : variant === 'standard'
+        ? 'text-base font-semibold text-novo-ink'
+        : 'text-sm font-medium text-novo-subtle'
+
+  const hintCls =
+    variant === 'primary'
+      ? 'mt-1 text-sm text-novo-subtle'
+      : variant === 'standard'
+        ? 'mt-0.5 text-xs text-novo-muted'
+        : 'mt-0.5 text-2xs text-novo-muted'
+
+  const cardGap = variant === 'primary' ? 'space-y-4' : 'space-y-3'
+
   return (
     <section>
-      <header className="mb-3 flex items-baseline justify-between gap-4">
+      <header className="mb-4 flex items-baseline justify-between gap-4">
         <div>
-          <h2
-            className={`text-sm font-semibold ${
-              muted ? 'text-novo-subtle' : 'text-novo-ink'
-            }`}
-          >
-            {title}
-          </h2>
-          <p className="mt-0.5 text-xs text-novo-muted">{hint}</p>
+          <h2 className={titleCls}>{title}</h2>
+          <p className={hintCls}>{hint}</p>
         </div>
-        <span className="text-2xs font-medium tabular text-novo-muted">
-          {items.length}
-        </span>
+        <CountBadge count={items.length} variant={variant} />
       </header>
-      <div className="space-y-3">
+      <div className={cardGap}>
         {items.map((item) => (
           <ApprovalCard
             key={item.nomination.id}
@@ -120,5 +151,33 @@ function QueueSection({
         ))}
       </div>
     </section>
+  )
+}
+
+function CountBadge({
+  count,
+  variant,
+}: {
+  count: number
+  variant: SectionVariant
+}) {
+  if (variant === 'primary') {
+    return (
+      <span className="inline-flex h-7 min-w-[1.75rem] items-center justify-center rounded-full bg-novo-ink px-2.5 text-xs font-semibold text-novo-paper tabular">
+        {count}
+      </span>
+    )
+  }
+  if (variant === 'standard') {
+    return (
+      <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full border border-novo-border bg-novo-surface px-2 text-2xs font-medium text-novo-subtle tabular">
+        {count}
+      </span>
+    )
+  }
+  return (
+    <span className="text-2xs font-medium tabular text-novo-muted">
+      {count}
+    </span>
   )
 }
