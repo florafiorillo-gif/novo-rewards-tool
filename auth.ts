@@ -57,13 +57,13 @@ async function resolveEmployeeByEmail(
   }
 }
 
-// Dev-only mock signin. Gated behind USE_MOCK_DATA + non-prod so the
-// provider cannot register in a Vercel prod deploy even if the flag leaks.
-// When on, Google is skipped entirely — the signin page shows only the
-// email form and no OAuth redirect path exists.
-export const DEV_SIGNIN_ENABLED =
-  process.env.USE_MOCK_DATA === 'true' &&
-  process.env.NODE_ENV !== 'production'
+// Mock-data signin. Gated on USE_MOCK_DATA alone so the Vercel testing
+// deploy (no Google OAuth yet, URL-level password protection via Vercel)
+// can still authenticate seeded employees in production mode. When on,
+// Google is skipped entirely — the signin page shows only the email form
+// and no OAuth redirect path exists. Turn off by unsetting USE_MOCK_DATA
+// in the target environment.
+export const DEV_SIGNIN_ENABLED = process.env.USE_MOCK_DATA === 'true'
 
 const providers = []
 
