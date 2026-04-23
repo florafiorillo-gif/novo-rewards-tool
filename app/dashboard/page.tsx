@@ -1,7 +1,10 @@
 import Link from 'next/link'
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
-import { getManagerDashboardView } from '@/modules/dashboard/manager-view'
+import {
+  getManagerDashboardView,
+  getTeamRhythm,
+} from '@/modules/dashboard/manager-view'
 import { getDepartmentDashboardView } from '@/modules/dashboard/department-view'
 import { getRecognitionFeed } from '@/modules/dashboard/recognition-feed'
 import { getRecipientDashboardView } from '@/modules/dashboard/recipient-view'
@@ -12,6 +15,7 @@ import { ManagerPoolCard } from '@/components/dashboard/ManagerPoolCard'
 import { DepartmentPoolCard } from '@/components/dashboard/DepartmentPoolCard'
 import { RecognitionFeed } from '@/components/dashboard/RecognitionFeed'
 import { RecognizeCTACard } from '@/components/dashboard/RecognizeCTACard'
+import { TeamRhythmCard } from '@/components/dashboard/TeamRhythmCard'
 import { YourActivityCard } from '@/components/dashboard/YourActivityCard'
 
 export const dynamic = 'force-dynamic'
@@ -28,17 +32,27 @@ export default async function DashboardPage() {
   // cards once and only once.
   const role = await resolveRole(employeeId)
 
-  const [view, deptView, feed, recipientView, tier3Queue, fulfillmentQueue] =
-    await Promise.all([
-      getManagerDashboardView(employeeId),
-      getDepartmentDashboardView(employeeId),
-      getRecognitionFeed(employeeId, 20),
-      getRecipientDashboardView(employeeId),
-      role.is_committee ? listCommitteeQueue(employeeId) : Promise.resolve([]),
-      role.is_people_team
-        ? listManualFulfillmentQueue()
-        : Promise.resolve([]),
-    ])
+  const [
+    view,
+    deptView,
+    feed,
+    recipientView,
+    teamRhythm,
+    tier3Queue,
+    fulfillmentQueue,
+  ] = await Promise.all([
+    getManagerDashboardView(employeeId),
+    getDepartmentDashboardView(employeeId),
+    getRecognitionFeed(employeeId, 20),
+    getRecipientDashboardView(employeeId),
+    role.is_manager
+      ? getTeamRhythm(employeeId)
+      : Promise.resolve(null),
+    role.is_committee ? listCommitteeQueue(employeeId) : Promise.resolve([]),
+    role.is_people_team
+      ? listManualFulfillmentQueue()
+      : Promise.resolve([]),
+  ])
 
   const { period, in_grace, grace_ends_at, pool, pacing, pending_tier1_count } =
     view
@@ -53,6 +67,8 @@ export default async function DashboardPage() {
   const hasAdminQueueItems =
     isAdmin && (totalPending > 0 || tier3Count > 0 || fulfillmentCount > 0)
   const hasActivity = !isAdmin && (receivedCount > 0 || givenCount > 0)
+  const hasTeamRhythm =
+    role.is_manager && !!teamRhythm && teamRhythm.entries.length > 0
 
   const feedIsEmpty = feed.length === 0
   // Employee-only viewers always get the sidebar so the Recognize CTA has
@@ -71,7 +87,8 @@ export default async function DashboardPage() {
         deptView.geo
       )) ||
     hasAdminQueueItems ||
-    hasActivity
+    hasActivity ||
+    hasTeamRhythm
   const showSidebar = !feedIsEmpty || hasSidebarContent
 
   return (
@@ -144,6 +161,10 @@ export default async function DashboardPage() {
                   grace_ends_at={deptView.grace_ends_at}
                 />
               )}
+
+            {hasTeamRhythm && teamRhythm && (
+              <TeamRhythmCard view={teamRhythm} />
+            )}
 
             {hasAdminQueueItems && (
               <YourQueueCard
