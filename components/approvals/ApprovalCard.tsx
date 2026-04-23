@@ -6,7 +6,7 @@ import {
   denyFromQueueAction,
   requestInfoFromQueueAction,
   upgradeFromQueueAction,
-} from '@/app/approvals/queue/actions'
+} from '@/app/review/actions'
 import { Button } from '@/components/ui/Button'
 
 interface Props {

@@ -29,7 +29,7 @@ export default async function RewardSelectionPage({
   if (!nomination) notFound()
 
   const existing = await getRewardForNomination(nomination.id)
-  if (existing) redirect('/approvals/queue')
+  if (existing) redirect('/review')
 
   const isTier2 = nomination.current_tier === 2
   if (nomination.current_tier === 1) {
@@ -37,7 +37,7 @@ export default async function RewardSelectionPage({
     const isManagerApprover = nomination.current_approver_id === employeeId
     if (!isSelfApproval && !isManagerApprover) notFound()
   } else if (isTier2) {
-    if (nomination.status !== 'approved') redirect('/approvals/queue')
+    if (nomination.status !== 'approved') redirect('/review')
     if (nomination.tier2_dept_head_id !== employeeId) notFound()
   } else {
     redirect('/leadership/queue')
@@ -78,7 +78,7 @@ export default async function RewardSelectionPage({
   return (
     <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
       <PageHeader
-        back={{ href: '/approvals/queue', label: 'Queue' }}
+        back={{ href: '/review', label: 'Review' }}
         eyebrow={`Tier ${tier} · ${value?.name ?? 'Value'}`}
         title={`Choose a reward for ${nominee.name}`}
         description={`Tier ${tier} range: $${range.min.toLocaleString()}–$${range.max.toLocaleString()}. Pick from the catalog, cash, or custom.`}

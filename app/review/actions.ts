@@ -52,14 +52,14 @@ export async function approveFromQueueAction(formData: FormData): Promise<void> 
     actor_id: actorId,
   })
   if (!result.ok) {
-    revalidatePath('/approvals/queue')
+    revalidatePath('/review')
     return
   }
 
   if (result.became_final) {
     await fireNominatorApprovalDM(result.nomination.id, actorId)
   }
-  revalidatePath('/approvals/queue')
+  revalidatePath('/review')
 }
 
 async function fireNominatorApprovalDM(
@@ -102,7 +102,7 @@ export async function denyFromQueueAction(formData: FormData): Promise<void> {
     reason_text: reasonText,
   })
   if (!result.ok) {
-    revalidatePath('/approvals/queue')
+    revalidatePath('/review')
     return
   }
 
@@ -125,7 +125,7 @@ export async function denyFromQueueAction(formData: FormData): Promise<void> {
     }
   }
 
-  revalidatePath('/approvals/queue')
+  revalidatePath('/review')
 }
 
 // ─── Propose upgrade / escalate ──────────────────────────────────────────────
@@ -170,7 +170,7 @@ export async function upgradeFromQueueAction(formData: FormData): Promise<void> 
       })
     }
   }
-  revalidatePath('/approvals/queue')
+  revalidatePath('/review')
 }
 
 // ─── Confirm Tier 2 reward (People team rep sign-off) ────────────────────────
@@ -219,7 +219,7 @@ export async function confirmRewardFromQueueAction(
       }
     }
   }
-  revalidatePath('/approvals/queue')
+  revalidatePath('/review')
 }
 
 // ─── Request more info ───────────────────────────────────────────────────────
@@ -234,5 +234,5 @@ export async function requestInfoFromQueueAction(formData: FormData): Promise<vo
     actor_id: actorId,
     question,
   })
-  revalidatePath('/approvals/queue')
+  revalidatePath('/review')
 }

@@ -26,7 +26,7 @@ export default async function ApprovalsQueuePage() {
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/dashboard', label: 'Dashboard' }}
-        eyebrow="Inbox"
+        eyebrow="Review"
         title="Nominations to review"
         description={
           items.length === 0

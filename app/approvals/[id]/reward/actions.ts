@@ -91,8 +91,8 @@ export async function selectRewardAction(
     await fireVendorStub(result.reward.id, result.reward.reward_type, actorId)
   }
 
-  revalidatePath('/approvals/queue')
-  redirect(`/approvals/queue?recent=${result.reward.id}`)
+  revalidatePath('/review')
+  redirect(`/review?recent=${result.reward.id}`)
 }
 
 async function fireVendorStub(

@@ -34,7 +34,7 @@ export async function AppHeader() {
             className="hidden flex-1 items-center gap-1 text-sm md:flex"
           >
             <NavLink href="/dashboard">Home</NavLink>
-            <NavLink href="/approvals/queue">Inbox</NavLink>
+            <NavLink href="/review">Review</NavLink>
             <NavLink href="/dashboard/me">Your recognitions</NavLink>
             {isCommittee && (
               <NavLink href="/leadership/dashboard">Leadership</NavLink>

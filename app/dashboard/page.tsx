@@ -358,7 +358,7 @@ function PendingForYou({ tier1, tier2 }: { tier1: number; tier2: number }) {
         {tier2 > 0 && <li>{tier2} as department head</li>}
       </ul>
       <Link
-        href="/approvals/queue"
+        href="/review"
         className="mt-4 inline-flex h-8 items-center rounded-md bg-white px-3 text-xs font-medium text-novo-ink hover:bg-white/90"
       >
         Review now <span aria-hidden className="ml-1">→</span>

@@ -90,11 +90,12 @@ export async function onReviewAndDecideButton(
   const nominationId = payload.actions?.[0]?.value
   if (!nominationId) return
   // Spec §7.1 says "review and decide" opens a full view. Phase 3 routes
-  // that to the web approvals queue, which is already richer than any
-  // modal we'd build.
+  // that to the web review queue (renamed from /approvals/queue in the
+  // tester-walkthrough pass), which is already richer than any modal
+  // we'd build. /approvals/queue redirects to /review via next.config.
   const base = process.env.AUTH_URL ?? 'http://localhost:3000'
-  const url = `${base}/approvals/queue?nomination_id=${encodeURIComponent(nominationId)}`
-  await respondEphemeral(payload, `Opening in the approvals dashboard: ${url}`)
+  const url = `${base}/review?nomination_id=${encodeURIComponent(nominationId)}`
+  await respondEphemeral(payload, `Opening in the review queue: ${url}`)
 }
 
 export async function onUndoButton(

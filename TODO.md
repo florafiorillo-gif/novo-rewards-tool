@@ -76,7 +76,7 @@ four-value set is enforced at create time by the zod refine against
 `VALUE_IDS`, so the null branch should only hit for corrupted data;
 '—' is the warm fallback instead of leaking `val_*` identifiers.
 
-### `/approvals/queue` ambiguity for unauthorized viewers
+### `/review` ambiguity for unauthorized viewers
 **Ref:** Audit A6. Empty state and "not an approver" state render the
 same copy. Rubina's pre-launch copy pass should split them. Propose:
 "Nothing waiting on you right now" vs. "You aren't an approver yet —

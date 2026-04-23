@@ -127,7 +127,7 @@ See `TODO.md` for the running list. Headline items:
 **Open questions flagged to stakeholders** (spec §17 + §19 items 9–11):
 - System actor attribution doc note (Flora owns).
 - Cross-geo dept-head fallback for T2 — acceptable, or People-team queue? (Rares + Sakshi.)
-- `/approvals/queue` empty vs not-an-approver copy split (Rubina's copy pass).
+- `/review` empty vs not-an-approver copy split (Rubina's copy pass).
 
 ## 9. What to work on next
 
