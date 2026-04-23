@@ -35,7 +35,7 @@ export function TierThreeQueueCard({
         <p className="mt-2 text-xs text-white/70">Queue is clear</p>
       )}
       <Link
-        href="/committee/queue"
+        href="/leadership/queue"
         className="mt-4 inline-flex h-8 items-center rounded-md bg-white px-3 text-xs font-medium text-novo-ink hover:bg-white/90"
       >
         {total > 0 ? 'Review now' : 'Open queue'}{' '}

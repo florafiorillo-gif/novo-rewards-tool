@@ -100,7 +100,7 @@ export async function decideCommitteeAction(formData: FormData): Promise<void> {
   // Tier 3 deny drops back to Tier 2 — no terminal DM; the Tier 2 approvers
   // get the nomination again and will close the loop with the nominator.
 
-  revalidatePath('/committee/queue')
+  revalidatePath('/leadership/queue')
 }
 
 export async function recuseCommitteeAction(formData: FormData): Promise<void> {
@@ -108,5 +108,5 @@ export async function recuseCommitteeAction(formData: FormData): Promise<void> {
   const nominationId = (formData.get('nomination_id') ?? '').toString()
   if (!nominationId) return
   await recuseCommitteeMember({ nomination_id: nominationId, actor_id: actorId })
-  revalidatePath('/committee/queue')
+  revalidatePath('/leadership/queue')
 }

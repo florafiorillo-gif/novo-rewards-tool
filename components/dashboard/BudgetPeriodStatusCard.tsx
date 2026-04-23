@@ -54,7 +54,7 @@ export function BudgetPeriodStatusCard({
       </div>
       <p className="mt-2 text-xs text-novo-subtle">{statusDetail}</p>
       <Link
-        href="/committee/budget"
+        href="/leadership/budget"
         className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
       >
         Open budget <span aria-hidden>→</span>

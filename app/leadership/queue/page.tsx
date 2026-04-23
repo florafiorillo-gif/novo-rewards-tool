@@ -33,8 +33,8 @@ export default async function CommitteeQueuePage() {
   return (
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
-        back={{ href: '/committee/dashboard', label: 'Committee dashboard' }}
-        eyebrow="Committee"
+        back={{ href: '/leadership/dashboard', label: 'Leadership dashboard' }}
+        eyebrow="Leadership"
         title="Queue"
         description="Tier 3 nominations for joint review. Batched monthly; urgent items surface first."
       />
@@ -44,8 +44,8 @@ export default async function CommitteeQueuePage() {
           title="No Tier 3 nominations pending"
           description="Next review happens at the monthly cadence. Urgent items will jump the queue when they arrive."
           action={
-            <LinkButton href="/committee/dashboard" variant="secondary">
-              Back to committee dashboard
+            <LinkButton href="/leadership/dashboard" variant="secondary">
+              Back to leadership dashboard
             </LinkButton>
           }
         />
@@ -64,7 +64,7 @@ export default async function CommitteeQueuePage() {
           {regular.length > 0 && (
             <QueueSection
               title="Scheduled for monthly review"
-              hint="Committee discusses at the next cadence."
+              hint="Leadership discusses at the next cadence."
               items={regular}
               viewerEmployeeId={employeeId}
               scopeNotes={scopeNotes}

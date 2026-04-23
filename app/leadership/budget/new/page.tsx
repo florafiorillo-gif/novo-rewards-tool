@@ -19,10 +19,10 @@ export default async function NewBudgetPeriodPage() {
   return (
     <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
       <PageHeader
-        back={{ href: '/committee/budget', label: 'Budget periods' }}
-        eyebrow="Committee · Budget"
+        back={{ href: '/leadership/budget', label: 'Budget periods' }}
+        eyebrow="Leadership · Budget"
         title="New period"
-        description="Percentages below are v1 defaults — the committee adjusts per quarter based on the prior period's actuals."
+        description="Percentages below are v1 defaults — leadership adjusts per quarter based on the prior period's actuals."
       />
 
       <form action={createPeriodAction} className="space-y-8">

@@ -144,7 +144,7 @@ async function main() {
       const exc = programView.exceptions.length
       const sla = programView.sla_misses.length
       console.log(
-        `    • Program health (exceptions=${exc}, sla_misses=${sla}) → ${role.is_committee ? '/committee/dashboard' : '/people-ops/dashboard'}`
+        `    • Program health (exceptions=${exc}, sla_misses=${sla}) → ${role.is_committee ? '/leadership/dashboard' : '/people-ops/dashboard'}`
       )
     }
     const received = recipientView.items.length

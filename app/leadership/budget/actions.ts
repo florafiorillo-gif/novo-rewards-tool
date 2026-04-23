@@ -69,10 +69,10 @@ export async function createPeriodAction(formData: FormData): Promise<void> {
     allocation_config: config,
   })
   if (!result.ok) {
-    revalidatePath('/committee/budget')
+    revalidatePath('/leadership/budget')
     return
   }
-  redirect(`/committee/budget/${result.period.id}`)
+  redirect(`/leadership/budget/${result.period.id}`)
 }
 
 // ─── Allocate pools ──────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export async function allocatePoolsAction(formData: FormData): Promise<void> {
   if (!periodId) return
   const config = parseAllocationConfig(formData)
   await allocatePools(periodId, config)
-  revalidatePath(`/committee/budget/${periodId}`)
+  revalidatePath(`/leadership/budget/${periodId}`)
 }
 
 // ─── Approve ─────────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ export async function approvePeriodAction(formData: FormData): Promise<void> {
   const periodId = (formData.get('period_id') ?? '').toString()
   if (!periodId) return
   await approvePeriod(periodId, actorId)
-  revalidatePath(`/committee/budget/${periodId}`)
+  revalidatePath(`/leadership/budget/${periodId}`)
 }
 
 // ─── Activate ────────────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ export async function activatePeriodAction(formData: FormData): Promise<void> {
   const periodId = (formData.get('period_id') ?? '').toString()
   if (!periodId) return
   await activatePeriod(periodId)
-  revalidatePath(`/committee/budget/${periodId}`)
+  revalidatePath(`/leadership/budget/${periodId}`)
 }
 
 // ─── Close ───────────────────────────────────────────────────────────────────
@@ -113,5 +113,5 @@ export async function closePeriodAction(formData: FormData): Promise<void> {
   const periodId = (formData.get('period_id') ?? '').toString()
   if (!periodId) return
   await closePeriod(periodId, actorId)
-  revalidatePath(`/committee/budget/${periodId}`)
+  revalidatePath(`/leadership/budget/${periodId}`)
 }

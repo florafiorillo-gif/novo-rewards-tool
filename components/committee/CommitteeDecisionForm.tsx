@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { decideCommitteeAction } from '@/app/committee/queue/actions'
+import { decideCommitteeAction } from '@/app/leadership/queue/actions'
 
 interface ScopeNote {
   id: string

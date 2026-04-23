@@ -85,7 +85,7 @@ async function seedQ2Period() {
 
   if (SEED_MODE === 'prod') {
     console.log(
-      `  ✓ Q2 2026 period draft with ${alloc.result.pools.length} pools — committee approves via /committee/budget`
+      `  ✓ Q2 2026 period draft with ${alloc.result.pools.length} pools — leadership approves via /leadership/budget`
     )
     return
   }

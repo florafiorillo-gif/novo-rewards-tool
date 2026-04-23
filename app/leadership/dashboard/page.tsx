@@ -26,7 +26,7 @@ export default async function CommitteeDashboardPage() {
   return (
     <main className="mx-auto max-w-shell px-6 py-10 lg:py-12">
       <PageHeader
-        eyebrow="Committee"
+        eyebrow="Leadership"
         title="Program health"
         description={
           view.period
@@ -35,10 +35,10 @@ export default async function CommitteeDashboardPage() {
         }
         actions={
           <>
-            <LinkButton href="/committee/queue" variant="secondary">
+            <LinkButton href="/leadership/queue" variant="secondary">
               Queue
             </LinkButton>
-            <LinkButton href="/committee/budget" variant="secondary">
+            <LinkButton href="/leadership/budget" variant="secondary">
               Budget
             </LinkButton>
           </>
@@ -59,7 +59,7 @@ export default async function CommitteeDashboardPage() {
           <p className="text-sm text-novo-subtle">
             No active recognition period. Start a new one from the budget page.
           </p>
-          <LinkButton href="/committee/budget" variant="primary" className="mt-4">
+          <LinkButton href="/leadership/budget" variant="primary" className="mt-4">
             Budget periods
           </LinkButton>
         </Card>
@@ -69,7 +69,7 @@ export default async function CommitteeDashboardPage() {
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {view.tier3_pool && (
               <StatCard
-                label="Tier 3 committee pool"
+                label="Tier 3 leadership pool"
                 primary={fmt(view.tier3_pool.pool.remaining_amount_usd)}
                 secondary={`of ${fmt(view.tier3_pool.pool.allocated_amount_usd)} · ${fmt(view.tier3_pool.pool.spent_amount_usd)} committed`}
               />

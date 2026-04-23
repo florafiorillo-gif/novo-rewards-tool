@@ -37,11 +37,15 @@ export const ALL_VIEWS: readonly DashboardView[] = [
   'employee',
 ] as const
 
+// User-facing labels. Internal view id 'committee' still reflects
+// the underlying role flag (is_committee_member); only the visible
+// string has been relabeled to "Leadership" as part of the tester
+// walkthrough feedback.
 export const VIEW_LABELS: Record<DashboardView, string> = {
   employee: 'Employee',
   manager: 'Manager',
   people_ops: 'People Ops',
-  committee: 'Committee',
+  committee: 'Leadership',
 }
 
 // Highest real view held by this viewer. Committee is the widest

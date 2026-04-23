@@ -1,5 +1,5 @@
 import type { HydratedTier3 } from '@/modules/committee/service'
-import { recuseCommitteeAction } from '@/app/committee/queue/actions'
+import { recuseCommitteeAction } from '@/app/leadership/queue/actions'
 import { TIER_RANGES } from '@/modules/catalog/types'
 import { CommitteeDecisionForm } from './CommitteeDecisionForm'
 import { Button } from '@/components/ui/Button'

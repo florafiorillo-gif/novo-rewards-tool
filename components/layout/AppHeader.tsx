@@ -37,7 +37,7 @@ export async function AppHeader() {
             <NavLink href="/approvals/queue">Inbox</NavLink>
             <NavLink href="/dashboard/me">Your recognitions</NavLink>
             {isCommittee && (
-              <NavLink href="/committee/dashboard">Committee</NavLink>
+              <NavLink href="/leadership/dashboard">Leadership</NavLink>
             )}
             {isPeopleOps && <NavLink href="/people-ops">People Ops</NavLink>}
           </nav>

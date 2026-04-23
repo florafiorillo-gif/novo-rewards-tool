@@ -24,12 +24,12 @@ export default async function BudgetPeriodsPage() {
   return (
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
-        back={{ href: '/committee/dashboard', label: 'Committee dashboard' }}
-        eyebrow="Committee · Budget"
+        back={{ href: '/leadership/dashboard', label: 'Leadership dashboard' }}
+        eyebrow="Leadership · Budget"
         title="Budget periods"
-        description="Quarterly allocations. Committee sign-off required before a period becomes active."
+        description="Quarterly allocations. Leadership sign-off required before a period becomes active."
         actions={
-          <LinkButton href="/committee/budget/new" variant="primary">
+          <LinkButton href="/leadership/budget/new" variant="primary">
             New period
           </LinkButton>
         }
@@ -40,7 +40,7 @@ export default async function BudgetPeriodsPage() {
           title="No periods yet"
           description="Periods are the container for all pools and nominations in a quarter. Start with a new allocation."
           action={
-            <LinkButton href="/committee/budget/new" variant="primary">
+            <LinkButton href="/leadership/budget/new" variant="primary">
               Create first period
             </LinkButton>
           }
@@ -64,7 +64,7 @@ export default async function BudgetPeriodsPage() {
                 >
                   <td className="px-5 py-4">
                     <Link
-                      href={`/committee/budget/${p.id}`}
+                      href={`/leadership/budget/${p.id}`}
                       className="font-medium text-novo-ink group-hover:underline"
                     >
                       {p.period_label}

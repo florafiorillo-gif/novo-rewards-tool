@@ -40,7 +40,7 @@ export default async function RewardSelectionPage({
     if (nomination.status !== 'approved') redirect('/approvals/queue')
     if (nomination.tier2_dept_head_id !== employeeId) notFound()
   } else {
-    redirect('/committee/queue')
+    redirect('/leadership/queue')
   }
 
   const nominee = await getEmployeeById(nomination.nominee_id)

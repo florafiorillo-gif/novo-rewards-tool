@@ -154,11 +154,11 @@ export default async function DashboardPage({
 
   const hasProgramHealth =
     (showPeopleOps || showCommittee) && !!programView?.period
-  // Committee members get the superset drill-down (/committee/dashboard
+  // Committee members get the superset drill-down (/leadership/dashboard
   // layers Tier 3 decisions on top of the program view). People Ops
   // without committee hats fall through to /people-ops/dashboard.
   const programHealthHref = showCommittee
-    ? '/committee/dashboard'
+    ? '/leadership/dashboard'
     : '/people-ops/dashboard'
 
   const hasBudgetPeriodStatus =
