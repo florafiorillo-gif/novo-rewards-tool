@@ -1,5 +1,9 @@
 import { insertMock } from '@/modules/nominations/mock-store'
 import { recordReaction, recordComment } from '@/modules/communication/engagement'
+import { createPeriod } from '@/modules/budget/periods'
+import { allocatePools } from '@/modules/budget/allocation'
+import { updateMockPeriod, listMockPeriods } from '@/modules/budget/mock-store'
+import { DEFAULT_ALLOCATION_CONFIG } from '@/modules/budget/types'
 import {
   buildDemoNominations,
   DEMO_REACTIONS,
@@ -33,6 +37,8 @@ if (
 }
 
 async function seedDemoStores(): Promise<void> {
+  await seedQ2Period()
+
   const nominations = buildDemoNominations()
   for (const nom of nominations) {
     insertMock(nom)
@@ -59,6 +65,36 @@ async function seedDemoStores(): Promise<void> {
 
   console.log(
     `[demo-seed] ${nominations.length} nominations, ${DEMO_REACTIONS.length} reactions, ${DEMO_COMMENTS.length} comments`
+  )
+}
+
+// Q2 2026 period flipped to active + pools allocated. Mirrors what
+// prisma/seed.ts does in dev mode for Postgres so the two paths line up.
+// Skipped if any period already exists (tests may seed their own).
+async function seedQ2Period(): Promise<void> {
+  if (listMockPeriods().length > 0) return
+  const result = await createPeriod({
+    period_label: 'Q2 2026',
+    start_date: new Date(2026, 3, 1),
+    end_date: new Date(2026, 5, 30),
+    total_allocation_usd: 100_000,
+    allocation_config: DEFAULT_ALLOCATION_CONFIG,
+  })
+  if (!result.ok) {
+    console.error('[demo-seed] createPeriod failed:', result.error)
+    return
+  }
+  const alloc = await allocatePools(result.period.id, DEFAULT_ALLOCATION_CONFIG)
+  if (!alloc.ok) {
+    console.error('[demo-seed] allocatePools failed:', alloc.error)
+    return
+  }
+  updateMockPeriod(result.period.id, {
+    status: 'active',
+    approved_at: new Date(),
+  })
+  console.log(
+    `[demo-seed] Q2 2026 active · ${alloc.result.pools.length} pools`
   )
 }
 
