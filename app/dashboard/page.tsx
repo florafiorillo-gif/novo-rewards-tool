@@ -5,16 +5,14 @@ import { getManagerDashboardView } from '@/modules/dashboard/manager-view'
 import { getDepartmentDashboardView } from '@/modules/dashboard/department-view'
 import { getRecognitionFeed } from '@/modules/dashboard/recognition-feed'
 import { getRecipientDashboardView } from '@/modules/dashboard/recipient-view'
+import { resolveRole } from '@/modules/roles/resolver'
 import { listCommitteeQueue } from '@/modules/committee/service'
 import { listManualFulfillmentQueue } from '@/modules/fulfillment/queries'
-import {
-  isCommitteeMember,
-  isPeopleTeamRep,
-} from '@/modules/roles/service'
 import { ManagerPoolCard } from '@/components/dashboard/ManagerPoolCard'
 import { DepartmentPoolCard } from '@/components/dashboard/DepartmentPoolCard'
 import { RecognitionFeed } from '@/components/dashboard/RecognitionFeed'
-import { LinkButton } from '@/components/ui/Button'
+import { RecognizeCTACard } from '@/components/dashboard/RecognizeCTACard'
+import { YourActivityCard } from '@/components/dashboard/YourActivityCard'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,13 +22,11 @@ export default async function DashboardPage() {
   const employeeId = session.user.employeeId
   if (!employeeId) redirect('/auth/signin')
 
-  // Role flags drive which secondary reads we issue + which sidebar card
-  // appears. Committee / people-ops see an admin "Your queue"; everyone else
-  // sees a personal "Your activity" (or nothing).
-  const [isCommittee, isPeopleOps] = await Promise.all([
-    isCommitteeMember(employeeId),
-    isPeopleTeamRep(employeeId),
-  ])
+  // resolveRole returns the viewer's full role set as independent booleans —
+  // a viewer can be several at once (Flora = people_team + committee).
+  // Widget composition ORs across the flags so each role contributes its
+  // cards once and only once.
+  const role = await resolveRole(employeeId)
 
   const [view, deptView, feed, recipientView, tier3Queue, fulfillmentQueue] =
     await Promise.all([
@@ -38,8 +34,10 @@ export default async function DashboardPage() {
       getDepartmentDashboardView(employeeId),
       getRecognitionFeed(employeeId, 20),
       getRecipientDashboardView(employeeId),
-      isCommittee ? listCommitteeQueue(employeeId) : Promise.resolve([]),
-      isPeopleOps ? listManualFulfillmentQueue() : Promise.resolve([]),
+      role.is_committee ? listCommitteeQueue(employeeId) : Promise.resolve([]),
+      role.is_people_team
+        ? listManualFulfillmentQueue()
+        : Promise.resolve([]),
     ])
 
   const { period, in_grace, grace_ends_at, pool, pacing, pending_tier1_count } =
@@ -49,19 +47,19 @@ export default async function DashboardPage() {
   const tier3Count = tier3Queue.length
   const fulfillmentCount = fulfillmentQueue.length
   const receivedCount = recipientView.items.length
+  const givenCount = recipientView.given_count
 
-  const isAdmin = isCommittee || isPeopleOps
+  const isAdmin = role.is_committee || role.is_people_team
   const hasAdminQueueItems =
-    isAdmin &&
-    (totalPending > 0 || tier3Count > 0 || fulfillmentCount > 0)
-  const hasActivityCount = !isAdmin && receivedCount > 0
+    isAdmin && (totalPending > 0 || tier3Count > 0 || fulfillmentCount > 0)
+  const hasActivity = !isAdmin && (receivedCount > 0 || givenCount > 0)
 
   const feedIsEmpty = feed.length === 0
-  // Use the full-width single-column layout when there's no feed content to
-  // hang a sidebar next to. Admins with pending queue items still need
-  // their sidebar though — so we only collapse when both columns would be
-  // near-empty.
+  // Employee-only viewers always get the sidebar so the Recognize CTA has
+  // somewhere to land. Everyone else collapses to single-column when both
+  // sides would otherwise be near-empty.
   const hasSidebarContent =
+    role.is_employee_only ||
     totalPending > 0 ||
     !!(pool && period && pacing) ||
     (isDeptHead &&
@@ -73,7 +71,7 @@ export default async function DashboardPage() {
         deptView.geo
       )) ||
     hasAdminQueueItems ||
-    hasActivityCount
+    hasActivity
   const showSidebar = !feedIsEmpty || hasSidebarContent
 
   return (
@@ -111,6 +109,8 @@ export default async function DashboardPage() {
           </section>
 
           <aside className="space-y-4">
+            {role.is_employee_only && <RecognizeCTACard />}
+
             {totalPending > 0 && (
               <PendingForYou
                 tier1={pending_tier1_count}
@@ -148,12 +148,14 @@ export default async function DashboardPage() {
             {hasAdminQueueItems && (
               <YourQueueCard
                 pendingApprovals={totalPending}
-                tier3Count={isCommittee ? tier3Count : 0}
-                fulfillmentCount={isPeopleOps ? fulfillmentCount : 0}
+                tier3Count={role.is_committee ? tier3Count : 0}
+                fulfillmentCount={role.is_people_team ? fulfillmentCount : 0}
               />
             )}
 
-            {hasActivityCount && <YourActivityCard received={receivedCount} />}
+            {hasActivity && (
+              <YourActivityCard given={givenCount} received={receivedCount} />
+            )}
           </aside>
         </div>
       ) : (
@@ -255,30 +257,6 @@ function YourQueueCard({
           </li>
         ))}
       </ul>
-    </section>
-  )
-}
-
-// Non-admin sidebar. Minimal stat; hidden by caller when there's nothing.
-function YourActivityCard({ received }: { received: number }) {
-  return (
-    <section className="rounded-lg border border-novo-border bg-novo-elevated p-5 shadow-card">
-      <p className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
-        Your activity
-      </p>
-      <p className="mt-2 text-2xl font-semibold text-novo-ink tabular">
-        {received}
-        <span className="ml-1 text-sm font-normal text-novo-subtle">
-          {received === 1 ? 'recognition' : 'recognitions'}
-        </span>
-      </p>
-      <p className="mt-0.5 text-xs text-novo-subtle">teammates have noticed</p>
-      <Link
-        href="/dashboard/me"
-        className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
-      >
-        View them all <span aria-hidden>→</span>
-      </Link>
     </section>
   )
 }
