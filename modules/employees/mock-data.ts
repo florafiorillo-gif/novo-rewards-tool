@@ -1,10 +1,20 @@
 import type { Employee } from './types'
+import { DEMO_EMPLOYEES } from '@/modules/seed/demo-employees'
 
 // Stable id of the synthetic "System" employee used by automated actors
 // (SLA auto-deny + 7-day escalations per spec §7.6). Kept inactive so it
 // never appears in dropdowns, Slack nominee pickers, or announcements.
 // See TODO.md item A1 for the stakeholder-facing note.
 export const SYSTEM_EMPLOYEE_ID = 'emp_system'
+
+// Demo employees are concatenated into MOCK_EMPLOYEES only under
+// SEED_MODE=demo so unit paths and baseline mock keep the 11-employee
+// fixture stable. Env flag resolved at module load — dev server restart
+// picks up a flip.
+function loadDemoEmployees(): Employee[] {
+  if (process.env.SEED_MODE !== 'demo') return []
+  return DEMO_EMPLOYEES
+}
 
 // Represents the org structure for dev/test. Mirrors what Zoho will provide
 // plus the Phase 3 role flags (department, dept head, People team rep,
@@ -213,4 +223,5 @@ export const MOCK_EMPLOYEES: Employee[] = [
     is_committee_member: false,
     tier2_assignments_count: 0,
   },
+  ...loadDemoEmployees(),
 ]
