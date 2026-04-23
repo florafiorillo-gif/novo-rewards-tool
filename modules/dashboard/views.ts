@@ -97,14 +97,20 @@ export function isSimulating(simulated: DashboardView | null): boolean {
 }
 
 // ─── Role-aware navigation ──────────────────────────────────────────
-// Shared items bracket the nav: "Home" at the start, "My recognitions"
-// at the end, with the viewer's role-specific items sandwiched in
-// between. This matches the tester brief's spelled-out per-role nav
-// order (Manager: Home, Review, My team, My recognitions).
+// Home always leads; each role view contributes a short set of items;
+// no trailing shared item. "My recognitions" (/dashboard/me) is still
+// a valid page but was removed from primary nav in the consolidation
+// pass to hit a max of ~4 primary items per role. Reachable from the
+// dashboard and by direct URL.
 //
 // Per-view additions render in a fixed outer order (manager →
 // people_ops → committee) so a multi-role viewer sees a stable
 // left-to-right sequence regardless of Set iteration.
+//
+// Program-level surfaces collapse into single hub items: "Admin" for
+// People Ops (/people-ops hub with tiles for catalog / scope notes /
+// fulfillment / program health), "Leadership" for committee
+// (/leadership hub with tiles for queue / budget / program health).
 
 export interface NavLinkItem {
   href: string
@@ -112,10 +118,6 @@ export interface NavLinkItem {
 }
 
 export const NAV_ITEM_HOME: NavLinkItem = { href: '/dashboard', label: 'Home' }
-export const NAV_ITEM_MY_RECOGNITIONS: NavLinkItem = {
-  href: '/dashboard/me',
-  label: 'My recognitions',
-}
 
 export const NAV_ITEMS_PER_VIEW: Record<DashboardView, readonly NavLinkItem[]> = {
   employee: [], // shared-only; included for completeness
@@ -123,11 +125,8 @@ export const NAV_ITEMS_PER_VIEW: Record<DashboardView, readonly NavLinkItem[]> =
     { href: '/review', label: 'Review' },
     { href: '/dashboard/team', label: 'My team' },
   ],
-  people_ops: [
-    { href: '/people-ops/dashboard', label: 'Program' },
-    { href: '/people-ops', label: 'Admin' },
-  ],
-  committee: [{ href: '/leadership/dashboard', label: 'Leadership' }],
+  people_ops: [{ href: '/people-ops', label: 'Admin' }],
+  committee: [{ href: '/leadership', label: 'Leadership' }],
 }
 
 const VIEW_ORDER: readonly DashboardView[] = [
@@ -138,8 +137,7 @@ const VIEW_ORDER: readonly DashboardView[] = [
 ] as const
 
 // Build the flattened nav list for the viewer's currently-active
-// views. Home leads; My recognitions trails; role-specific items
-// sit in the middle. Dedupes on href.
+// views. Home leads; role-specific items follow. Dedupes on href.
 export function navItemsForActiveViews(
   views: Set<DashboardView>
 ): NavLinkItem[] {
@@ -155,6 +153,5 @@ export function navItemsForActiveViews(
     if (!views.has(v)) continue
     for (const item of NAV_ITEMS_PER_VIEW[v]) push(item)
   }
-  push(NAV_ITEM_MY_RECOGNITIONS)
   return items
 }

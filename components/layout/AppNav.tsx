@@ -71,14 +71,13 @@ function NavLink({
 }
 
 // Highlight the nav item whose href matches the current path.
-// Exact match for the leaves (/dashboard/me, /dashboard/team,
-// /review), prefix match for the hub-style items (/people-ops,
-// /leadership) so sub-routes still show the parent as selected.
-// /dashboard is intentionally exact — /dashboard/me shouldn't keep
-// "Home" highlighted.
+// Exact match for leaf routes (/dashboard, /dashboard/team, /review);
+// prefix match for hub-style items (/people-ops, /leadership) so
+// sub-routes still light up the parent. /dashboard is intentionally
+// exact — /dashboard/team shouldn't keep "Home" highlighted.
 function isActive(pathname: string | null, href: string): boolean {
   if (!pathname) return false
-  if (href === '/dashboard' || href === '/dashboard/me' || href === '/dashboard/team') {
+  if (href === '/dashboard' || href === '/dashboard/team') {
     return pathname === href
   }
   if (href === '/review') return pathname === '/review'
