@@ -154,10 +154,15 @@ export default async function DashboardPage({
 
   const hasProgramHealth =
     (showPeopleOps || showCommittee) && !!programView?.period
-  // Committee members get the superset drill-down (/leadership/dashboard
-  // layers Tier 3 decisions on top of the program view). People Ops
-  // without committee hats fall through to /people-ops/dashboard.
-  const programHealthHref = showCommittee
+  // Real-role routing (not simulated): Leadership members always get
+  // the superset drill-down at /leadership/dashboard regardless of
+  // which view they're simulating. People Ops without Leadership fall
+  // through to /people-ops/dashboard. Tying this to role.is_committee
+  // (not showCommittee) means a Leadership user simulating People Ops
+  // still lands on their own governance view, and a People Ops user
+  // simulating Leadership doesn't get bounced to a page they can't
+  // access.
+  const programHealthHref = role.is_committee
     ? '/leadership/dashboard'
     : '/people-ops/dashboard'
 
