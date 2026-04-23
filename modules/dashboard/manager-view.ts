@@ -4,10 +4,11 @@ import { listPoolsForPeriod } from '@/modules/budget/pools'
 import { computePacing } from '@/modules/budget/pacing'
 import { countPendingTier1ForApprover } from '@/modules/approvals/queries'
 import { listMockApprovalActions, useMock } from '@/modules/approvals/shared'
-import { getEmployeesByIds } from '@/modules/employees/service'
+import { getDirectReports, getEmployeesByIds } from '@/modules/employees/service'
+import { listAllMock } from '@/modules/nominations/mock-store'
 import { getValueById } from '@/modules/values/constants'
 import type { BudgetPeriodRecord, BudgetPoolRecord, PacingIndicator } from '@/modules/budget/types'
-import type { Employee } from '@/modules/employees/types'
+import type { Employee, EmployeeSummary } from '@/modules/employees/types'
 import type { NominationRecord } from '@/modules/nominations/types'
 import type { ValueDef } from '@/modules/values/constants'
 
@@ -43,6 +44,32 @@ export interface ManagerDashboardView {
 
 const RECENT_LIMIT = 5
 
+// Rolling window used by the Team Rhythm card. A manager looking at their
+// team needs a consistent cadence signal, not a quarter-boundary reset —
+// at the start of a new period the card would otherwise show "nobody
+// recognized yet" for a week, which is misleading. Kept as a constant
+// here so product can tune without touching UI code.
+export const TEAM_RHYTHM_WINDOW_DAYS = 30
+
+export interface TeamRhythmEntry {
+  report: EmployeeSummary
+  // Most recent approved/fulfilled recognition for this report within the
+  // window. Null means nothing in the window — the UI flags it as "not
+  // recognized yet in the last 30 days" to cue the manager.
+  last_recognized_at: Date | null
+  count_in_window: number
+}
+
+export interface TeamRhythmView {
+  window_days: number
+  entries: TeamRhythmEntry[]
+}
+
+const EMPTY_TEAM_RHYTHM: TeamRhythmView = {
+  window_days: TEAM_RHYTHM_WINDOW_DAYS,
+  entries: [],
+}
+
 export async function getManagerDashboardView(
   employeeId: string,
   now: Date = new Date()
@@ -68,7 +95,86 @@ export async function getManagerDashboardView(
   }
 }
 
+// Per-report recognition cadence over a rolling window. Returns empty when
+// the viewer has no active reports (individual contributor) so the page
+// can hide the Team Rhythm card entirely. Reports are sorted with "never
+// recognized in window" first so the manager's eye catches them — the
+// whole point of this card.
+export async function getTeamRhythm(
+  managerId: string,
+  now: Date = new Date()
+): Promise<TeamRhythmView> {
+  const reports = await getDirectReports(managerId)
+  if (reports.length === 0) return EMPTY_TEAM_RHYTHM
+
+  const windowStart = new Date(
+    now.getTime() - TEAM_RHYTHM_WINDOW_DAYS * 24 * 60 * 60 * 1000
+  )
+  const reportIds = reports.map((r) => r.id)
+  const recognitions = await listRecognitionsForNominees(reportIds, windowStart)
+
+  const byReport = new Map<string, { last: Date | null; count: number }>()
+  for (const r of reports) {
+    byReport.set(r.id, { last: null, count: 0 })
+  }
+  for (const nom of recognitions) {
+    const at = nom.approved_at ?? nom.submitted_at
+    const slot = byReport.get(nom.nominee_id)
+    if (!slot) continue
+    slot.count += 1
+    if (!slot.last || at > slot.last) slot.last = at
+  }
+
+  const entries: TeamRhythmEntry[] = reports
+    .map((report) => {
+      const slot = byReport.get(report.id)!
+      return {
+        report,
+        last_recognized_at: slot.last,
+        count_in_window: slot.count,
+      }
+    })
+    .sort((a, b) => {
+      // Never-recognized first (most attention-worthy), then oldest-last
+      // ascending so recently recognized reports sink to the bottom.
+      if (!a.last_recognized_at && b.last_recognized_at) return -1
+      if (a.last_recognized_at && !b.last_recognized_at) return 1
+      if (!a.last_recognized_at && !b.last_recognized_at) {
+        return a.report.name.localeCompare(b.report.name)
+      }
+      return a.last_recognized_at!.getTime() - b.last_recognized_at!.getTime()
+    })
+
+  return { window_days: TEAM_RHYTHM_WINDOW_DAYS, entries }
+}
+
 // ─── Internal ────────────────────────────────────────────────────────────────
+
+async function listRecognitionsForNominees(
+  nomineeIds: string[],
+  sinceDate: Date
+): Promise<NominationRecord[]> {
+  if (nomineeIds.length === 0) return []
+  if (useMock()) {
+    const ids = new Set(nomineeIds)
+    return listAllMock().filter(
+      (n) =>
+        ids.has(n.nominee_id) &&
+        (n.status === 'approved' || n.status === 'fulfilled') &&
+        (n.approved_at ?? n.submitted_at) >= sinceDate
+    )
+  }
+  return (await db.nomination.findMany({
+    where: {
+      nominee_id: { in: nomineeIds },
+      status: { in: ['approved', 'fulfilled'] },
+      OR: [
+        { approved_at: { gte: sinceDate } },
+        { AND: [{ approved_at: null }, { submitted_at: { gte: sinceDate } }] },
+      ],
+    },
+  })) as unknown as NominationRecord[]
+}
 
 async function findManagerPool(
   employeeId: string,

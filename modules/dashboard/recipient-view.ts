@@ -50,6 +50,12 @@ export interface RecipientRecognitionItem {
 
 export interface RecipientDashboardView {
   items: RecipientRecognitionItem[]
+  // Count of recognitions this employee has *given* to others that reached
+  // approved/fulfilled. Used by the employee dashboard's summary card
+  // alongside items.length (received). Denied / cancelled / in-flight
+  // nominations are intentionally excluded — the employee surface shouldn't
+  // make a pending approval look like a delivered recognition.
+  given_count: number
 }
 
 const VISIBLE_STATUSES = new Set(['approved', 'fulfilled'])
@@ -57,8 +63,11 @@ const VISIBLE_STATUSES = new Set(['approved', 'fulfilled'])
 export async function getRecipientDashboardView(
   employeeId: string
 ): Promise<RecipientDashboardView> {
-  const nominations = await loadVisibleNominationsForNominee(employeeId)
-  if (nominations.length === 0) return { items: [] }
+  const [nominations, given_count] = await Promise.all([
+    loadVisibleNominationsForNominee(employeeId),
+    countGivenByNominator(employeeId),
+  ])
+  if (nominations.length === 0) return { items: [], given_count }
 
   const nominatorIds = nominations.map((n) => n.nominator_id)
   const [employees, rewardsByNom] = await Promise.all([
@@ -84,10 +93,25 @@ export async function getRecipientDashboardView(
     }
   })
 
-  return { items }
+  return { items, given_count }
 }
 
 // ─── Internal ────────────────────────────────────────────────────────────────
+
+async function countGivenByNominator(nominatorId: string): Promise<number> {
+  if (useMock()) {
+    return listAllMock().filter(
+      (n) =>
+        n.nominator_id === nominatorId && VISIBLE_STATUSES.has(n.status)
+    ).length
+  }
+  return db.nomination.count({
+    where: {
+      nominator_id: nominatorId,
+      status: { in: ['approved', 'fulfilled'] },
+    },
+  })
+}
 
 function projectReward(reward: RewardRecord): RecipientRewardProjection {
   return {

@@ -194,6 +194,32 @@ export async function countPendingTier1ForApprover(
   })
 }
 
+// Count of denied nominations within a date range. Surfaced in the
+// People team admin queue as "denials to review" — reps skim for pattern
+// flags (recurring denials from one manager, denials of the same nominee,
+// etc.). Includes both human and system auto-denies; the distinction lives
+// on /people-ops/dashboard's SLA misses list.
+export async function countDeniedInRange(
+  start: Date,
+  end: Date
+): Promise<number> {
+  if (useMock()) {
+    return listAllMock().filter(
+      (n) =>
+        n.status === 'denied' &&
+        n.denied_at !== null &&
+        n.denied_at >= start &&
+        n.denied_at <= end
+    ).length
+  }
+  return db.nomination.count({
+    where: {
+      status: 'denied',
+      denied_at: { gte: start, lte: end },
+    },
+  })
+}
+
 // Tier 2 pending count for the dept-head dashboard. Scoped to nominations
 // where the viewer is the snapshot dept head — not a People-team rep, even
 // if the viewer is also a rep. status covers both the approval phase
