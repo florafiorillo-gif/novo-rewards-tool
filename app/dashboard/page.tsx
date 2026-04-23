@@ -8,12 +8,16 @@ import {
 import { getDepartmentDashboardView } from '@/modules/dashboard/department-view'
 import { getRecognitionFeed } from '@/modules/dashboard/recognition-feed'
 import { getRecipientDashboardView } from '@/modules/dashboard/recipient-view'
+import { getPeopleTeamDashboardView } from '@/modules/dashboard/people-team-view'
 import { resolveRole } from '@/modules/roles/resolver'
 import { listCommitteeQueue } from '@/modules/committee/service'
 import { listManualFulfillmentQueue } from '@/modules/fulfillment/queries'
+import { countDeniedInRange } from '@/modules/approvals/queries'
+import { getDisplayablePeriod } from '@/modules/budget/periods'
 import { ManagerPoolCard } from '@/components/dashboard/ManagerPoolCard'
 import { DepartmentPoolCard } from '@/components/dashboard/DepartmentPoolCard'
 import { RecognitionFeed } from '@/components/dashboard/RecognitionFeed'
+import { ProgramHealthCard } from '@/components/dashboard/ProgramHealthCard'
 import { RecognizeCTACard } from '@/components/dashboard/RecognizeCTACard'
 import { TeamRhythmCard } from '@/components/dashboard/TeamRhythmCard'
 import { YourActivityCard } from '@/components/dashboard/YourActivityCard'
@@ -40,6 +44,8 @@ export default async function DashboardPage() {
     teamRhythm,
     tier3Queue,
     fulfillmentQueue,
+    programView,
+    displayablePeriod,
   ] = await Promise.all([
     getManagerDashboardView(employeeId),
     getDepartmentDashboardView(employeeId),
@@ -52,7 +58,23 @@ export default async function DashboardPage() {
     role.is_people_team
       ? listManualFulfillmentQueue()
       : Promise.resolve([]),
+    role.is_people_team
+      ? getPeopleTeamDashboardView(employeeId)
+      : Promise.resolve(null),
+    role.is_people_team ? getDisplayablePeriod() : Promise.resolve(null),
   ])
+
+  // Denials during the current period — backs the new "Denials to review"
+  // row on the People team admin queue. Only fetched when the viewer is a
+  // People team rep; the count is a signal for pattern-flag follow-up, not
+  // an action queue, so it's null-safe if no period is active.
+  const deniedCount =
+    role.is_people_team && displayablePeriod?.period
+      ? await countDeniedInRange(
+          displayablePeriod.period.start_date,
+          displayablePeriod.period.end_date
+        )
+      : 0
 
   const { period, in_grace, grace_ends_at, pool, pacing, pending_tier1_count } =
     view
@@ -65,10 +87,15 @@ export default async function DashboardPage() {
 
   const isAdmin = role.is_committee || role.is_people_team
   const hasAdminQueueItems =
-    isAdmin && (totalPending > 0 || tier3Count > 0 || fulfillmentCount > 0)
+    isAdmin &&
+    (totalPending > 0 ||
+      tier3Count > 0 ||
+      fulfillmentCount > 0 ||
+      deniedCount > 0)
   const hasActivity = !isAdmin && (receivedCount > 0 || givenCount > 0)
   const hasTeamRhythm =
     role.is_manager && !!teamRhythm && teamRhythm.entries.length > 0
+  const hasProgramHealth = role.is_people_team && !!programView?.period
 
   const feedIsEmpty = feed.length === 0
   // Employee-only viewers always get the sidebar so the Recognize CTA has
@@ -88,7 +115,8 @@ export default async function DashboardPage() {
       )) ||
     hasAdminQueueItems ||
     hasActivity ||
-    hasTeamRhythm
+    hasTeamRhythm ||
+    hasProgramHealth
   const showSidebar = !feedIsEmpty || hasSidebarContent
 
   return (
@@ -171,6 +199,15 @@ export default async function DashboardPage() {
                 pendingApprovals={totalPending}
                 tier3Count={role.is_committee ? tier3Count : 0}
                 fulfillmentCount={role.is_people_team ? fulfillmentCount : 0}
+                deniedCount={role.is_people_team ? deniedCount : 0}
+              />
+            )}
+
+            {hasProgramHealth && programView && (
+              <ProgramHealthCard
+                view={programView}
+                href="/people-ops/dashboard"
+                eyebrow="Program health"
               />
             )}
 
@@ -232,10 +269,12 @@ function YourQueueCard({
   pendingApprovals,
   tier3Count,
   fulfillmentCount,
+  deniedCount,
 }: {
   pendingApprovals: number
   tier3Count: number
   fulfillmentCount: number
+  deniedCount: number
 }) {
   const rows: Array<{ label: string; count: number; href: string }> = []
   if (pendingApprovals > 0)
@@ -255,6 +294,12 @@ function YourQueueCard({
       label: 'Pending fulfillment',
       count: fulfillmentCount,
       href: '/people-ops/fulfillment',
+    })
+  if (deniedCount > 0)
+    rows.push({
+      label: 'Denials to review',
+      count: deniedCount,
+      href: '/people-ops/dashboard',
     })
 
   return (
