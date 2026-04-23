@@ -8,7 +8,10 @@ import {
 import { getDepartmentDashboardView } from '@/modules/dashboard/department-view'
 import { getRecognitionFeed } from '@/modules/dashboard/recognition-feed'
 import { getRecipientDashboardView } from '@/modules/dashboard/recipient-view'
-import { getPeopleTeamDashboardView } from '@/modules/dashboard/people-team-view'
+import {
+  buildProgramView,
+  getPeopleTeamDashboardView,
+} from '@/modules/dashboard/people-team-view'
 import { resolveRole } from '@/modules/roles/resolver'
 import { listCommitteeQueue } from '@/modules/committee/service'
 import { listManualFulfillmentQueue } from '@/modules/fulfillment/queries'
@@ -17,9 +20,11 @@ import { getDisplayablePeriod } from '@/modules/budget/periods'
 import { ManagerPoolCard } from '@/components/dashboard/ManagerPoolCard'
 import { DepartmentPoolCard } from '@/components/dashboard/DepartmentPoolCard'
 import { RecognitionFeed } from '@/components/dashboard/RecognitionFeed'
+import { BudgetPeriodStatusCard } from '@/components/dashboard/BudgetPeriodStatusCard'
 import { ProgramHealthCard } from '@/components/dashboard/ProgramHealthCard'
 import { RecognizeCTACard } from '@/components/dashboard/RecognizeCTACard'
 import { TeamRhythmCard } from '@/components/dashboard/TeamRhythmCard'
+import { TierThreeQueueCard } from '@/components/dashboard/TierThreeQueueCard'
 import { YourActivityCard } from '@/components/dashboard/YourActivityCard'
 
 export const dynamic = 'force-dynamic'
@@ -58,10 +63,18 @@ export default async function DashboardPage() {
     role.is_people_team
       ? listManualFulfillmentQueue()
       : Promise.resolve([]),
+    // Committee members get program-level visibility (spec §10.5), so the
+    // program view is fetched for either role. buildProgramView is
+    // role-agnostic; getPeopleTeamDashboardView gates on rep flag, so
+    // committee-only viewers (Rares) use the unguarded path.
     role.is_people_team
       ? getPeopleTeamDashboardView(employeeId)
+      : role.is_committee
+        ? buildProgramView()
+        : Promise.resolve(null),
+    role.is_people_team || role.is_committee
+      ? getDisplayablePeriod()
       : Promise.resolve(null),
-    role.is_people_team ? getDisplayablePeriod() : Promise.resolve(null),
   ])
 
   // Denials during the current period — backs the new "Denials to review"
@@ -86,16 +99,23 @@ export default async function DashboardPage() {
   const givenCount = recipientView.given_count
 
   const isAdmin = role.is_committee || role.is_people_team
+  // Tier 3 deliberately excluded — committee gets its own TierThreeQueueCard
+  // above. People team reps without committee hats can't have Tier 3 items.
   const hasAdminQueueItems =
-    isAdmin &&
-    (totalPending > 0 ||
-      tier3Count > 0 ||
-      fulfillmentCount > 0 ||
-      deniedCount > 0)
+    isAdmin && (totalPending > 0 || fulfillmentCount > 0 || deniedCount > 0)
   const hasActivity = !isAdmin && (receivedCount > 0 || givenCount > 0)
   const hasTeamRhythm =
     role.is_manager && !!teamRhythm && teamRhythm.entries.length > 0
-  const hasProgramHealth = role.is_people_team && !!programView?.period
+  const hasProgramHealth =
+    (role.is_people_team || role.is_committee) && !!programView?.period
+  // Committee members get the superset drill-down (/committee/dashboard
+  // layers Tier 3 decisions on top of the program view). People-team-only
+  // reps drop to the /people-ops/dashboard variant.
+  const programHealthHref = role.is_committee
+    ? '/committee/dashboard'
+    : '/people-ops/dashboard'
+  const hasCommitteeCards = role.is_committee && !!displayablePeriod?.period
+  const tier3UrgentCount = tier3Queue.filter((q) => q.nomination.urgent).length
 
   const feedIsEmpty = feed.length === 0
   // Employee-only viewers always get the sidebar so the Recognize CTA has
@@ -116,7 +136,8 @@ export default async function DashboardPage() {
     hasAdminQueueItems ||
     hasActivity ||
     hasTeamRhythm ||
-    hasProgramHealth
+    hasProgramHealth ||
+    hasCommitteeCards
   const showSidebar = !feedIsEmpty || hasSidebarContent
 
   return (
@@ -163,6 +184,13 @@ export default async function DashboardPage() {
               />
             )}
 
+            {role.is_committee && (
+              <TierThreeQueueCard
+                total={tier3Count}
+                urgent={tier3UrgentCount}
+              />
+            )}
+
             {pool && period && pacing && (
               <ManagerPoolCard
                 period={period}
@@ -194,19 +222,29 @@ export default async function DashboardPage() {
               <TeamRhythmCard view={teamRhythm} />
             )}
 
+            {/* Admin queue. Tier 3 is handled by TierThreeQueueCard above
+                when the viewer is committee, so this card stays focused on
+                approvals + fulfillment + denials for the People-team path. */}
             {hasAdminQueueItems && (
               <YourQueueCard
                 pendingApprovals={totalPending}
-                tier3Count={role.is_committee ? tier3Count : 0}
                 fulfillmentCount={role.is_people_team ? fulfillmentCount : 0}
                 deniedCount={role.is_people_team ? deniedCount : 0}
+              />
+            )}
+
+            {hasCommitteeCards && displayablePeriod?.period && (
+              <BudgetPeriodStatusCard
+                period={displayablePeriod.period}
+                inGrace={displayablePeriod.in_grace}
+                graceEndsAt={displayablePeriod.grace_ends_at}
               />
             )}
 
             {hasProgramHealth && programView && (
               <ProgramHealthCard
                 view={programView}
-                href="/people-ops/dashboard"
+                href={programHealthHref}
                 eyebrow="Program health"
               />
             )}
@@ -267,12 +305,10 @@ function PendingForYou({ tier1, tier2 }: { tier1: number; tier2: number }) {
 // the caller if every count is zero.
 function YourQueueCard({
   pendingApprovals,
-  tier3Count,
   fulfillmentCount,
   deniedCount,
 }: {
   pendingApprovals: number
-  tier3Count: number
   fulfillmentCount: number
   deniedCount: number
 }) {
@@ -282,12 +318,6 @@ function YourQueueCard({
       label: 'Pending approvals',
       count: pendingApprovals,
       href: '/approvals/queue',
-    })
-  if (tier3Count > 0)
-    rows.push({
-      label: 'Pending Tier 3 reviews',
-      count: tier3Count,
-      href: '/committee/queue',
     })
   if (fulfillmentCount > 0)
     rows.push({
