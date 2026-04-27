@@ -18,6 +18,12 @@ const TILES: Array<{
       'Pools by geo, reserve draws, SLA misses for the current quarter.',
   },
   {
+    href: '/leadership/participation',
+    title: 'Participation patterns',
+    description:
+      "Drill into who's giving and receiving across geos, departments, and managers. Lowest participation surfaces first.",
+  },
+  {
     href: '/people-ops/fulfillment',
     title: 'Fulfillment queue',
     description:

@@ -33,6 +33,12 @@ const TILES: Array<{
     description:
       'Pools by geo, reserve draws, SLA misses, and the committee decision history for the active period.',
   },
+  {
+    href: '/leadership/participation',
+    title: 'Participation patterns',
+    description:
+      "Who's giving and receiving recognition this period. Drills from company → geo → department → manager so problem areas surface first.",
+  },
 ]
 
 export default async function LeadershipHomePage() {
