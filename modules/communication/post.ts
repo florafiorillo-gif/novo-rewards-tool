@@ -207,8 +207,88 @@ export async function sendMadeItHappenPost(
   }
 }
 
-// PostSender wrapper — plugs into ack.firePostIfReady / runPostSweep.
-export const realPostSender: PostSender = async (nom) => {
-  const { message_ts } = await sendMadeItHappenPost(nom)
+// PostSender wrapper — plugs into ack.firePostIfReady /
+// runPostSweep. Length 1 → single-row post; length >= 2 → unified
+// group post listing every recipient in the array. The caller
+// (fireGroupPostIfReady) only passes public-pref siblings, so the
+// sender doesn't need to re-filter visibility here.
+export const realPostSender: PostSender = async (noms) => {
+  if (noms.length === 0) return { message_ts: null }
+  if (noms.length === 1) {
+    const { message_ts } = await sendMadeItHappenPost(noms[0]!)
+    return { message_ts }
+  }
+  const { message_ts } = await sendGroupMadeItHappenPost(noms)
   return { message_ts }
+}
+
+// ─── Group post composer (Round 3) ─────────────────────────────────
+// Renders one #made-it-happen message that lists every public
+// recipient by name. The caller only passes public-pref siblings;
+// private and team_only siblings are excluded upstream and don't
+// appear in the post text.
+//
+// Group siblings share nominator + value + behavior + outcome (they
+// were created from one form submission), so the body re-uses the
+// first sibling's narrative. Scope notes vary per approver so we
+// omit them from the group post — keeps the message terse and
+// avoids "scope-note-from-which-approver?" attribution gymnastics.
+export async function sendGroupMadeItHappenPost(
+  noms: NominationRecord[]
+): Promise<SendPostResult> {
+  if (noms.length === 0) {
+    return { message_ts: null, outcome: 'skipped_missing_context' }
+  }
+  const head = noms[0]!
+  const [nominator, ...nomineeRecords] = await Promise.all([
+    getEmployeeById(head.nominator_id),
+    ...noms.map((n) => getEmployeeById(n.nominee_id)),
+  ])
+  if (!nominator) {
+    return { message_ts: null, outcome: 'skipped_missing_context' }
+  }
+  const nominees = nomineeRecords.filter(
+    (e): e is Employee => e !== null
+  )
+  if (nominees.length === 0) {
+    return { message_ts: null, outcome: 'skipped_missing_context' }
+  }
+  const value = getValueById(head.value_id)
+  if (!value) return { message_ts: null, outcome: 'skipped_missing_context' }
+
+  // Header lists every public recipient by full name. The accent
+  // moves to the front for Tier 3 (parity with single-row post).
+  const accent = head.current_tier === 3 ? `${TIER_3_ACCENT} ` : ''
+  const namesList = nominees.map((e) => e.name).join(', ')
+  const header = `${accent}*${namesList}* | *${value.name}*`
+  const nominator_quote = `${nominator.name}: "${head.behavior_text}"`
+  const outcome =
+    head.current_tier >= 2 && head.outcome_text.trim().length > 0
+      ? head.outcome_text
+      : null
+
+  const assembly: PostAssembly = {
+    header,
+    nominator_quote,
+    outcome,
+    scope_note_line: null,
+    thread_starter: THREAD_STARTER,
+  }
+
+  const channel = madeItHappenChannel()
+  if (!slackEnabled() || !channel) {
+    return { message_ts: null, outcome: 'skipped_unconfigured' }
+  }
+
+  try {
+    const res = await getSlackClient().chat.postMessage({
+      channel,
+      blocks: buildPostBlocks(assembly),
+      text: buildPostFallbackText(assembly),
+    })
+    return { message_ts: res.ts ?? null, outcome: 'posted' }
+  } catch (err) {
+    console.error('[slack] #made-it-happen group post failed', err)
+    return { message_ts: null, outcome: 'skipped_unconfigured' }
+  }
 }

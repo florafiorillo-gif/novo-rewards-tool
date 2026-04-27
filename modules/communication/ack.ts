@@ -1,5 +1,9 @@
 import { db } from '@/lib/db'
-import { getNominationById } from '@/modules/nominations/service'
+import {
+  getNominationById,
+  listGroupSiblings,
+} from '@/modules/nominations/service'
+import { getEmployeeById } from '@/modules/employees/service'
 import { listAllMock, updateMock } from '@/modules/nominations/mock-store'
 import { listRewards, getRewardForNomination } from '@/modules/rewards/service'
 import { patchNomination } from '@/modules/approvals/shared'
@@ -82,17 +86,23 @@ export function shouldFirePost(
   return now.getTime() - dmSentAt.getTime() >= POST_TIMEOUT_MS
 }
 
-// Injected sender. 6B ships a stub (returns { message_ts: null }); 6C
-// swaps in the real Slack channel post.
+// Injected sender. Always receives an array; length 1 means a
+// single-row post, length >= 2 means a unified group post (Round 3
+// group nominations). Implementations branch internally — see
+// realPostSender in modules/communication/post.ts.
 export type PostSender = (
-  nomination: NominationRecord
+  nominations: NominationRecord[]
 ) => Promise<{ message_ts: string | null }>
 
 export const stubPostSender: PostSender = async () => ({ message_ts: null })
 
 // Called by the Slack ack-button handler immediately after
 // acknowledgeNomination succeeds, and by the cron sweep for 24h
-// timeouts. Idempotent via markPostFired.
+// timeouts. Idempotent via markPostFired. Group-aware: if the
+// nomination is part of a group, defers until every public sibling
+// has settled, then fires one unified post for the public ready
+// set; private/team_only siblings keep their independent fire-and-
+// mark behavior.
 export async function firePostIfReady(
   nomination_id: string,
   sender: PostSender,
@@ -100,9 +110,14 @@ export async function firePostIfReady(
 ): Promise<{ fired: boolean; message_ts: string | null }> {
   const nom = await getNominationById(nomination_id)
   if (!nom) return { fired: false, message_ts: null }
+
+  if (nom.team_award_group_id) {
+    return fireGroupPostIfReady(nom, sender, now)
+  }
+
   const reward = await getRewardForNomination(nomination_id)
   if (!shouldFirePost(nom, reward, now)) return { fired: false, message_ts: null }
-  const { message_ts } = await sender(nom)
+  const { message_ts } = await sender([nom])
   const marked = await markPostFired(nomination_id, message_ts, now)
   return { fired: marked.fired, message_ts }
 }
@@ -117,16 +132,143 @@ export async function runPostSweep(
   const fired: string[] = []
   const skipped: string[] = []
   for (const nom of candidates) {
+    if (nom.post_fired_at) {
+      // A previous iteration in this same sweep (e.g. another sibling
+      // in the same group) already fanned this row's post_fired_at.
+      // Re-read happens implicitly via getNominationById in the group
+      // path; skip the cached snapshot.
+      skipped.push(nom.id)
+      continue
+    }
+    if (nom.team_award_group_id) {
+      const result = await fireGroupPostIfReady(nom, sender, now)
+      if (result.fired) fired.push(nom.id)
+      else skipped.push(nom.id)
+      continue
+    }
     const reward = rewardByNom.get(nom.id) ?? null
     if (!shouldFirePost(nom, reward, now)) {
       skipped.push(nom.id)
       continue
     }
-    const { message_ts } = await sender(nom)
+    const { message_ts } = await sender([nom])
     await markPostFired(nom.id, message_ts, now)
     fired.push(nom.id)
   }
   return { fired, skipped }
+}
+
+// ─── Group post firing ───────────────────────────────────────────────
+//
+// Conditions to fire a group post for a given trigger nomination:
+//
+//   1. Every PUBLIC-pref sibling has "settled" — meaning each one is
+//      either already fired, ready to fire right now (acked or 24h
+//      timeout), or in a terminal state (denied / cancelled). If any
+//      public sibling is still pending (submitted / under_review /
+//      approved-but-no-DM-yet), we defer.
+//
+//   2. After settle, count public ready siblings:
+//        - >= 2 → unified group post (sender receives the public list)
+//        - 1    → single-row post (spec: "only one approved, post
+//                 normally"); sender receives a 1-element list
+//        - 0    → no public post; just mark the trigger's post_fired_at
+//                 with message_ts=null so it stops re-considering
+//
+//   3. After firing, mark every ready sibling post_fired_at:
+//        - Public siblings get the group's message_ts so reactions
+//          can attach later if the comm-reactions module wires it.
+//        - Private / team_only siblings get null (matches existing
+//          single-row private behavior — no post on their row).
+
+async function fireGroupPostIfReady(
+  trigger: NominationRecord,
+  sender: PostSender,
+  now: Date
+): Promise<{ fired: boolean; message_ts: string | null }> {
+  const siblings = await listGroupSiblings(trigger.team_award_group_id)
+  if (siblings.length === 0) {
+    // Defensive — trigger had a group_id but the lookup found
+    // nothing. Treat as a single-row post.
+    const reward = await getRewardForNomination(trigger.id)
+    if (!shouldFirePost(trigger, reward, now)) {
+      return { fired: false, message_ts: null }
+    }
+    const { message_ts } = await sender([trigger])
+    await markPostFired(trigger.id, message_ts, now)
+    return { fired: true, message_ts }
+  }
+
+  // Hydrate per-sibling state: recipient (for visibility pref),
+  // reward (for shouldFirePost), and a "ready/settled/pending" tag.
+  type Hydrated = {
+    nom: NominationRecord
+    isPublic: boolean
+    state: 'fired' | 'ready' | 'terminal' | 'pending'
+  }
+  const hydrated: Hydrated[] = []
+  for (const s of siblings) {
+    const recipient = await getEmployeeById(s.nominee_id)
+    const isPublic = recipient?.recognition_preference === 'public'
+    if (s.post_fired_at) {
+      hydrated.push({ nom: s, isPublic, state: 'fired' })
+      continue
+    }
+    if (s.status === 'denied' || s.status === 'cancelled') {
+      hydrated.push({ nom: s, isPublic, state: 'terminal' })
+      continue
+    }
+    if (s.status !== 'approved' && s.status !== 'fulfilled') {
+      hydrated.push({ nom: s, isPublic, state: 'pending' })
+      continue
+    }
+    const reward = await getRewardForNomination(s.id)
+    if (shouldFirePost(s, reward, now)) {
+      hydrated.push({ nom: s, isPublic, state: 'ready' })
+    } else {
+      // Approved/fulfilled but no DM sent or no ack/timeout yet.
+      hydrated.push({ nom: s, isPublic, state: 'pending' })
+    }
+  }
+
+  // Defer if any public sibling is still in flight.
+  const publicPending = hydrated.some(
+    (h) => h.isPublic && h.state === 'pending'
+  )
+  if (publicPending) return { fired: false, message_ts: null }
+
+  const readyPublic = hydrated.filter((h) => h.isPublic && h.state === 'ready')
+  const readyAll = hydrated.filter((h) => h.state === 'ready')
+
+  if (readyPublic.length === 0) {
+    // No public post to fire. Mark every ready sibling (which by
+    // definition are non-public here) post_fired_at with null —
+    // matches single-row private behavior. The trigger itself is
+    // among them if it was ready.
+    for (const r of readyAll) {
+      await markPostFired(r.nom.id, null, now)
+    }
+    // If the trigger wasn't ready (e.g. it's terminal/fired and
+    // sweep happened to surface it), there's nothing more to do.
+    return { fired: readyAll.length > 0, message_ts: null }
+  }
+
+  // At least one public ready sibling — fire the post. The sender
+  // receives the public list; length 1 → single-row, length >=2 →
+  // unified group post.
+  const senderResult = await sender(readyPublic.map((r) => r.nom))
+
+  // Mark every ready sibling post_fired_at. Public ones get the
+  // group's message_ts; non-public ones get null.
+  for (const r of readyAll) {
+    await markPostFired(
+      r.nom.id,
+      r.isPublic ? senderResult.message_ts : null,
+      now
+    )
+  }
+
+  return { fired: true, message_ts: senderResult.message_ts }
 }
 
 async function loadCandidates(): Promise<NominationRecord[]> {
