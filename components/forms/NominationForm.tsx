@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 import type { SubmitState } from '@/app/nominations/actions'
 import { submitNominationAction } from '@/app/nominations/actions'
@@ -55,6 +55,7 @@ const OUTCOME_PLACEHOLDER = 'What happened as a result? Why did it matter?'
 const DEFAULT_BEHAVIOR_PLACEHOLDER = 'What did they do? Be specific.'
 const MIN_LEN = 30
 const MAX_LEN = 500
+const MAX_RECIPIENTS = 10
 
 export function NominationForm({
   employees,
@@ -66,18 +67,31 @@ export function NominationForm({
     submitNominationAction,
     INITIAL_STATE
   )
-  const [selectedNomineeId, setSelectedNomineeId] = useState(
+  const [selectedNomineeIds, setSelectedNomineeIds] = useState<string[]>(
     initialNomineeId && employees.some((e) => e.id === initialNomineeId)
-      ? initialNomineeId
-      : ''
+      ? [initialNomineeId]
+      : []
   )
   const [selectedValueId, setSelectedValueId] = useState('')
   const [behavior, setBehavior] = useState('')
   const [outcome, setOutcome] = useState('')
 
-  const selectedNominee = employees.find((e) => e.id === selectedNomineeId)
+  const employeesById = useMemo(
+    () => new Map(employees.map((e) => [e.id, e])),
+    [employees]
+  )
+
+  const isGroup = selectedNomineeIds.length > 1
+  // Self-approval reflection is only required on the single-
+  // recipient path. The service rejects multi-recipient submissions
+  // that include any direct report, so reflection is never asked
+  // for in the group case.
+  const onlyNomineeId = !isGroup ? selectedNomineeIds[0] ?? null : null
+  const onlyNominee = onlyNomineeId
+    ? employeesById.get(onlyNomineeId) ?? null
+    : null
   const isSelfApprovalPath =
-    !!selectedNominee && selectedNominee.manager_id === currentEmployeeId
+    !!onlyNominee && onlyNominee.manager_id === currentEmployeeId
 
   const behaviorPlaceholder =
     values.find((v) => v.id === selectedValueId)?.behavior_placeholder ??
@@ -93,32 +107,31 @@ export function NominationForm({
         </div>
       )}
 
-      {/* ── Nominee ────────────────────────────────────────────────── */}
+      {/* ── Nominees ───────────────────────────────────────────────── */}
       <section aria-labelledby="nominee-label" className="space-y-3">
         <FieldLabel
           id="nominee-label"
           title="Who are you recognizing?"
           step={1}
           total={3}
+          hint={`Pick one teammate, or up to ${MAX_RECIPIENTS} for a group recognition.`}
         />
-        <select
-          id="nominee_id"
-          name="nominee_id"
-          required
-          value={selectedNomineeId}
-          onChange={(e) => setSelectedNomineeId(e.target.value)}
-          className="block h-11 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm text-novo-ink transition focus:border-novo-ink"
-        >
-          <option value="" disabled>
-            Pick a teammate
-          </option>
-          {employees.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.name} — {e.role_title}
-            </option>
-          ))}
-        </select>
+        <NomineePicker
+          employees={employees}
+          currentEmployeeId={currentEmployeeId}
+          selectedIds={selectedNomineeIds}
+          onChange={setSelectedNomineeIds}
+        />
         {err.nominee_id && <FieldError>{err.nominee_id}</FieldError>}
+
+        {isGroup && (
+          <p className="rounded-md border border-novo-border bg-novo-hover/40 px-3 py-2 text-xs text-novo-subtle">
+            You&rsquo;re recognizing {selectedNomineeIds.length} people for this
+            moment. Each one&rsquo;s manager will approve independently — if one
+            denies, only that recipient drops off.
+          </p>
+        )}
+
         {isSelfApprovalPath && (
           <p className="text-xs text-novo-subtle">
             This person reports to you — we&rsquo;ll collapse this into a single
@@ -183,7 +196,7 @@ export function NominationForm({
         />
       </section>
 
-      {/* ── Self-approval reflection ───────────────────────────────── */}
+      {/* ── Self-approval reflection (single-recipient only) ───────── */}
       {isSelfApprovalPath && (
         <section className="space-y-3 rounded-lg border border-novo-border bg-novo-hover/40 p-5">
           <div>
@@ -243,13 +256,151 @@ export function NominationForm({
           Submissions route to an approver automatically. You can cancel within
           24 hours.
         </p>
-        <SubmitButton />
+        <SubmitButton disabled={selectedNomineeIds.length === 0} />
       </div>
     </form>
   )
 }
 
 // ─── Subcomponents ────────────────────────────────────────────────────────
+
+// Multi-select with autocomplete. Filters the active-employee list as
+// the user types and renders selected names as removable chips. Each
+// selection emits a hidden <input name="nominee_ids" value=...> so
+// FormData.getAll('nominee_ids') yields the array on submit.
+function NomineePicker({
+  employees,
+  currentEmployeeId,
+  selectedIds,
+  onChange,
+}: {
+  employees: EmployeeOption[]
+  currentEmployeeId: string
+  selectedIds: string[]
+  onChange: (ids: string[]) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+
+  const employeesById = useMemo(
+    () => new Map(employees.map((e) => [e.id, e])),
+    [employees]
+  )
+
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (q.length === 0) return []
+    return employees
+      .filter(
+        (e) =>
+          e.id !== currentEmployeeId &&
+          !selectedIds.includes(e.id) &&
+          (e.name.toLowerCase().includes(q) ||
+            e.role_title.toLowerCase().includes(q) ||
+            e.email.toLowerCase().includes(q))
+      )
+      .slice(0, 8)
+  }, [query, employees, selectedIds, currentEmployeeId])
+
+  const atCap = selectedIds.length >= MAX_RECIPIENTS
+
+  function add(id: string) {
+    if (selectedIds.includes(id)) return
+    if (atCap) return
+    onChange([...selectedIds, id])
+    setQuery('')
+    setOpen(false)
+  }
+
+  function remove(id: string) {
+    onChange(selectedIds.filter((x) => x !== id))
+  }
+
+  return (
+    <div>
+      {/* Hidden inputs — FormData.getAll('nominee_ids') reads these on submit. */}
+      {selectedIds.map((id) => (
+        <input
+          key={id}
+          type="hidden"
+          name="nominee_ids"
+          value={id}
+        />
+      ))}
+
+      {selectedIds.length > 0 && (
+        <ul className="mb-2 flex flex-wrap gap-2">
+          {selectedIds.map((id) => {
+            const emp = employeesById.get(id)
+            return (
+              <li key={id}>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-novo-border bg-novo-paper py-1 pl-3 pr-1 text-xs text-novo-ink shadow-card">
+                  {emp?.name ?? id}
+                  <button
+                    type="button"
+                    onClick={() => remove(id)}
+                    aria-label={`Remove ${emp?.name ?? id}`}
+                    className="ml-1 flex h-5 w-5 items-center justify-center rounded-full text-novo-muted hover:bg-novo-hover hover:text-novo-ink"
+                  >
+                    ×
+                  </button>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      <div className="relative">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setOpen(true)
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => {
+            // Delay so click on a suggestion still registers.
+            setTimeout(() => setOpen(false), 120)
+          }}
+          placeholder={
+            atCap
+              ? `Cap reached — ${MAX_RECIPIENTS} max`
+              : selectedIds.length === 0
+                ? 'Type a name to find a teammate'
+                : 'Add another teammate'
+          }
+          disabled={atCap}
+          className="block h-11 w-full rounded-md border border-novo-border bg-novo-paper px-3 text-sm text-novo-ink placeholder:text-novo-muted focus:border-novo-ink disabled:bg-novo-hover disabled:text-novo-muted"
+        />
+        {open && matches.length > 0 && (
+          <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-novo-border bg-novo-elevated p-1 text-sm shadow-elevated">
+            {matches.map((e) => (
+              <li key={e.id}>
+                <button
+                  type="button"
+                  onMouseDown={(ev) => ev.preventDefault()}
+                  onClick={() => add(e.id)}
+                  className="flex w-full flex-col rounded-md px-3 py-2 text-left hover:bg-novo-hover"
+                >
+                  <span className="font-medium text-novo-ink">{e.name}</span>
+                  <span className="text-2xs text-novo-muted">
+                    {e.role_title}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <p className="mt-1.5 text-2xs text-novo-muted tabular">
+        {selectedIds.length}/{MAX_RECIPIENTS} selected
+      </p>
+    </div>
+  )
+}
 
 function FieldLabel({
   id,
@@ -403,10 +554,10 @@ function FieldError({ children }: { children: React.ReactNode }) {
   return <p className="text-xs text-novo-coral">{children}</p>
 }
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" disabled={pending} size="lg">
+    <Button type="submit" disabled={disabled || pending} size="lg">
       {pending ? 'Submitting…' : 'Submit nomination'}
     </Button>
   )
