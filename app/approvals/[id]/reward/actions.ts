@@ -91,6 +91,51 @@ export async function selectRewardAction(
     await fireVendorStub(result.reward.id, result.reward.reward_type, actorId)
   }
 
+  // ── Apply-to-all (group nominations) ───────────────────────────────
+  // When the form's apply-to-siblings checkbox was on, the page
+  // emitted a sibling_nomination_ids hidden input per eligible
+  // sibling. Each sibling re-runs selectReward with the same scope
+  // note and choice. Failures are logged but don't roll the focused
+  // selection back — those siblings stay in 'approved' status with
+  // no reward and surface again in the approver's /review queue.
+  const applyToSiblings = formData.get('apply_to_siblings') === 'on'
+  const siblingIds = formData
+    .getAll('sibling_nomination_ids')
+    .map((v) => (typeof v === 'string' ? v.trim() : ''))
+    .filter((v) => v.length > 0)
+
+  if (applyToSiblings && siblingIds.length > 0) {
+    for (const siblingId of siblingIds) {
+      // Fresh tier check per sibling — most groups will be all T1
+      // but a per-sibling upgrade earlier in the flow could have
+      // bumped one to T2 (which lives in pending_confirm until the
+      // rep signs off, mirroring the focused nomination's logic).
+      const siblingNom = await getNominationById(siblingId)
+      if (!siblingNom) continue
+      const siblingPendingConfirm = siblingNom.current_tier === 2
+
+      const siblingInput: Parameters<typeof selectReward>[0] = {
+        ...input,
+        nomination_id: siblingId,
+        pending_confirm: siblingPendingConfirm,
+      }
+      const r = await selectReward(siblingInput)
+      if (!r.ok) {
+        console.error(
+          `[rewards] apply-to-all failed for sibling ${siblingId}:`,
+          r.error.code
+        )
+        continue
+      }
+      if (
+        !siblingPendingConfirm &&
+        !isManualDelivery(r.reward.delivery_mechanism)
+      ) {
+        await fireVendorStub(r.reward.id, r.reward.reward_type, actorId)
+      }
+    }
+  }
+
   revalidatePath('/review')
   redirect(`/review?recent=${result.reward.id}`)
 }

@@ -29,6 +29,14 @@ interface ScopeNote {
   template_text: string
 }
 
+// Sibling nomination summary: same group, same approver (this viewer),
+// status='approved', no reward yet. Drives the apply-to-all checkbox.
+export interface RewardSiblingSummary {
+  nomination_id: string
+  nominee_name: string
+  geo: Geo
+}
+
 interface Props {
   nominationId: string
   nomineeGeo: Geo
@@ -37,6 +45,13 @@ interface Props {
   catalog: CatalogItem[]
   scopeNotes: ScopeNote[]
   poolRemaining: number
+  // Group siblings the same approver can act on. Empty when this is
+  // a single-recipient nomination or the viewer is the only approver
+  // in the group; in either case the form behaves exactly as before.
+  siblingsForViewer: RewardSiblingSummary[]
+  // Display name of the focused nominee (for the apply-to-all banner
+  // copy: "applying the same reward to <focused> + 2 others").
+  focusedNomineeName: string
 }
 
 export function RewardSelectionForm({
@@ -47,6 +62,8 @@ export function RewardSelectionForm({
   catalog,
   scopeNotes,
   poolRemaining,
+  siblingsForViewer,
+  focusedNomineeName,
 }: Props) {
   const [state, formAction] = useFormState(
     selectRewardAction,
@@ -61,6 +78,20 @@ export function RewardSelectionForm({
   const [scopeNoteText, setScopeNoteText] = useState<string>('')
   const [scopeNoteTemplateId, setScopeNoteTemplateId] = useState<string>('')
   const [budgetException, setBudgetException] = useState<boolean>(false)
+  // Apply-to-all is the lean shape of the "customize per recipient"
+  // toggle: default ON, applies one selection to every sibling the
+  // approver can act on; uncheck to update only the focused
+  // nomination and return to /review for the others.
+  const [applyToAll, setApplyToAll] = useState<boolean>(
+    siblingsForViewer.length > 0
+  )
+
+  const hasSiblings = siblingsForViewer.length > 0
+  const crossGeoSiblings = siblingsForViewer.filter(
+    (s) => s.geo !== nomineeGeo
+  )
+  const catalogCrossGeoWarning =
+    applyToAll && choiceKind === 'catalog' && crossGeoSiblings.length > 0
 
   const selectedCatalogItem = useMemo(
     () => catalog.find((c) => c.id === catalogItemId),
@@ -96,11 +127,69 @@ export function RewardSelectionForm({
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="nomination_id" value={nominationId} />
       <input type="hidden" name="choice_kind" value={choiceKind} />
+      {/* Sibling ids only emitted when the apply-to-all toggle is on.
+          Server action reads getAll('sibling_nomination_ids') and
+          attempts selectReward for each after the focused row succeeds. */}
+      {applyToAll &&
+        siblingsForViewer.map((s) => (
+          <input
+            key={s.nomination_id}
+            type="hidden"
+            name="sibling_nomination_ids"
+            value={s.nomination_id}
+          />
+        ))}
 
       {!state.ok && state.error && (
         <p className="rounded-md border border-novo-coral/30 bg-novo-pink-tint px-4 py-3 text-sm text-novo-oxblood">
           {state.error}
         </p>
+      )}
+
+      {hasSiblings && (
+        <div className="rounded-lg border border-novo-border bg-novo-hover/40 p-4">
+          <p className="text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted">
+            Group recognition
+          </p>
+          <p className="mt-1 text-sm text-novo-ink">
+            You&rsquo;re also approving {siblingsForViewer.length}{' '}
+            {siblingsForViewer.length === 1 ? 'other recipient' : 'other recipients'}{' '}
+            in this group:{' '}
+            <span className="text-novo-subtle">
+              {siblingsForViewer.map((s) => s.nominee_name).join(', ')}
+            </span>
+            .
+          </p>
+          <label className="mt-3 flex items-start gap-2 text-sm text-novo-ink">
+            <input
+              type="checkbox"
+              name="apply_to_siblings"
+              checked={applyToAll}
+              onChange={(e) => setApplyToAll(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              Apply this same reward to all{' '}
+              <span className="tabular">{siblingsForViewer.length + 1}</span> of
+              your group recipients ({focusedNomineeName} + the names above).
+              <span className="block text-xs text-novo-subtle">
+                Uncheck to update only {focusedNomineeName} and pick rewards for
+                the others one at a time from /review.
+              </span>
+            </span>
+          </label>
+          {catalogCrossGeoWarning && (
+            <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Heads up: catalog items are geo-specific, and{' '}
+              {crossGeoSiblings.length === 1
+                ? `${crossGeoSiblings[0]!.nominee_name} is in ${crossGeoSiblings[0]!.geo}`
+                : `${crossGeoSiblings.length} of these recipients are outside ${nomineeGeo}`}
+              . Their rows will fail and stay in your queue. Pick cash or custom
+              for an apply-to-all that works across geos, or uncheck this and
+              do them separately.
+            </p>
+          )}
+        </div>
       )}
 
       <p className="rounded-md border border-novo-border bg-novo-hover px-3 py-2 text-xs text-novo-subtle">

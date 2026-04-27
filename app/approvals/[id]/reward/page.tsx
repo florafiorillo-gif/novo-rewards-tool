@@ -1,6 +1,9 @@
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/auth'
-import { getNominationById } from '@/modules/nominations/service'
+import {
+  getNominationById,
+  listGroupSiblings,
+} from '@/modules/nominations/service'
 import { getEmployeeById } from '@/modules/employees/service'
 import { getValueById } from '@/modules/values/constants'
 import { listCatalogForSelection } from '@/modules/catalog/service'
@@ -9,7 +12,10 @@ import { TIER_RANGES } from '@/modules/catalog/types'
 import { getActivePeriod } from '@/modules/budget/periods'
 import { resolvePoolForNomination } from '@/modules/budget/routing'
 import { getRewardForNomination } from '@/modules/rewards/service'
-import { RewardSelectionForm } from '@/components/rewards/RewardSelectionForm'
+import {
+  RewardSelectionForm,
+  type RewardSiblingSummary,
+} from '@/components/rewards/RewardSelectionForm'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 
@@ -74,6 +80,34 @@ export default async function RewardSelectionPage({
         )
       )
     : 0
+
+  // Group siblings the SAME approver can also act on right now:
+  // same group, different nomination, status=approved, no reward
+  // yet, and the viewer is the appropriate approver for that tier.
+  // Empty list when this is a single-recipient nomination or the
+  // viewer doesn't own any other siblings in the group.
+  const siblingsForViewer: RewardSiblingSummary[] = []
+  if (nomination.team_award_group_id) {
+    const allSiblings = await listGroupSiblings(nomination.team_award_group_id)
+    for (const s of allSiblings) {
+      if (s.id === nomination.id) continue
+      if (s.status !== 'approved') continue
+      const isMyT1 =
+        s.current_tier === 1 && s.current_approver_id === employeeId
+      const isMyT2 =
+        s.current_tier === 2 && s.tier2_dept_head_id === employeeId
+      if (!isMyT1 && !isMyT2) continue
+      const sibReward = await getRewardForNomination(s.id)
+      if (sibReward) continue
+      const sibNominee = await getEmployeeById(s.nominee_id)
+      if (!sibNominee) continue
+      siblingsForViewer.push({
+        nomination_id: s.id,
+        nominee_name: sibNominee.name,
+        geo: sibNominee.geo,
+      })
+    }
+  }
 
   return (
     <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
@@ -142,6 +176,8 @@ export default async function RewardSelectionPage({
           template_text: t.template_text,
         }))}
         poolRemaining={pool?.remaining_amount_usd ?? 0}
+        siblingsForViewer={siblingsForViewer}
+        focusedNomineeName={nominee.name}
       />
     </main>
   )
