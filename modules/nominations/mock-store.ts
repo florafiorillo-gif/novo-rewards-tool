@@ -82,3 +82,13 @@ export function listPendingForApproverMock(approver_id: string): NominationRecor
 export function listAllMock(): NominationRecord[] {
   return [...store.values()]
 }
+
+// Group-aware reads (Round 3 group nominations). Group nominations
+// share a `team_award_group_id`; siblings need to be enumerable so
+// the post composer can render a single unified Slack post and the
+// reward picker can offer "apply to all of yours."
+export function findByGroupIdMock(group_id: string): NominationRecord[] {
+  return [...store.values()]
+    .filter((r) => r.team_award_group_id === group_id)
+    .sort((a, b) => a.submitted_at.getTime() - b.submitted_at.getTime())
+}

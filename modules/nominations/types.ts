@@ -72,3 +72,37 @@ export type CancelNominationError =
 export type CancelNominationResult =
   | { ok: true; nomination: NominationRecord }
   | { ok: false; error: CancelNominationError }
+
+// ─── Group nominations (Round 3) ────────────────────────────────────
+// Single submission, multiple recipients. Fans out into N independent
+// nominations sharing a team_award_group_id. Length-1 input falls
+// through to the standard single-recipient path with no group_id.
+
+export type CreateGroupNominationError =
+  | { code: 'validation'; issues: ZodIssue[] }
+  | { code: 'self_nomination' }
+  | { code: 'nominator_not_found' }
+  | { code: 'value_not_found' }
+  // No active or candidate recipients survived validation — every
+  // nominee was missing from the directory or inactive. Form should
+  // tell the user to pick again.
+  | { code: 'no_recipients_remaining' }
+  // Group nominations don't allow self-approval mixing in v1: if any
+  // recipient is the nominator's direct report, ask them to submit
+  // that one separately (the single-recipient path handles the
+  // self-approval reflection inline).
+  | { code: 'self_approval_in_group' }
+
+export type CreateGroupNominationResult =
+  | {
+      ok: true
+      // null when only one nomination was created (single-recipient
+      // form submission); a `grp_<uuid>` string when N >= 2.
+      group_id: string | null
+      nominations: NominationRecord[]
+      // Recipients who were silently dropped at submission time. UI
+      // shows a "we skipped these" notice next to the confirmation.
+      excluded_inactive_ids: string[]
+      excluded_missing_ids: string[]
+    }
+  | { ok: false; error: CreateGroupNominationError }

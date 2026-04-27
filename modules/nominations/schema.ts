@@ -3,8 +3,11 @@ import { VALUE_IDS } from '@/modules/values/constants'
 
 // Shared by the Slack modal submission and the web fallback form (spec §6.2).
 // Warm-tone copy; Rubina owns the pre-launch copy pass.
-export const NominationInputSchema = z.object({
-  nominee_id: z.string().min(1, 'Please pick someone to recognize.'),
+
+// Common narrative fields used by both single- and group-nomination
+// shapes. Pulled into one place so behavior/outcome validation copy
+// stays identical across the two paths.
+const NominationNarrativeShape = {
   value_id: z
     .string()
     .refine((v) => VALUE_IDS.has(v), 'Please choose one of the four values.'),
@@ -35,6 +38,24 @@ export const NominationInputSchema = z.object({
     .max(3, 'Up to three evidence links.')
     .optional()
     .default([]),
+} as const
+
+export const NominationInputSchema = z.object({
+  nominee_id: z.string().min(1, 'Please pick someone to recognize.'),
+  ...NominationNarrativeShape,
 })
 
 export type NominationInput = z.infer<typeof NominationInputSchema>
+
+// Group-nomination input: one form submission, up to 10 recipients
+// recognized for the same story. Fans out into N independent
+// nominations sharing a group_id (see createGroupNomination).
+export const GroupNominationInputSchema = z.object({
+  nominee_ids: z
+    .array(z.string().min(1))
+    .min(1, 'Pick at least one teammate to recognize.')
+    .max(10, 'You can recognize up to 10 teammates in one nomination.'),
+  ...NominationNarrativeShape,
+})
+
+export type GroupNominationInput = z.infer<typeof GroupNominationInputSchema>
