@@ -3,7 +3,7 @@ import { auth } from '@/auth'
 import { isPeopleTeamRep } from '@/modules/roles/service'
 import { createCatalogItemAction } from '../actions'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { Button } from '@/components/ui/Button'
+import { SubmitButton } from '@/components/ui/SubmitButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -104,9 +104,9 @@ export default async function NewCatalogItemPage() {
         </Field>
 
         <div className="flex items-center justify-end border-t border-novo-border pt-6">
-          <Button type="submit" size="lg">
+          <SubmitButton size="lg" pendingLabel="Creating…">
             Create
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </main>

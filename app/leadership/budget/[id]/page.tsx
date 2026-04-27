@@ -14,7 +14,7 @@ import {
 } from '../actions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { SubmitButton } from '@/components/ui/SubmitButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -196,33 +196,37 @@ export default async function BudgetPeriodDetailPage({
                 name="dept_tier2_pct"
                 value={config.within_geo.dept_tier2_pct}
               />
-              <Button type="submit">
+              <SubmitButton
+                pendingLabel={
+                  pools.length > 0 ? 'Re-allocating…' : 'Allocating…'
+                }
+              >
                 {pools.length > 0 ? 'Re-allocate pools' : 'Allocate pools'}
-              </Button>
+              </SubmitButton>
             </form>
           )}
           {canApprove && (
             <form action={approvePeriodAction}>
               <input type="hidden" name="period_id" value={period.id} />
-              <Button type="submit" variant="secondary">
+              <SubmitButton variant="secondary" pendingLabel="Approving…">
                 Approve
-              </Button>
+              </SubmitButton>
             </form>
           )}
           {canActivate && (
             <form action={activatePeriodAction}>
               <input type="hidden" name="period_id" value={period.id} />
-              <Button type="submit" variant="secondary">
+              <SubmitButton variant="secondary" pendingLabel="Activating…">
                 Activate
-              </Button>
+              </SubmitButton>
             </form>
           )}
           {canClose && (
             <form action={closePeriodAction}>
               <input type="hidden" name="period_id" value={period.id} />
-              <Button type="submit" variant="secondary">
+              <SubmitButton variant="secondary" pendingLabel="Closing…">
                 Close
-              </Button>
+              </SubmitButton>
             </form>
           )}
         </section>

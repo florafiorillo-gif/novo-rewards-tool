@@ -4,7 +4,7 @@ import { isCommitteeMember } from '@/modules/roles/service'
 import { DEFAULT_ALLOCATION_CONFIG } from '@/modules/budget/types'
 import { createPeriodAction } from '../actions'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { Button } from '@/components/ui/Button'
+import { SubmitButton } from '@/components/ui/SubmitButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -102,9 +102,9 @@ export default async function NewBudgetPeriodPage() {
         </Section>
 
         <div className="flex items-center justify-end gap-3 border-t border-novo-border pt-6">
-          <Button type="submit" size="lg">
+          <SubmitButton size="lg" pendingLabel="Creating draft…">
             Create draft
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </main>

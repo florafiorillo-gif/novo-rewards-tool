@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useFormStatus } from 'react-dom'
 import { decideCommitteeAction } from '@/app/leadership/queue/actions'
 
 interface ScopeNote {
@@ -150,12 +151,20 @@ export function CommitteeDecisionForm({
         </fieldset>
       )}
 
-      <button
-        type="submit"
-        className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-      >
-        Record decision
-      </button>
+      <RecordDecisionButton />
     </form>
+  )
+}
+
+function RecordDecisionButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {pending ? 'Recording…' : 'Record decision'}
+    </button>
   )
 }
