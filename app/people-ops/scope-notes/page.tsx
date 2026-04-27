@@ -47,7 +47,9 @@ export default async function ScopeNotesPage() {
             </header>
             {byTier[tier].length === 0 ? (
               <p className="rounded-lg border border-dashed border-novo-border px-4 py-6 text-center text-sm text-novo-subtle">
-                No templates for Tier {tier} yet.
+                No Tier {tier} templates yet. Use the &ldquo;Add template&rdquo;
+                form below and pick Tier {tier} so approvers have a starting
+                point at reward selection.
               </p>
             ) : (
               <ul className="divide-y divide-novo-border rounded-lg border border-novo-border bg-novo-elevated shadow-card">

@@ -29,7 +29,9 @@ export function DepartmentManagerList({ items }: Props) {
   if (items.length === 0) {
     return (
       <section className="rounded-lg border border-dashed border-gray-200 bg-white p-6 text-sm text-gray-500">
-        No manager pools in your department yet this quarter.
+        No manager pools allocated in your department yet this quarter. Once
+        Leadership opens the period and pools are pushed to your managers,
+        their pacing will show here.
       </section>
     )
   }

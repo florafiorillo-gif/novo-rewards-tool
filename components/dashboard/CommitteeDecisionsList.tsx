@@ -36,7 +36,9 @@ export function CommitteeDecisionsList({ items }: Props) {
       </h2>
       {items.length === 0 ? (
         <p className="text-sm text-gray-500">
-          No committee decisions yet this quarter.
+          No Tier 3 decisions logged this quarter yet. Once the committee
+          approves, denies, or defers a Value Share nomination, it&rsquo;ll
+          appear here with the rationale.
         </p>
       ) : (
         <ul className="space-y-4">

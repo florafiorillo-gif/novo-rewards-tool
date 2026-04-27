@@ -61,7 +61,9 @@ export default async function CatalogPage() {
               </header>
               {byGeo[geo].length === 0 ? (
                 <p className="rounded-lg border border-dashed border-novo-border px-4 py-6 text-center text-sm text-novo-subtle">
-                  No items yet for {geo}.
+                  No items for {geo} yet. Use &ldquo;Add item&rdquo; above and
+                  set the geo to {geo} so approvers there have something to
+                  pick.
                 </p>
               ) : (
                 <div className="overflow-hidden rounded-lg border border-novo-border bg-novo-elevated shadow-card">
