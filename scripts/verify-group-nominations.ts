@@ -108,7 +108,7 @@ async function main() {
     const r = await approveNomination({
       nomination_id: s.id,
       actor_id: s.current_approver_id,
-      reflection_type: null,
+      reflection_type: undefined,
     })
     check(
       `approve ${s.nominee_id}`,
@@ -120,7 +120,7 @@ async function main() {
     const r = await denyNomination({
       nomination_id: denied.id,
       actor_id: denied.current_approver_id,
-      reason_code: 'value_mismatch',
+      reason_structured: 'value_mismatch',
       reason_text: 'Better fit for a different recognition cycle.',
     })
     check(
@@ -211,7 +211,7 @@ async function main() {
     await approveNomination({
       nomination_id: s.id,
       actor_id: s.current_approver_id,
-      reflection_type: null,
+      reflection_type: undefined,
     })
   }
   // Make Marcus (emp_026) private; Elena + Tara public.
