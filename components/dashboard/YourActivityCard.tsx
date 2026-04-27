@@ -2,10 +2,11 @@ import Link from 'next/link'
 
 // Small two-number card showing the viewer's own recognition activity —
 // given (that they wrote) vs. received (that teammates wrote about them).
-// Links to /dashboard/me for the full received history; given history is
-// not a dedicated surface yet (nominations the viewer submitted appear in
-// /nominations/submitted indirectly, but that's a submit-flow confirmation,
-// not a history view).
+// Always links to /dashboard/me so the card is a reliable entry point
+// to the full personal history regardless of whether the viewer has
+// received anything yet. Two testers couldn't find /dashboard/me from
+// the avatar dropdown alone, so the dashboard now surfaces it twice:
+// in primary nav and from this card.
 export function YourActivityCard({
   given,
   received,
@@ -22,14 +23,13 @@ export function YourActivityCard({
         <Stat label="Given" value={given} />
         <Stat label="Received" value={received} />
       </dl>
-      {received > 0 && (
-        <Link
-          href="/dashboard/me"
-          className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
-        >
-          View what teammates noticed <span aria-hidden>→</span>
-        </Link>
-      )}
+      <Link
+        href="/dashboard/me"
+        className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
+      >
+        {received > 0 ? 'View what teammates noticed' : 'See your history'}{' '}
+        <span aria-hidden>→</span>
+      </Link>
     </section>
   )
 }

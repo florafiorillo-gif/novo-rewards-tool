@@ -97,11 +97,10 @@ export function isSimulating(simulated: DashboardView | null): boolean {
 }
 
 // ─── Role-aware navigation ──────────────────────────────────────────
-// Home always leads; each role view contributes a short set of items;
-// no trailing shared item. "My recognitions" (/dashboard/me) is still
-// a valid page but was removed from primary nav in the consolidation
-// pass to hit a max of ~4 primary items per role. Reachable from the
-// dashboard and by direct URL.
+// Home leads, "My recognitions" follows, then each role view's items.
+// "My recognitions" is back in primary nav as a universally-shared
+// item after two testers couldn't find /dashboard/me from the avatar
+// dropdown alone — redundancy with the dropdown is intentional.
 //
 // Per-view additions render in a fixed outer order (manager →
 // people_ops → committee) so a multi-role viewer sees a stable
@@ -118,6 +117,10 @@ export interface NavLinkItem {
 }
 
 export const NAV_ITEM_HOME: NavLinkItem = { href: '/dashboard', label: 'Home' }
+export const NAV_ITEM_MY_RECOGNITIONS: NavLinkItem = {
+  href: '/dashboard/me',
+  label: 'My recognitions',
+}
 
 export const NAV_ITEMS_PER_VIEW: Record<DashboardView, readonly NavLinkItem[]> = {
   employee: [], // shared-only; included for completeness
@@ -137,7 +140,8 @@ const VIEW_ORDER: readonly DashboardView[] = [
 ] as const
 
 // Build the flattened nav list for the viewer's currently-active
-// views. Home leads; role-specific items follow. Dedupes on href.
+// views. Home leads, My recognitions next (always), then role-
+// specific items. Dedupes on href.
 export function navItemsForActiveViews(
   views: Set<DashboardView>
 ): NavLinkItem[] {
@@ -149,6 +153,7 @@ export function navItemsForActiveViews(
     items.push(item)
   }
   push(NAV_ITEM_HOME)
+  push(NAV_ITEM_MY_RECOGNITIONS)
   for (const v of VIEW_ORDER) {
     if (!views.has(v)) continue
     for (const item of NAV_ITEMS_PER_VIEW[v]) push(item)
