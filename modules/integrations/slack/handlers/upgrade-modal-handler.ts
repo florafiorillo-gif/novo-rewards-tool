@@ -114,6 +114,6 @@ function errorTextForProposeUpgrade(code: string): string {
     case 'forbidden':
       return "You aren't authorized to propose an upgrade."
     default:
-      return "Couldn't send for review. Try again."
+      return "We couldn't send this nomination for review. Please try again — if this keeps happening, reach out to the People team."
   }
 }

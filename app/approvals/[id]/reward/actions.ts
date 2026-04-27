@@ -235,7 +235,7 @@ function messageForSelectError(
     case 'forbidden':
       return "You're not authorized to select a reward for this nomination."
     default:
-      return "We couldn't record that reward. Try again."
+      return "We couldn't record that reward. Please try again — if this keeps happening, reach out to the People team."
   }
 }
 

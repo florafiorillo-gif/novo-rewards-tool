@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         response_type: 'ephemeral',
-        text: "Something went wrong opening the nomination form. Please try again in a minute.",
+        text: "We couldn't open the nomination form from Slack right now. Please try again in a minute, or recognize a teammate from your dashboard on the web.",
       },
       { status: 200 }
     )

@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
       {
         response_action: 'errors',
         errors: {
-          behavior_block: "Something went wrong — please try again in a minute.",
+          behavior_block:
+            "We couldn't process that action right now. Please try again in a minute, or open it on the web from your dashboard.",
         },
       },
       { status: 200 }

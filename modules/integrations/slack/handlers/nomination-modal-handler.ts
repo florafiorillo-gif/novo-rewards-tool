@@ -136,9 +136,13 @@ function mapCreateErrorToModalError(code: string): ResponseOrVoid {
       return modalError({ [BLOCK_VALUE]: 'Please choose one of the four values.' })
     case 'validation':
       return modalError({
-        [BLOCK_BEHAVIOR]: 'Something looks off — check the length and try again.',
+        [BLOCK_BEHAVIOR]:
+          'Behavior and outcome each need at least 30 characters and at most 500. Please adjust and resubmit.',
       })
     default:
-      return modalError({ [BLOCK_BEHAVIOR]: "We couldn't submit that. Try again." })
+      return modalError({
+        [BLOCK_BEHAVIOR]:
+          "We couldn't submit your nomination. Please try again — if this keeps happening, reach out to the People team.",
+      })
   }
 }

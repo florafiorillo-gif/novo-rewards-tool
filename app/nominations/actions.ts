@@ -180,7 +180,11 @@ function mapCreateError(error: { code: string; issues?: unknown[] }): SubmitStat
       return { ok: false, fieldErrors }
     }
     default:
-      return { ok: false, formError: "We couldn't submit that. Please try again." }
+      return {
+        ok: false,
+        formError:
+          "We couldn't submit your nomination. Please try again — if this keeps happening, reach out to the People team.",
+      }
   }
 }
 
