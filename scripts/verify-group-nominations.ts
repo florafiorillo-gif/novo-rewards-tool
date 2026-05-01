@@ -57,8 +57,8 @@ async function main() {
 
   // ── Scenario 1: submit a group of 4, verify N + shared group_id ────
   header('Scenario 1 — 4-recipient submission')
-  // Lauren Park (emp_021) recognizes Elena (emp_023), Tara (emp_029),
-  // Marcus (emp_026), Nina (emp_025) — none are her direct reports.
+  // Tina Tambourine (emp_021) recognizes Nina (emp_023), Etta (emp_029),
+  // Ringo (emp_026), Bonnie (emp_025) — none are her direct reports.
   const create = await createGroupNomination(
     {
       nominee_ids: ['emp_023', 'emp_029', 'emp_026', 'emp_025'],
@@ -261,10 +261,10 @@ async function main() {
 
   // ── Scenario 5: cross-geo routing ─────────────────────────────────
   header('Scenario 5 — cross-geo group routes to per-recipient pools')
-  // Sarah Chen (US, emp_005) is mgr of Alex (US), Jamie (US),
-  // Thomas (US). For a true cross-geo group from a non-manager, use
-  // Lauren (emp_021, US) recognizing Elena (US), Priya (India,
-  // emp_008), and Diego (Colombia, emp_050).
+  // Stevie Synthesizer (US, emp_005) is mgr of Jimi (US), Janis (US),
+  // Freddie (US). For a true cross-geo group from a non-manager, use
+  // Tina (emp_021, US) recognizing Nina (US), Ravi (India,
+  // emp_008), and Paul (Colombia, emp_050).
   resetMockNominations()
   const v3 = await createGroupNomination(
     {

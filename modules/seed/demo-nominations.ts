@@ -63,7 +63,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_006',
     value_id: 'val_assume_best_intention',
     behavior_text:
-      'When the partnerships thread got tense, Alex pulled the other lead into a direct call instead of escalating through leadership.',
+      'When the partnerships thread got tense, Jimi pulled the other lead into a direct call instead of escalating through leadership.',
     outcome_text:
       'The two of them rewrote the integration scope in a shared doc by end of day. No one had to referee.',
     submitted_at: apr(5, 15),
@@ -93,7 +93,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_045',
     value_id: 'val_run_for_the_bus',
     behavior_text:
-      'Kavya caught a regression in the release candidate at 8pm IST and stayed on to walk the on-call engineer through a repro path.',
+      'Billie caught a regression in the release candidate at 8pm IST and stayed on to walk the on-call engineer through a repro path.',
     outcome_text:
       'We held the release, fixed it overnight, and shipped clean the next morning instead of rolling back in production.',
     submitted_at: apr(8, 14),
@@ -123,7 +123,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_050',
     value_id: 'val_run_for_the_bus',
     behavior_text:
-      'Diego rewrote the Colombia payroll export over a weekend when the vendor switched format without notice.',
+      'Paul rewrote the Colombia payroll export over a weekend when the vendor switched format without notice.',
     outcome_text:
       'Payroll went out on time. We never told the Colombia team there was almost a problem.',
     submitted_at: apr(11, 13),
@@ -138,7 +138,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_027',
     value_id: 'val_intellectual_honesty',
     behavior_text:
-      'Rachel told me the campaign we had funded was not working before anyone had asked for a mid-quarter review.',
+      'Whitney told me the campaign we had funded was not working before anyone had asked for a mid-quarter review.',
     outcome_text:
       'We killed it at week four instead of at end of quarter. Reallocated the spend to the partner webinar series that is actually converting.',
     submitted_at: apr(13, 10),
@@ -153,7 +153,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_028',
     value_id: 'val_assume_best_intention',
     behavior_text:
-      'A customer email came in written in all caps and Chris wrote back assuming they were frustrated, not hostile. Got on a call same day.',
+      'A customer email came in written in all caps and Otis wrote back assuming they were frustrated, not hostile. Got on a call same day.',
     outcome_text:
       "The account renewed at a higher tier this week. The customer cited the 'humans not tickets' treatment in the CSAT survey.",
     submitted_at: apr(14, 9),
@@ -168,7 +168,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_024',
     value_id: 'val_hierarchy_not_authority',
     behavior_text:
-      "Thomas made the call to pause the migration plan I had approved and rerun the benchmark. He'd spotted a read-pattern we missed.",
+      "Freddie made the call to pause the migration plan I had approved and rerun the benchmark. He'd spotted a read-pattern we missed.",
     outcome_text:
       'The revised plan cut the cutover window from six hours to under two. His version of the sequencing is now the template.',
     submitted_at: apr(16, 11),
@@ -183,7 +183,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_048',
     value_id: 'val_run_for_the_bus',
     behavior_text:
-      'Neha stood up a temporary triage channel inside two hours when the status-page incident broke over an Indian holiday.',
+      'Dolly stood up a temporary triage channel inside two hours when the status-page incident broke over an Indian holiday.',
     outcome_text:
       'Customers got hourly updates. Churn signal from the incident is effectively zero this week.',
     submitted_at: apr(18, 14),
@@ -200,7 +200,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_025',
     value_id: 'val_intellectual_honesty',
     behavior_text:
-      "Nina's memo on the indexing work told the uncomfortable truth about what we skipped in the first pass. She wrote it before she had to.",
+      "Bonnie's memo on the indexing work told the uncomfortable truth about what we skipped in the first pass. She wrote it before she had to.",
     outcome_text:
       'Gave the next team clear eyes on what they were inheriting instead of discovering it the hard way.',
     submitted_at: apr(20, 16),
@@ -214,7 +214,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_007',
     value_id: 'val_assume_best_intention',
     behavior_text:
-      'Jamie took the hit on a schedule miss publicly and then talked to the person whose ticket it was in DM, not the thread.',
+      'Janis took the hit on a schedule miss publicly and then talked to the person whose ticket it was in DM, not the thread.',
     outcome_text:
       "Kept a rough week from turning into a team morale thing. That PM is still doing the work; she'd have taken a week to recover if it had blown up publicly.",
     submitted_at: apr(21, 10),
@@ -228,7 +228,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_047',
     value_id: 'val_run_for_the_bus',
     behavior_text:
-      "Anjali built the vendor reconciliation report before the request landed. She'd seen the pattern coming.",
+      "Sade built the vendor reconciliation report before the request landed. She'd seen the pattern coming.",
     outcome_text:
       'Month-end close is two days faster this period than last. No one asked her to do it — she just did.',
     submitted_at: apr(22, 11),
@@ -244,7 +244,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_040',
     value_id: 'val_hierarchy_not_authority',
     behavior_text:
-      'Rohan challenged my initial architecture call for the new service in the review meeting, in front of the whole team.',
+      'Charlie challenged my initial architecture call for the new service in the review meeting, in front of the whole team.',
     outcome_text:
       "He was right and we went with his approach. The fact that he did it publicly set a better tone than 'DM me later'.",
     submitted_at: apr(19, 9),
@@ -261,7 +261,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_044',
     value_id: 'val_run_for_the_bus',
     behavior_text:
-      "Meera owned the India-side cutover of the identity service end-to-end — including the coordination with Ops that wasn't her job.",
+      "Selena owned the India-side cutover of the identity service end-to-end — including the coordination with Ops that wasn't her job.",
     outcome_text:
       'Zero customer-visible downtime. The India team operated the new system from day one without hand-holding.',
     submitted_at: apr(17, 11),
@@ -277,7 +277,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_026',
     value_id: 'val_intellectual_honesty',
     behavior_text:
-      "Marcus raised his own call on the pricing experiment — said the lift wasn't real once we corrected for seasonality.",
+      "Ringo raised his own call on the pricing experiment — said the lift wasn't real once we corrected for seasonality.",
     outcome_text:
       'We did not ship the 15% price bump. The revised experiment with the correct comparison is running cleanly now.',
     submitted_at: apr(20, 9),
@@ -295,7 +295,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_029',
     value_id: 'val_hierarchy_not_authority',
     behavior_text:
-      'Tara reorganized the design crit process after sitting through three that felt broken. Proposed the new format, ran it herself.',
+      'Etta reorganized the design crit process after sitting through three that felt broken. Proposed the new format, ran it herself.',
     outcome_text:
       'Design crits are now the session the engineers want to be in. Other teams are asking how we structure them.',
     submitted_at: apr(11, 16),
@@ -314,7 +314,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_028',
     value_id: 'val_run_for_the_bus',
     behavior_text:
-      'Chris closed the largest deal of the quarter by shifting to a services-first pitch mid-cycle when the product-led angle was not landing.',
+      'Otis closed the largest deal of the quarter by shifting to a services-first pitch mid-cycle when the product-led angle was not landing.',
     outcome_text:
       '$180k ARR signed, six weeks faster than the original timeline. The services angle is now in the standard playbook for enterprise.',
     submitted_at: apr(4, 10),
@@ -331,7 +331,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_006',
     value_id: 'val_assume_best_intention',
     behavior_text:
-      'Alex led the onboarding of three new engineers across two time zones — wrote the doc, ran the sessions, hung out in the learning channel for weeks.',
+      'Jimi led the onboarding of three new engineers across two time zones — wrote the doc, ran the sessions, hung out in the learning channel for weeks.',
     outcome_text:
       'All three shipped production code in their first month. The onboarding doc is now what everyone new gets pointed to first.',
     submitted_at: apr(2, 11),
@@ -350,7 +350,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_008',
     value_id: 'val_run_for_the_bus',
     behavior_text:
-      "Priya made the call to rewrite the India team's entire deployment pipeline when the third outage in a month traced to the same root cause.",
+      "Ravi made the call to rewrite the India team's entire deployment pipeline when the third outage in a month traced to the same root cause.",
     outcome_text:
       'Uptime across India-hosted services is at a quarterly high. The new pipeline is now also running US services in shadow mode.',
     submitted_at: apr(18, 9),
@@ -365,7 +365,7 @@ const SEEDS: Seed[] = [
     nominee_id: 'emp_023',
     value_id: 'val_hierarchy_not_authority',
     behavior_text:
-      "Elena rebuilt the design system from scratch after pushing back on the 'ship what we have' plan everyone else had agreed to.",
+      "Nina rebuilt the design system from scratch after pushing back on the 'ship what we have' plan everyone else had agreed to.",
     outcome_text:
       "We are not paying down six months of design debt on top of the current roadmap. The relaunch hit was worth the slip.",
     submitted_at: apr(20, 10),

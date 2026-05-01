@@ -41,7 +41,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   // ── Committee ──────────────────────────────────────────────────────────────
   {
     id: 'emp_001',
-    name: 'Rares Crisan',
+    name: 'Miles Trumpet',
     email: 'dog@novo.co',
     geo: 'US',
     manager_id: null,
@@ -57,7 +57,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_002',
-    name: 'Flora Fiorillo',
+    name: 'Aretha Microphone',
     email: 'cat@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
@@ -75,7 +75,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   // ── People team ────────────────────────────────────────────────────────────
   {
     id: 'emp_003',
-    name: 'Rubina Khan',
+    name: 'Joni Acoustic',
     email: 'rabbit@novo.co',
     geo: 'US',
     manager_id: 'emp_002',
@@ -91,7 +91,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_004',
-    name: 'Sakshi Mehta',
+    name: 'Ella Songbook',
     email: 'owl@novo.co',
     geo: 'US',
     manager_id: 'emp_002',
@@ -109,7 +109,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   // ── US team ────────────────────────────────────────────────────────────────
   {
     id: 'emp_005',
-    name: 'Sarah Chen',
+    name: 'Stevie Synthesizer',
     email: 'fox@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
@@ -125,7 +125,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_006',
-    name: 'Alex Rivera',
+    name: 'Jimi Stratocaster',
     email: 'deer@novo.co',
     geo: 'US',
     manager_id: 'emp_005',
@@ -141,7 +141,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_007',
-    name: 'Jamie Kim',
+    name: 'Janis Distortion',
     email: 'bird@novo.co',
     geo: 'US',
     manager_id: 'emp_005',
@@ -159,7 +159,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   // ── India team ─────────────────────────────────────────────────────────────
   {
     id: 'emp_008',
-    name: 'Priya Sharma',
+    name: 'Ravi Sitar',
     email: 'bear@novo.co',
     geo: 'India',
     manager_id: 'emp_001',
@@ -175,7 +175,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_009',
-    name: 'Arjun Patel',
+    name: 'Lou Reverb',
     email: 'tiger@novo.co',
     geo: 'India',
     manager_id: 'emp_008',
@@ -193,7 +193,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   // ── Colombia team ──────────────────────────────────────────────────────────
   {
     id: 'emp_010',
-    name: 'Carlos Mendez',
+    name: 'Carlos Nylon',
     email: 'wolf@novo.co',
     geo: 'Colombia',
     manager_id: 'emp_001',
@@ -209,7 +209,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_011',
-    name: 'Valentina Torres',
+    name: 'Celia Maracas',
     email: 'fish@novo.co',
     geo: 'Colombia',
     manager_id: 'emp_010',

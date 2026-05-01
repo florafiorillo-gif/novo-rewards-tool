@@ -83,12 +83,12 @@ async function main() {
   resetMockNominations()
 
   // Reference org chart (demo seed):
-  //   emp_006 Alex Rivera (IC)        mgr=emp_005 (Sarah Chen, VP Eng)
-  //   emp_007 Jamie Kim   (IC)        mgr=emp_005 (same team as Alex)
-  //   emp_026 Marcus Johnson (IC)     mgr=emp_020 (Michael Brown, Head of Product)
-  //   emp_005 Sarah Chen   (manager)  mgr=emp_001 (Rares, CEO)
-  //   emp_020 Michael Brown (manager) mgr=emp_001 (peer manager to Sarah)
-  //   emp_001 Rares (CEO)             mgr=null
+  //   emp_006 Jimi Stratocaster (IC)     mgr=emp_005 (Stevie Synthesizer, VP Eng)
+  //   emp_007 Janis Distortion  (IC)     mgr=emp_005 (same team as Jimi)
+  //   emp_026 Ringo Sticks      (IC)     mgr=emp_020 (Bob Harmonica, Head of Product)
+  //   emp_005 Stevie Synthesizer (manager) mgr=emp_001 (Miles, CEO)
+  //   emp_020 Bob Harmonica      (manager) mgr=emp_001 (peer manager to Stevie)
+  //   emp_001 Miles Trumpet      (CEO)    mgr=null
 
   // ── Scenario 1: IC → IC same team ────────────────────────────────
   header('Scenario 1 — role combinations (allowed cases)')

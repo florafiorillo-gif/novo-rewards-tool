@@ -9,7 +9,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   // ── US (12) ──────────────────────────────────────────────────────────
   {
     id: 'emp_020',
-    name: 'Michael Brown',
+    name: 'Bob Harmonica',
     email: 'lion@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
@@ -25,7 +25,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_021',
-    name: 'Lauren Park',
+    name: 'Tina Tambourine',
     email: 'panda@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
@@ -41,7 +41,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_022',
-    name: 'David Kim',
+    name: 'Marvin Bassline',
     email: 'eagle@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
@@ -57,7 +57,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_023',
-    name: 'Elena Vasquez',
+    name: 'Nina Ivory',
     email: 'hawk@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
@@ -73,7 +73,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_024',
-    name: 'Thomas Wright',
+    name: 'Freddie Falsetto',
     email: 'whale@novo.co',
     geo: 'US',
     manager_id: 'emp_005',
@@ -89,7 +89,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_025',
-    name: 'Nina Rodriguez',
+    name: 'Bonnie Slide',
     email: 'dolphin@novo.co',
     geo: 'US',
     manager_id: 'emp_024',
@@ -105,7 +105,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_026',
-    name: 'Marcus Johnson',
+    name: 'Ringo Sticks',
     email: 'otter@novo.co',
     geo: 'US',
     manager_id: 'emp_020',
@@ -121,7 +121,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_027',
-    name: 'Rachel Lee',
+    name: 'Whitney Coloratura',
     email: 'seal@novo.co',
     geo: 'US',
     manager_id: 'emp_021',
@@ -137,7 +137,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_028',
-    name: 'Chris Patel',
+    name: 'Otis Marquee',
     email: 'penguin@novo.co',
     geo: 'US',
     manager_id: 'emp_022',
@@ -153,7 +153,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_029',
-    name: 'Tara Singh',
+    name: 'Etta Mainstage',
     email: 'swan@novo.co',
     geo: 'US',
     manager_id: 'emp_023',
@@ -169,7 +169,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_030',
-    name: 'Ben Wilson',
+    name: 'Chuck Riff',
     email: 'moose@novo.co',
     geo: 'US',
     manager_id: 'emp_001',
@@ -185,7 +185,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_031',
-    name: 'Sophia Martinez',
+    name: 'Patsy Steel',
     email: 'elk@novo.co',
     geo: 'US',
     manager_id: 'emp_020',
@@ -203,7 +203,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   // ── India (10) ────────────────────────────────────────────────────────
   {
     id: 'emp_040',
-    name: 'Rohan Gupta',
+    name: 'Charlie Bebop',
     email: 'horse@novo.co',
     geo: 'India',
     manager_id: 'emp_008',
@@ -219,7 +219,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_041',
-    name: 'Ananya Singh',
+    name: 'Yo-Yo Cello',
     email: 'pony@novo.co',
     geo: 'India',
     manager_id: 'emp_040',
@@ -235,7 +235,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_042',
-    name: 'Vikram Rao',
+    name: 'Joao Bossa',
     email: 'goat@novo.co',
     geo: 'India',
     manager_id: 'emp_040',
@@ -251,7 +251,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_043',
-    name: 'Deepak Kumar',
+    name: 'Astor Bandoneon',
     email: 'lamb@novo.co',
     geo: 'India',
     manager_id: 'emp_008',
@@ -267,7 +267,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_044',
-    name: 'Meera Iyer',
+    name: 'Selena Bolero',
     email: 'cow@novo.co',
     geo: 'India',
     manager_id: 'emp_008',
@@ -283,7 +283,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_045',
-    name: 'Kavya Nair',
+    name: 'Billie Standards',
     email: 'duck@novo.co',
     geo: 'India',
     manager_id: 'emp_008',
@@ -299,7 +299,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_046',
-    name: 'Suresh Menon',
+    name: 'Hank Pedalboard',
     email: 'frog@novo.co',
     geo: 'India',
     manager_id: 'emp_001',
@@ -315,7 +315,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_047',
-    name: 'Anjali Desai',
+    name: 'Sade Smoothness',
     email: 'turtle@novo.co',
     geo: 'India',
     manager_id: 'emp_046',
@@ -331,7 +331,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_048',
-    name: 'Neha Gupta',
+    name: 'Dolly Banjo',
     email: 'koala@novo.co',
     geo: 'India',
     manager_id: 'emp_001',
@@ -347,7 +347,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_049',
-    name: 'Varun Malhotra',
+    name: 'Tito Conga',
     email: 'hedgehog@novo.co',
     geo: 'India',
     manager_id: 'emp_048',
@@ -365,7 +365,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   // ── Colombia (3) ──────────────────────────────────────────────────────
   {
     id: 'emp_050',
-    name: 'Diego Ramirez',
+    name: 'Paul McBass',
     email: 'squirrel@novo.co',
     geo: 'Colombia',
     manager_id: 'emp_010',
@@ -381,7 +381,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_051',
-    name: 'Camila Silva',
+    name: 'Prince Rhythm',
     email: 'raven@novo.co',
     geo: 'Colombia',
     manager_id: 'emp_010',
@@ -397,7 +397,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   },
   {
     id: 'emp_052',
-    name: 'Isabella Perez',
+    name: 'David Saxophone',
     email: 'sparrow@novo.co',
     geo: 'Colombia',
     manager_id: 'emp_010',
