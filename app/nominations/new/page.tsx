@@ -134,7 +134,7 @@ function KindToggle({
       >
         <span className="text-sm font-semibold">Peer recognition</span>
         <span className="text-xs text-novo-subtle">
-          Non-monetary. Posts immediately. No approval.
+          Acknowledge what they did.
         </span>
       </Link>
       <Link
@@ -149,7 +149,7 @@ function KindToggle({
       >
         <span className="text-sm font-semibold">With a reward</span>
         <span className="text-xs text-novo-subtle">
-          Routes to an approver. Goes through Tier 1/2/3.
+          When the moment deserves something tangible.
         </span>
       </Link>
     </div>
