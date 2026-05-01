@@ -9,10 +9,7 @@ import '@/modules/seed/demo-bootstrap'
 
 import { getEmployeeByEmail } from '@/modules/employees/service'
 import { resolveRole } from '@/modules/roles/resolver'
-import {
-  getManagerDashboardView,
-  getTeamRhythm,
-} from '@/modules/dashboard/manager-view'
+import { getManagerDashboardView } from '@/modules/dashboard/manager-view'
 import { getDepartmentDashboardView } from '@/modules/dashboard/department-view'
 import { getRecognitionFeed } from '@/modules/dashboard/recognition-feed'
 import { getRecipientDashboardView } from '@/modules/dashboard/recipient-view'
@@ -58,7 +55,6 @@ async function main() {
       deptView,
       feed,
       recipientView,
-      teamRhythm,
       tier3Queue,
       fulfillmentQueue,
       programView,
@@ -68,7 +64,6 @@ async function main() {
       getDepartmentDashboardView(emp.id),
       getRecognitionFeed(emp.id, 20),
       getRecipientDashboardView(emp.id),
-      role.is_manager ? getTeamRhythm(emp.id) : Promise.resolve(null),
       role.is_committee ? listCommitteeQueue(emp.id) : Promise.resolve([]),
       role.is_people_team ? listManualFulfillmentQueue() : Promise.resolve([]),
       role.is_people_team
@@ -116,12 +111,6 @@ async function main() {
     if (deptView.dept_pool && deptView.dept_pacing) {
       console.log(
         `    • Department pool ($${deptView.dept_pool.remaining_amount_usd} remaining · ${deptView.dept_pacing})`
-      )
-    }
-    if (role.is_manager && teamRhythm && teamRhythm.entries.length > 0) {
-      const zeros = teamRhythm.entries.filter((e) => !e.last_recognized_at).length
-      console.log(
-        `    • Team Rhythm (${teamRhythm.entries.length} reports, ${zeros} never recognized in window)`
       )
     }
     const isAdmin = role.is_committee || role.is_people_team

@@ -2,7 +2,8 @@ import type { ReactNode } from 'react'
 
 interface EmptyStateProps {
   title: string
-  description: ReactNode
+  /** Optional — when absent the title carries the message on its own. */
+  description?: ReactNode
   action?: ReactNode
   /** Small hint text under the action, e.g. a secondary path or explanation. */
   footnote?: ReactNode
@@ -24,7 +25,9 @@ export function EmptyState({
       }`}
     >
       <h3 className="text-base font-semibold text-novo-ink">{title}</h3>
-      <p className="mt-1.5 text-sm text-novo-subtle">{description}</p>
+      {description && (
+        <p className="mt-1.5 text-sm text-novo-subtle">{description}</p>
+      )}
       {action && <div className="mt-5">{action}</div>}
       {footnote && (
         <p className="mt-3 text-xs text-novo-muted">{footnote}</p>

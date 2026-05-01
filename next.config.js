@@ -4,6 +4,10 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: ['localhost:3000'],
     },
+    // pdfkit ships its own .afm font files and a CommonJS entrypoint;
+    // letting webpack walk into it breaks the font lookup at runtime.
+    // Externalizing keeps the server-side require path intact.
+    serverComponentsExternalPackages: ['pdfkit'],
   },
   async redirects() {
     return [
