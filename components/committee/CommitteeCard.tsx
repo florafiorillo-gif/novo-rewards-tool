@@ -30,7 +30,7 @@ export function CommitteeCard({ item, viewerEmployeeId, scopeNotes }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-novo-border bg-novo-surface/60 px-6 py-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-2xs text-novo-muted">
-            <span className="inline-flex items-center rounded border border-novo-border bg-novo-paper px-1.5 py-0.5 font-medium text-novo-subtle">
+            <span className="inline-flex items-center rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-700">
               Tier 3 · committee
             </span>
             <span
@@ -59,7 +59,7 @@ export function CommitteeCard({ item, viewerEmployeeId, scopeNotes }: Props) {
           )}
           {deferredCount >= 2 && (
             <span className="inline-flex items-center rounded-full border border-novo-coral/30 bg-novo-pink-tint px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-novo-coral">
-              Deferred twice — consult Jackson
+              Deferred twice. Consult Jackson.
             </span>
           )}
         </div>

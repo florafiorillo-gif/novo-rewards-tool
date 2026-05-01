@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Archivo_Black } from 'next/font/google'
+import { Montserrat, Archivo_Black } from 'next/font/google'
 import { AppHeader } from '@/components/layout/AppHeader'
 // AuthGate intentionally not imported — unwired from the layout
 // while still kept on disk (components/layout/AuthGate.tsx) for
@@ -10,7 +10,14 @@ import { AppHeader } from '@/components/layout/AppHeader'
 import '@/modules/seed/demo-bootstrap'
 import '../styles/globals.css'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+// Brand-deck-aligned primary face. Weights cover the four levels used
+// across the app: 400 body, 500 medium UI text, 600 section headings,
+// 700 page titles.
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-montserrat',
+})
 const archivoBlack = Archivo_Black({
   subsets: ['latin'],
   weight: '400',
@@ -24,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${archivoBlack.variable}`}>
+    <html lang="en" className={`${montserrat.variable} ${archivoBlack.variable}`}>
       <body>
         <AppHeader />
         {children}

@@ -16,11 +16,11 @@ export function buildUpgradeModal(args: {
   const tierOptions =
     args.from_tier === 1
       ? [
-          { text: { type: 'plain_text' as const, text: 'Tier 2 — Impact' }, value: '2' },
-          { text: { type: 'plain_text' as const, text: 'Tier 3 — Value Share' }, value: '3' },
+          { text: { type: 'plain_text' as const, text: 'Tier 2 · Impact' }, value: '2' },
+          { text: { type: 'plain_text' as const, text: 'Tier 3 · Value Share' }, value: '3' },
         ]
       : [
-          { text: { type: 'plain_text' as const, text: 'Tier 3 — Value Share' }, value: '3' },
+          { text: { type: 'plain_text' as const, text: 'Tier 3 · Value Share' }, value: '3' },
         ]
 
   return {

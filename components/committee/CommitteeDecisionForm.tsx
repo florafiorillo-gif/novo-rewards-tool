@@ -58,7 +58,7 @@ export function CommitteeDecisionForm({
         required
         minLength={10}
         rows={2}
-        placeholder="Short decision log — what did you decide and why?"
+        placeholder="Short decision log. What did you decide and why?"
         className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
       />
 

@@ -34,9 +34,8 @@ export default async function CommitteeQueuePage() {
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/leadership/dashboard', label: 'Leadership dashboard' }}
-        eyebrow="Leadership"
         title="Queue"
-        description="Tier 3 nominations for joint review. Batched monthly; urgent items surface first."
+        description="Tier 3 nominations for joint review. Batched monthly. Urgent items appear first."
       />
 
       {items.length === 0 ? (
@@ -53,7 +52,7 @@ export default async function CommitteeQueuePage() {
         <div className="space-y-10">
           {urgent.length > 0 && (
             <QueueSection
-              title="Urgent — async decision requested"
+              title="Urgent: async decision requested"
               hint="These don't wait for the monthly cadence."
               items={urgent}
               viewerEmployeeId={employeeId}

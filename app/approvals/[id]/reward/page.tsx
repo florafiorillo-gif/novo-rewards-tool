@@ -113,7 +113,6 @@ export default async function RewardSelectionPage({
     <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/review', label: 'Review' }}
-        eyebrow={`Tier ${tier} · ${value?.name ?? 'Value'}`}
         title={`Choose a reward for ${nominee.name}`}
         description={`Tier ${tier} range: $${range.min.toLocaleString()}–$${range.max.toLocaleString()}. Pick from the catalog, cash, or custom.`}
       />
@@ -154,7 +153,7 @@ export default async function RewardSelectionPage({
       {!pool && (
         <p className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           We couldn&rsquo;t resolve a pool for this nomination. Reach out to the
-          committee — there may be no active budget period.
+          committee. There may be no active budget period.
         </p>
       )}
 

@@ -27,8 +27,7 @@ export function YourActivityCard({
         href="/dashboard/me"
         className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
       >
-        {received > 0 ? 'View what teammates noticed' : 'See your history'}{' '}
-        <span aria-hidden>→</span>
+        See your history <span aria-hidden>→</span>
       </KeepViewLink>
     </section>
   )

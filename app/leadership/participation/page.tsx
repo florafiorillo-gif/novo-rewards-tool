@@ -122,11 +122,10 @@ async function CompanyLevel({
     <main className="mx-auto max-w-shell px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/leadership', label: 'Leadership' }}
-        eyebrow="Participation"
         title="Company-wide patterns"
         description={
           view.period
-            ? `${view.period.period_label} — who's giving and receiving across geos and departments. Lowest participation surfaces first.`
+            ? `${view.period.period_label}. Who's giving and receiving across geos and departments. Lowest participation appears first.`
             : 'No active recognition period right now.'
         }
       />
@@ -168,11 +167,10 @@ async function GeoLevel({
     <main className="mx-auto max-w-shell px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/leadership/participation', label: 'Company' }}
-        eyebrow={`Participation · ${view.geo}`}
         title={`${view.geo} patterns`}
         description={
           view.period
-            ? `${view.period.period_label} — departments based in ${view.geo}.`
+            ? `${view.period.period_label}. Departments based in ${view.geo}.`
             : 'No active recognition period right now.'
         }
       />
@@ -216,11 +214,10 @@ async function DepartmentLevel({
     <main className="mx-auto max-w-shell px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/leadership/participation', label: 'Company' }}
-        eyebrow={`Participation · ${view.department}`}
         title={`${view.department} patterns`}
         description={
           view.period
-            ? `${view.period.period_label} — managers and team participation rates for ${view.department}.`
+            ? `${view.period.period_label}. Managers and team participation rates for ${view.department}.`
             : 'No active recognition period right now.'
         }
       />
@@ -273,11 +270,10 @@ async function ManagerLevel({
     <main className="mx-auto max-w-shell px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: backHref, label: backLabel }}
-        eyebrow={`Participation · ${view.manager.name}`}
         title={`${view.manager.name}'s team`}
         description={
           view.period
-            ? `${view.period.period_label} — direct reports, last recognition received, and ${view.manager.name.split(' ')[0]}'s pool utilization.`
+            ? `${view.period.period_label}. Direct reports, last recognition received, and ${view.manager.name.split(' ')[0]}'s pool utilization.`
             : 'No active recognition period right now.'
         }
       />

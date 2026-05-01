@@ -55,7 +55,7 @@ export function buildPostAssembly(args: {
   let scope_note_line: string | null = null
   if (scope_note_text && scope_note_text.trim().length > 0 && approver) {
     const role = describeApproverRole(approver, nomination.current_tier)
-    scope_note_line = `${scope_note_text.trim()}\n— ${approver.name}, ${role}`
+    scope_note_line = `${scope_note_text.trim()}\n${approver.name} · ${role}`
   }
 
   return {
@@ -101,7 +101,7 @@ export function buildPostFallbackText(assembly: PostAssembly): string {
   const parts = [assembly.header.replace(/\*/g, ''), assembly.nominator_quote]
   if (assembly.outcome) parts.push(assembly.outcome)
   if (assembly.scope_note_line) parts.push(assembly.scope_note_line)
-  return parts.join(' — ')
+  return parts.join('. ')
 }
 
 function describeApproverRole(approver: Employee, tier: number): string {

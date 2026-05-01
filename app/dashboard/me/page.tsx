@@ -21,16 +21,11 @@ export default async function RecipientDashboardPage() {
     <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/dashboard', label: 'Dashboard' }}
-        eyebrow="Your recognitions"
-        title="Noticed"
-        description="What teammates have called out. Tiers and dollar amounts are kept private — this is about the story, not the size."
+        title="Recognitions you've received"
       />
 
       {view.items.length === 0 ? (
-        <EmptyState
-          title="Nothing here yet"
-          description="When a teammate recognizes you for living one of the values, it lands here. Visible only to you."
-        />
+        <EmptyState title="No recognitions yet." />
       ) : (
         <RecipientRecognitionList items={view.items} />
       )}

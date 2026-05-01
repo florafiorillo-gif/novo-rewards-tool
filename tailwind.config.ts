@@ -49,8 +49,10 @@ const config: Config = {
         '5xl': ['44px', { lineHeight: '52px', letterSpacing: '-0.03em' }],
       },
       fontFamily: {
+        // Brand-deck primary face. System fallbacks kick in if the
+        // Google fetch fails (offline dev, blocked network, etc.).
         sans: [
-          'var(--font-inter)',
+          'var(--font-montserrat)',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',

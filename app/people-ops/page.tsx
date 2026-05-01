@@ -53,9 +53,8 @@ export default async function PeopleOpsHomePage() {
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/dashboard', label: 'Dashboard' }}
-        eyebrow="People Ops"
         title="Operations"
-        description="Catalog, scope notes, fulfillment, and program-wide health. Everything People team needs to run the recognition program."
+        description="Catalog, scope notes, fulfillment, and program-wide health."
       />
 
       <div className="grid gap-3 sm:grid-cols-2">

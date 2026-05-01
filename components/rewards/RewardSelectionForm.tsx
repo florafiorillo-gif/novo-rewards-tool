@@ -410,7 +410,7 @@ export function RewardSelectionForm({
           <span>
             This reward exceeds the remaining pool balance ($
             <span className="tabular">{poolRemaining.toLocaleString()}</span>).
-            Check to approve as a budget exception — the reward will draw from
+            Check to approve as a budget exception. The reward will draw from
             reserve.
           </span>
         </label>

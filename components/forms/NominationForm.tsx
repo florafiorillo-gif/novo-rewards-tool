@@ -127,14 +127,14 @@ export function NominationForm({
         {isGroup && (
           <p className="rounded-md border border-novo-border bg-novo-hover/40 px-3 py-2 text-xs text-novo-subtle">
             You&rsquo;re recognizing {selectedNomineeIds.length} people for this
-            moment. Each one&rsquo;s manager will approve independently — if one
+            moment. Each one&rsquo;s manager will approve independently. If one
             denies, only that recipient drops off.
           </p>
         )}
 
         {isSelfApprovalPath && (
           <p className="text-xs text-novo-subtle">
-            This person reports to you — we&rsquo;ll collapse this into a single
+            This person reports to you. We&rsquo;ll collapse this into a single
             step so you can approve your own recognition inline.
           </p>
         )}
@@ -205,7 +205,7 @@ export function NominationForm({
             </p>
             <p className="mt-1 text-sm text-novo-ink">
               You&rsquo;re recognizing one of your directs. Help us see patterns
-              in manager-to-direct recognition — this is not shown publicly.
+              in manager-to-direct recognition. Not shown publicly.
             </p>
           </div>
           <select
@@ -234,7 +234,7 @@ export function NominationForm({
           id="evidence-label"
           title="Evidence links"
           optional
-          hint="Up to three — a PR, doc, or Slack thread. Helps approvers act quickly."
+          hint="Up to three. A PR, doc, or Slack thread. Helps approvers act quickly."
         />
         <div className="space-y-2">
           {[1, 2, 3].map((n) => (
@@ -366,7 +366,7 @@ function NomineePicker({
           }}
           placeholder={
             atCap
-              ? `Cap reached — ${MAX_RECIPIENTS} max`
+              ? `Cap reached. ${MAX_RECIPIENTS} max`
               : selectedIds.length === 0
                 ? 'Type a name to find a teammate'
                 : 'Add another teammate'

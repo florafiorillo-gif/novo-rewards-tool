@@ -10,14 +10,7 @@ import {
   getPeopleTeamDashboardView,
 } from '@/modules/dashboard/people-team-view'
 import { resolveRole } from '@/modules/roles/resolver'
-import {
-  activeViews,
-  highestRealView,
-  parseViewParam,
-  realViews,
-  VIEW_LABELS,
-  type DashboardView,
-} from '@/modules/dashboard/views'
+import { activeViews, parseViewParam } from '@/modules/dashboard/views'
 import { listCommitteeQueue } from '@/modules/committee/service'
 import { listManualFulfillmentQueue } from '@/modules/fulfillment/queries'
 import { countDeniedInRange } from '@/modules/approvals/queries'
@@ -27,7 +20,6 @@ import { DepartmentPoolCard } from '@/components/dashboard/DepartmentPoolCard'
 import { RecognitionFeed } from '@/components/dashboard/RecognitionFeed'
 import { BudgetPeriodStatusCard } from '@/components/dashboard/BudgetPeriodStatusCard'
 import { ProgramHealthCard } from '@/components/dashboard/ProgramHealthCard'
-import { RecognizeCTACard } from '@/components/dashboard/RecognizeCTACard'
 import { TierThreeQueueCard } from '@/components/dashboard/TierThreeQueueCard'
 import { YourActivityCard } from '@/components/dashboard/YourActivityCard'
 
@@ -48,7 +40,6 @@ export default async function DashboardPage({
   // through to null, which renders the additive merge of real roles.
   const simulated = parseViewParam(searchParams?.view)
   const views = activeViews(role, simulated)
-  const real = realViews(role)
 
   // Which view templates contribute to this render. Mirrors the spec
   // in modules/dashboard/views.ts.
@@ -138,11 +129,6 @@ export default async function DashboardPage({
     !showCommittee &&
     !showPeopleOps &&
     (receivedCount > 0 || givenCount > 0)
-  // Recognize CTA lands for any viewer whose effective view set is just
-  // 'employee' (either a true employee-only viewer, or someone simulating
-  // Employee). Matches the intent of "give them somewhere to start."
-  const showRecognizeCTA = showEmployee && views.size === 1
-
   const hasProgramHealth =
     (showPeopleOps || showCommittee) && !!programView?.period
   // Real-role routing (not simulated): Leadership members always get
@@ -162,7 +148,6 @@ export default async function DashboardPage({
 
   const feedIsEmpty = feed.length === 0
   const hasSidebarContent =
-    showRecognizeCTA ||
     totalPending > 0 ||
     (showCommittee && tier3Count >= 0) ||
     !!managerPool ||
@@ -192,31 +177,18 @@ export default async function DashboardPage({
           {greet(session.user.name)}
         </h1>
         <p className="mt-2 max-w-xl text-sm text-novo-subtle">
-          Recognitions from across Novo appear here as they&rsquo;re approved.
+          What&rsquo;s happening across Novo.
         </p>
-        <ViewBadge
-          role={role}
-          simulated={simulated}
-          real={real}
-        />
       </header>
 
       {/* ── Body ──────────────────────────────────────────────────────── */}
       {showSidebar ? (
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <section aria-labelledby="feed-heading" className="min-w-0">
-            <h2
-              id="feed-heading"
-              className="mb-3 text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted"
-            >
-              Recent recognition
-            </h2>
+          <section className="min-w-0">
             <RecognitionFeed items={feed} viewerId={employeeId} />
           </section>
 
           <aside className="space-y-4">
-            {showRecognizeCTA && <RecognizeCTACard />}
-
             {showManager && totalPending > 0 && (
               <PendingForYou tier1={tier1Pending} tier2={tier2Pending} />
             )}
@@ -283,7 +255,7 @@ export default async function DashboardPage({
           </aside>
         </div>
       ) : (
-        <section aria-labelledby="feed-heading">
+        <section>
           <RecognitionFeed items={feed} viewerId={employeeId} />
         </section>
       )}
@@ -294,35 +266,6 @@ export default async function DashboardPage({
 function greet(name: string | null | undefined): string {
   const first = name?.split(' ')[0] ?? 'there'
   return `Welcome back, ${first}.`
-}
-
-// Small text badge under the greeting that names the active view.
-// Real view (no simulation): reads "View as [highest]". Simulated:
-// reads "View as X · simulated" so the tester knows they're not
-// looking at their own default layout.
-function ViewBadge({
-  role,
-  simulated,
-  real,
-}: {
-  role: ReturnType<typeof import('@/modules/roles/resolver')['resolveRole']> extends Promise<infer R> ? R : never
-  simulated: DashboardView | null
-  real: Set<DashboardView>
-}) {
-  const active = simulated ?? highestRealView(role)
-  const label = VIEW_LABELS[active]
-  const note = simulated ? 'simulated' : real.size > 1 ? 'merged' : null
-
-  return (
-    <p className="mt-3 text-2xs uppercase tracking-[0.08em] text-novo-muted">
-      View as {label}
-      {note && (
-        <span className="ml-1 rounded border border-novo-border bg-novo-hover px-1.5 py-0.5 font-medium text-novo-subtle">
-          {note}
-        </span>
-      )}
-    </p>
-  )
 }
 
 function PendingForYou({ tier1, tier2 }: { tier1: number; tier2: number }) {

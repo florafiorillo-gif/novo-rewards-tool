@@ -44,13 +44,13 @@ export async function onAcknowledgeButton(
       await getSlackClient().chat.update({
         channel,
         ts,
-        text: 'Acknowledged — your recognition has been shared.',
+        text: 'Acknowledged. Your recognition has been shared.',
         blocks: [
           {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: '_Acknowledged — your recognition has been shared._',
+              text: '_Acknowledged. Your recognition has been shared._',
             },
           },
         ],

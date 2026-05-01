@@ -26,25 +26,22 @@ export default async function ApprovalsQueuePage() {
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/dashboard', label: 'Dashboard' }}
-        eyebrow="Review"
         title="Nominations to review"
         description={
           items.length === 0
-            ? 'Your queue is empty. We&rsquo;ll surface new work here as it arrives.'
-            : `${items.length} waiting across the flows below.`
+            ? 'Your queue is empty.'
+            : `${items.length} waiting.`
         }
       />
 
       {items.length === 0 ? (
         <EmptyState
           title="Nothing waiting on you"
-          description="When a teammate submits a nomination that routes to you — or a reward you need to select or confirm — it'll show up here."
           action={
             <LinkButton href="/dashboard" variant="secondary">
               Back to dashboard
             </LinkButton>
           }
-          footnote="Quiet inboxes are a feature. Notice someone instead."
         />
       ) : (
         // Visual hierarchy: primary decision work first (large,
@@ -68,7 +65,7 @@ export default async function ApprovalsQueuePage() {
               <QueueSection
                 variant="standard"
                 title="Pick a reward"
-                hint="Already approved — choose the reward to finish the handoff."
+                hint="Already approved. Choose the reward to finish the handoff."
                 items={byAction.select_reward}
                 viewerEmployeeId={employeeId}
               />
@@ -87,7 +84,7 @@ export default async function ApprovalsQueuePage() {
               <QueueSection
                 variant="muted"
                 title="Waiting on the other approver"
-                hint="No action from you — here so you can see what's moving."
+                hint="No action from you. Here so you can see what's moving."
                 items={byAction.wait}
                 viewerEmployeeId={employeeId}
               />

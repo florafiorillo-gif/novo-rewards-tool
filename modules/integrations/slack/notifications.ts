@@ -152,7 +152,7 @@ export async function pingCommitteeUrgent(args: {
       await getSlackClient().chat.postMessage({
         channel,
         text:
-          `Urgent Tier 3 recognition waiting for review — ${args.nominee_name} (${args.value_name}). ` +
+          `Urgent Tier 3 recognition waiting for review: ${args.nominee_name} (${args.value_name}). ` +
           `Please review in the committee queue.`,
       })
     } catch {

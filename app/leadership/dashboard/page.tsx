@@ -26,11 +26,10 @@ export default async function CommitteeDashboardPage() {
   return (
     <main className="mx-auto max-w-shell px-6 py-10 lg:py-12">
       <PageHeader
-        eyebrow="Leadership"
         title="Program health"
         description={
           view.period
-            ? `${view.period.period_label} — pools, exceptions, SLA, and Tier 3 decisions.`
+            ? `${view.period.period_label}. Pools, exceptions, SLA, and Tier 3 decisions.`
             : 'No active recognition period right now.'
         }
         actions={

@@ -52,22 +52,12 @@ export function getValueById(id: string): ValueDef | null {
 }
 
 // Returns the Tailwind color classes (bg + text) for a value pill.
-// Each value gets a distinct colour from the Novo palette: coral and
-// oxblood for the two "act" values, lime and lime-soft for the two
-// "trust / honesty" values. Centralised so feed/approval/committee/
-// participation pills stay in sync. Unknown ids fall back to a
-// neutral hover tone so we never crash on a stale value id.
-export function valueTagClasses(valueId: string): string {
-  switch (valueId) {
-    case 'val_run_for_the_bus':
-      return 'bg-novo-coral text-novo-paper'
-    case 'val_hierarchy_not_authority':
-      return 'bg-novo-oxblood text-novo-paper'
-    case 'val_assume_best_intention':
-      return 'bg-novo-lime text-novo-ink'
-    case 'val_intellectual_honesty':
-      return 'bg-novo-lime-soft text-novo-ink'
-    default:
-      return 'bg-novo-hover text-novo-ink'
-  }
+// Single neutral treatment for every value pill. The earlier per-value
+// palette (coral / oxblood / lime / lime-soft) was loud on otherwise
+// quiet cards and dominated the visual hierarchy of recognitions; the
+// value name itself does the differentiating work. Light-grey
+// background, dark-grey text, no border. Centralised so feed,
+// approval, committee, and participation pills stay in sync.
+export function valueTagClasses(_valueId: string): string {
+  return 'bg-neutral-100 text-neutral-700'
 }

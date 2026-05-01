@@ -77,9 +77,8 @@ export default async function NewNominationPage({
       <main className="mx-auto max-w-content px-6 py-10 lg:py-16">
         <PageHeader
           back={{ href: '/dashboard', label: 'Dashboard' }}
-          eyebrow="Recognition · with reward"
           title="Recognize a teammate"
-          description="Every nomination is an observation of a Novo value being lived. Keep it specific. The smallest acknowledgment is the one most often skipped."
+          description="Approval is required before the reward is sent. Be specific."
         />
 
         {showTiered && <KindToggle current="tiered" nomineeId={initialNomineeId} />}
@@ -98,9 +97,8 @@ export default async function NewNominationPage({
     <main className="mx-auto max-w-content px-6 py-10 lg:py-16">
       <PageHeader
         back={{ href: '/dashboard', label: 'Dashboard' }}
-        eyebrow="Peer recognition"
         title="Recognize a peer"
-        description="Notice when a teammate lives a value. They'll see it, the team will see it."
+        description="Posts immediately. No approval, no reward."
       />
 
       {showTiered && <KindToggle current="peer" nomineeId={initialNomineeId} />}

@@ -71,8 +71,8 @@ export function buildColombiaManualInstruction(args: {
   const { recipient, reward } = args
   const employmentLine =
     recipient.employment_type === 'contractor'
-      ? 'Contractor — use contractor payment path (coordinate with Finance).'
-      : 'Employee — Zoho payroll (coordinate with Finance).'
+      ? 'Contractor: use contractor payment path (coordinate with Finance).'
+      : 'Employee: Zoho payroll (coordinate with Finance).'
   return [
     `Payee: ${recipient.name} (${recipient.email})`,
     `Employee ID: ${recipient.id}`,

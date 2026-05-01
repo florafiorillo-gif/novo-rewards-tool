@@ -69,7 +69,7 @@ export async function handleNominationSubmit(
   const slackNominatorId = payload.user?.id
   if (!slackNominatorId) {
     return modalError({
-      [BLOCK_NOMINEE]: "Hmm — we couldn't identify you in Slack. Try again.",
+      [BLOCK_NOMINEE]: "We couldn't identify you in Slack. Try again.",
     })
   }
 
@@ -142,7 +142,7 @@ function mapCreateErrorToModalError(code: string): ResponseOrVoid {
     default:
       return modalError({
         [BLOCK_BEHAVIOR]:
-          "We couldn't submit your nomination. Please try again — if this keeps happening, reach out to the People team.",
+          "We couldn't submit your nomination. Please try again. If this keeps happening, reach out to the People team.",
       })
   }
 }

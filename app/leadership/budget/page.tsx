@@ -25,7 +25,6 @@ export default async function BudgetPeriodsPage() {
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/leadership/dashboard', label: 'Leadership dashboard' }}
-        eyebrow="Leadership · Budget"
         title="Budget periods"
         description="Quarterly allocations. Leadership sign-off required before a period becomes active."
         actions={

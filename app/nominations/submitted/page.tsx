@@ -199,7 +199,7 @@ async function renderGroup(groupId: string, sessionEmployeeId: string) {
 
       <p className="mt-6 text-center text-xs text-novo-muted">
         Each recipient&rsquo;s manager approves independently. If one denies,
-        only that recipient drops off — the others continue.
+        only that recipient drops off. The others continue.
       </p>
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

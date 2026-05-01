@@ -25,7 +25,7 @@ function pacingChip(p: PacingIndicator): {
       return {
         label: 'Running hot',
         tone: 'warning',
-        hint: 'Spending ahead of pace — worth a look before quarter-end.',
+        hint: 'Spending ahead of pace. Worth a look before quarter-end.',
       }
     case 'under_utilized':
       return {
@@ -109,7 +109,12 @@ export function ManagerPoolCard({
 }
 
 function PacingChip({
-  tone,
+  // tone is retained on the type so callers don't have to change, but
+  // visually we render every state with the same neutral treatment.
+  // The label itself ("On track" / "Running hot" / "Under-utilized")
+  // already carries the meaning, and the bright green / amber chips
+  // were dominating the otherwise quiet pool card.
+  tone: _tone,
   label,
   hint,
 }: {
@@ -117,16 +122,10 @@ function PacingChip({
   label: string
   hint: string
 }) {
-  const toneClasses =
-    tone === 'positive'
-      ? 'bg-emerald-50 text-emerald-800 border-emerald-100'
-      : tone === 'warning'
-        ? 'bg-amber-50 text-amber-800 border-amber-100'
-        : 'bg-novo-hover text-novo-subtle border-novo-border'
   return (
     <span
       title={hint}
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-2xs font-medium ${toneClasses}`}
+      className="inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-[10px] font-medium text-neutral-700"
     >
       {label}
     </span>

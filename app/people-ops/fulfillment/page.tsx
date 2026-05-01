@@ -44,21 +44,16 @@ export default async function FulfillmentQueuePage() {
     <main className="mx-auto max-w-shell px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/people-ops', label: 'People Ops' }}
-        eyebrow="People Ops"
         title="Manual fulfillment"
         description={
           items.length === 0
-            ? "Nothing waiting. We'll surface rewards here when they need human action."
+            ? 'Nothing waiting.'
             : `${items.length} reward${items.length === 1 ? '' : 's'} needing People Ops action.`
         }
       />
 
       {items.length === 0 ? (
-        <EmptyState
-          title="Queue is clear"
-          description="When a reward routes to manual fulfillment — US cash, India cash, Colombia, custom items, or anything that fails — it lands here."
-          footnote="A quiet queue means the automated paths are doing their job."
-        />
+        <EmptyState title="Queue is clear" />
       ) : (
         <div className="space-y-8">
           {usCashPending.length > 0 && (
@@ -195,8 +190,8 @@ Nomination: ${item.reward.nomination_id}`}
 Employee ID: ${item.nominee.id}
 ${
   item.nominee.employment_type === 'contractor'
-    ? 'Contractor — contractor payment path (coordinate with Finance).'
-    : 'Employee — Zoho payroll (coordinate with Finance).'
+    ? 'Contractor: contractor payment path (coordinate with Finance).'
+    : 'Employee: Zoho payroll (coordinate with Finance).'
 }
 Reward: ${item.reward.reward_type} · $${item.reward.amount_usd.toFixed(2)} USD
 Reward ID: ${item.reward.id}

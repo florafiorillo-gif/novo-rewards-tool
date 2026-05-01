@@ -19,25 +19,25 @@ const TILES: Array<{
     href: '/leadership/queue',
     title: 'Decisions to review',
     description:
-      'Tier 3 nominations waiting on the committee. Urgent items surface first; scheduled batch runs monthly.',
+      'Tier 3 nominations waiting on the committee. Urgent items appear first.',
   },
   {
     href: '/leadership/budget',
     title: 'Budget governance',
     description:
-      'Quarterly allocations. Create, approve, activate, and close periods; pools stay drawable for a 14-day grace window.',
+      'Quarterly allocations. Create, approve, activate, and close periods.',
   },
   {
     href: '/leadership/dashboard',
     title: 'Program health',
     description:
-      'Pools by geo, reserve draws, SLA misses, and the committee decision history for the active period.',
+      'Pools by geo, reserve draws, and SLA misses for the active period.',
   },
   {
     href: '/leadership/participation',
     title: 'Participation patterns',
     description:
-      "Who's giving and receiving recognition this period. Drills from company → geo → department → manager so problem areas surface first.",
+      'Who is giving and receiving recognition, by geo, department, and manager.',
   },
 ]
 
@@ -51,7 +51,6 @@ export default async function LeadershipHomePage() {
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/dashboard', label: 'Dashboard' }}
-        eyebrow="Leadership"
         title="Governance"
         description="Where the committee reviews Tier 3 nominations, sets and approves budget, and keeps an eye on program-wide signals."
       />

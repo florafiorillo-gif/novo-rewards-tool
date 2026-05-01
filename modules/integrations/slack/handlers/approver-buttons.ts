@@ -124,7 +124,7 @@ export async function onUndoButton(
       await getSlackClient().chat.update({
         channel,
         ts,
-        text: 'Undone — waiting for your decision.',
+        text: 'Undone. Waiting for your decision.',
         blocks: [
           {
             type: 'section',
@@ -151,7 +151,7 @@ function errorTextForApprove(code: string): string {
     case 'forbidden':
       return "You aren't the approver for this nomination."
     case 'reflection_required':
-      return 'This is a self-approval — please use the web form so you can choose a reflection type.'
+      return 'This is a self-approval. Please use the web form so you can choose a reflection type.'
     default:
       return "Couldn't approve right now. Try again in a minute."
   }

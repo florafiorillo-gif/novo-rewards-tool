@@ -28,7 +28,7 @@ function pacingChip(p: PacingIndicator): {
       return {
         label: 'Running hot',
         tone: 'amber',
-        hint: 'Spending ahead of pace — worth a look before quarter-end.',
+        hint: 'Spending ahead of pace. Worth a look before quarter-end.',
       }
     case 'under_utilized':
       return {
@@ -81,14 +81,7 @@ export function DepartmentPoolCard({
           </p>
         </div>
         <span
-          className={
-            'rounded-full px-3 py-1 text-xs font-medium ' +
-            (chip.tone === 'green'
-              ? 'bg-green-50 text-green-700'
-              : chip.tone === 'amber'
-              ? 'bg-amber-50 text-amber-800'
-              : 'bg-gray-100 text-gray-600')
-          }
+          className="inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-[10px] font-medium text-neutral-700"
           title={chip.hint}
         >
           {chip.label}
@@ -107,9 +100,9 @@ export function DepartmentPoolCard({
 
       {graceDaysLeft !== null && (
         <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          {period.period_label} has closed —{' '}
+          {period.period_label} has closed.{' '}
           {graceDaysLeft === 0
-            ? 'the last day to finish pending reward selections is today.'
+            ? 'The last day to finish pending reward selections is today.'
             : `${graceDaysLeft} day${graceDaysLeft === 1 ? '' : 's'} left to finish pending reward selections.`}
         </p>
       )}

@@ -49,7 +49,7 @@ export function buildRecipientDMBlocks(args: {
         elements: [
           {
             type: 'mrkdwn' as const,
-            text: '_Acknowledged — your recognition has been shared._',
+            text: '_Acknowledged. Your recognition has been shared._',
           },
         ],
       },

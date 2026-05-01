@@ -17,7 +17,6 @@ export default async function NewCatalogItemPage() {
     <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/people-ops/catalog', label: 'Catalog' }}
-        eyebrow="People Ops · Catalog"
         title="New item"
       />
 

@@ -29,9 +29,8 @@ export default async function ScopeNotesPage() {
     <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/people-ops', label: 'People Ops' }}
-        eyebrow="People Ops"
         title="Scope note templates"
-        description="Shown as a dropdown at reward selection. Approvers pick one and can edit before committing — templates are starting points, not final copy."
+        description="Shown as a dropdown at reward selection. Approvers pick one and can edit before committing. Templates are starting points, not final copy."
       />
 
       <div className="space-y-8">
@@ -107,9 +106,9 @@ export default async function ScopeNotesPage() {
               <option value="" disabled>
                 Choose tier
               </option>
-              <option value="1">Tier 1 — Spot</option>
-              <option value="2">Tier 2 — Impact</option>
-              <option value="3">Tier 3 — Value Share</option>
+              <option value="1">Tier 1 · Spot</option>
+              <option value="2">Tier 2 · Impact</option>
+              <option value="3">Tier 3 · Value Share</option>
             </select>
             <textarea
               name="template_text"

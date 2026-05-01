@@ -90,9 +90,6 @@ async function main() {
 
     console.log(`  feed items: ${feed.length}`)
     console.log('  sidebar cards:')
-    if (role.is_employee_only) {
-      console.log('    • Recognize CTA')
-    }
     if (totalPending > 0) {
       console.log(
         `    • Waiting on you (${view.pending_tier1_count} T1, ${deptView.pending_tier2_count} T2)`

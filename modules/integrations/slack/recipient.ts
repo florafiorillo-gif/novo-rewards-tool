@@ -137,7 +137,7 @@ export async function sendPeerRecognitionDM(args: {
       channel,
       text:
         `${nominator.name} recognized you for ${valueName}: ` +
-        `“${behaviorSummary}” — see your dashboard for the full note.`,
+        `“${behaviorSummary}”. See your dashboard for the full note.`,
     })
   } catch (err) {
     console.error('[slack] peer recognition DM failed', err)

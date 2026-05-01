@@ -25,11 +25,10 @@ export default async function PeopleOpsDashboardPage() {
     <main className="mx-auto max-w-shell px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/people-ops', label: 'People Ops' }}
-        eyebrow="People Ops"
         title="Program dashboard"
         description={
           view.period
-            ? `${view.period.period_label} — full program view.`
+            ? `${view.period.period_label}. Full program view.`
             : 'No active recognition period right now.'
         }
       />

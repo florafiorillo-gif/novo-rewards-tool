@@ -21,7 +21,7 @@ export async function AppHeader() {
         <KeepViewLink
           href={employeeId ? '/dashboard' : '/auth/signin'}
           className="flex items-baseline gap-1.5 hover:opacity-80"
-          aria-label="Novo Rewards — home"
+          aria-label="Novo Rewards home"
         >
           <span className="font-display text-lg leading-none tracking-tight text-novo-ink">
             novo

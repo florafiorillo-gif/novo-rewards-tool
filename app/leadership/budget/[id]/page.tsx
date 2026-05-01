@@ -62,7 +62,6 @@ export default async function BudgetPeriodDetailPage({
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/leadership/budget', label: 'Budget periods' }}
-        eyebrow="Leadership · Budget"
         title={period.period_label}
         description={
           <>

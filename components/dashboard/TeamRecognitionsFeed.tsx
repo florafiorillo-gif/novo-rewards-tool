@@ -99,7 +99,7 @@ function ValueTag({ valueId, name }: { valueId: string; name: string }) {
 
 function TierChip({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center rounded border border-novo-border bg-novo-surface px-1.5 py-0.5 text-2xs font-medium text-novo-subtle">
+    <span className="inline-flex items-center rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-700">
       {label}
     </span>
   )

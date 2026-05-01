@@ -30,16 +30,15 @@ export default async function TeamPage() {
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/dashboard', label: 'Dashboard' }}
-        eyebrow="My team"
         title="My team"
-        description="Recognitions your team has received this quarter."
+        description="This quarter's recognitions for your direct reports."
         actions={<TeamExportButton enabled={hasContent} />}
       />
 
       {hasContent ? (
         <TeamRecognitionsFeed groups={data.groups} />
       ) : (
-        <EmptyState title="No recognitions for your team this quarter yet." />
+        <EmptyState title="No recognitions this quarter." />
       )}
     </main>
   )

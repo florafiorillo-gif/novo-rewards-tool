@@ -26,7 +26,6 @@ export default async function CatalogPage() {
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/people-ops', label: 'People Ops' }}
-        eyebrow="People Ops"
         title="Reward catalog"
         description="Per geo. Approvers see only active items within the target tier range."
         actions={

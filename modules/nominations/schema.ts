@@ -14,12 +14,12 @@ const NominationNarrativeShape = {
   behavior_text: z
     .string()
     .trim()
-    .min(30, 'A little more detail helps — at least 30 characters.')
+    .min(30, 'A little more detail helps. At least 30 characters.')
     .max(500, 'Keep it to 500 characters or fewer.'),
   outcome_text: z
     .string()
     .trim()
-    .min(30, 'A little more detail helps — at least 30 characters.')
+    .min(30, 'A little more detail helps. At least 30 characters.')
     .max(500, 'Keep it to 500 characters or fewer.'),
   evidence_links: z
     .array(

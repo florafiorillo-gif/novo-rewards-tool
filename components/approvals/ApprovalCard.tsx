@@ -130,8 +130,8 @@ export function ApprovalCard({ hydrated, viewerEmployeeId }: Props) {
           {pending_reward.vendor ? ` from ${pending_reward.vendor}` : ''}, $
           <span className="tabular">
             {pending_reward.amount_usd.toLocaleString()}
-          </span>{' '}
-          — confirm to commit budget.
+          </span>
+          . Confirm to commit budget.
         </div>
       )}
       {action_needed === 'wait' && (
@@ -217,9 +217,9 @@ function TierChip({ tier }: { tier: number }) {
         ? '· committee'
         : '· manager approval'
   return (
-    <span className="inline-flex items-center gap-1 rounded border border-novo-border bg-novo-surface px-1.5 py-0.5 font-medium text-novo-subtle">
+    <span className="inline-flex items-center gap-1 rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-700">
       {label}
-      <span className="text-novo-muted">{hint}</span>
+      <span className="text-neutral-500">{hint}</span>
     </span>
   )
 }
@@ -295,8 +295,8 @@ function UpgradeDisclosure({
             defaultValue="2"
             className="block h-9 w-full rounded-md border border-novo-border bg-novo-paper px-2 text-xs text-novo-ink focus:border-novo-ink"
           >
-            <option value="2">Tier 2 — Impact</option>
-            <option value="3">Tier 3 — Value Share</option>
+            <option value="2">Tier 2 · Impact</option>
+            <option value="3">Tier 3 · Value Share</option>
           </select>
         ) : (
           <input type="hidden" name="to_tier" value="3" />

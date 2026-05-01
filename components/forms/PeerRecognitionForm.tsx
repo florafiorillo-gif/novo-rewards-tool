@@ -92,7 +92,7 @@ export function PeerRecognitionForm({
           title="Who are you recognizing?"
           step={1}
           total={3}
-          hint="Anyone on the team — except your manager or anyone above them in your chain."
+          hint="Anyone on the team, except your manager or anyone above them in your chain."
         />
         <SingleNomineePicker
           employees={employees}
@@ -163,8 +163,7 @@ export function PeerRecognitionForm({
       {/* ── Footer ─────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between border-t border-novo-border pt-6">
         <p className="text-xs text-novo-subtle">
-          Peer recognitions post immediately. No approval, no reward — just
-          acknowledgment.
+          Peer recognitions post immediately. No approval, no reward.
         </p>
         <SubmitButton disabled={!selectedNomineeId || !selectedValueId} />
       </div>

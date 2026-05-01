@@ -18,7 +18,7 @@ const OPTIONS: Array<{
     value: 'public',
     label: 'Public',
     description:
-      'Your recognition posts to #made-it-happen. The default — most people leave this on.',
+      'Your recognition posts to #made-it-happen. This is the default.',
   },
   {
     value: 'team_only',
@@ -48,9 +48,8 @@ export default async function SettingsPage() {
     <main className="mx-auto max-w-content px-6 py-10 lg:py-12">
       <PageHeader
         back={{ href: '/dashboard', label: 'Dashboard' }}
-        eyebrow="Settings"
         title="Visibility preferences"
-        description="Controls how public your recognition is. You can change this any time — the next nomination you receive will respect whatever this is at the moment it's approved."
+        description="Controls how public your recognition is. You can change this any time. The next nomination you receive will respect whatever this is at the moment it's approved."
       />
 
       <Card>
