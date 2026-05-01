@@ -1,14 +1,13 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
-import {
-  getAllActiveEmployees,
-  isManager,
-} from '@/modules/employees/service'
+import { getAllActiveEmployees } from '@/modules/employees/service'
+import { resolveRole } from '@/modules/roles/resolver'
+import { activeViews, parseViewParam } from '@/modules/dashboard/views'
 import { VALUES } from '@/modules/values/constants'
 import { NominationForm } from '@/components/forms/NominationForm'
 import { PeerRecognitionForm } from '@/components/forms/PeerRecognitionForm'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,18 +15,27 @@ export const dynamic = 'force-dynamic'
 //   - peer    (default): non-monetary, instant, no approval. Available
 //                        to everyone.
 //   - tiered  (?kind=tiered): the existing T1/T2/T3 reward flow. Only
-//                             surfaced to managers — the URL falls
-//                             back to peer for ICs.
+//                             surfaced when the viewer's *active* view
+//                             includes 'manager' — i.e., a real manager
+//                             outside of sim, or any viewer simulating
+//                             Manager. ICs (and managers simulating
+//                             Employee) see the peer form only.
+//
+// Submission-time authorization still gates on the viewer's *real* role
+// inside the server actions, per modules/dashboard/views.ts — the
+// active-view gate here is purely a visibility / fallback rule.
 //
 // One URL keeps the AppHeader "+Recognize" pill stable for everyone;
-// managers see a kind toggle at the top, ICs just see the peer form.
+// managers (or sim-as-Manager) see a kind toggle at the top, the
+// Employee flow just shows the peer form.
 export default async function NewNominationPage({
   searchParams,
 }: {
-  // ?nominee=emp_xxx deep-links from the /dashboard/team "Recognize"
-  // buttons so the form opens with that teammate pre-selected.
-  // ?kind=tiered selects the reward flow for managers.
-  searchParams?: { nominee?: string; kind?: string }
+  // ?nominee=emp_xxx deep-links from inline "Recognize" buttons so the
+  // form opens with that teammate pre-selected.
+  // ?kind=tiered selects the reward flow when the active view permits.
+  // ?view=employee|manager|... is the demo view-switcher state.
+  searchParams?: { nominee?: string; kind?: string; view?: string }
 }) {
   const session = await auth()
   if (!session?.user?.employeeId) redirect('/auth/signin')
@@ -46,11 +54,16 @@ export default async function NewNominationPage({
   const initialNomineeId =
     typeof searchParams?.nominee === 'string' ? searchParams.nominee : undefined
 
-  const userIsManager = await isManager(currentEmployeeId)
-  // Tiered is manager-only; ICs requesting ?kind=tiered fall back to
-  // peer rather than getting a forbidden page.
+  const role = await resolveRole(currentEmployeeId)
+  const simulated = parseViewParam(searchParams?.view)
+  const views = activeViews(role, simulated)
+  // Tiered is gated on the *active* view including 'manager'. A real
+  // Manager simulating Employee sees peer only; a real Employee
+  // simulating Manager sees both options (server-side actions still
+  // enforce real-role permissions on submit).
+  const showTiered = views.has('manager')
   const kind: 'peer' | 'tiered' =
-    searchParams?.kind === 'tiered' && userIsManager ? 'tiered' : 'peer'
+    searchParams?.kind === 'tiered' && showTiered ? 'tiered' : 'peer'
 
   const valueOptions = VALUES.map((v) => ({
     id: v.id,
@@ -69,7 +82,7 @@ export default async function NewNominationPage({
           description="Every nomination is an observation of a Novo value being lived. Keep it specific. The smallest acknowledgment is the one most often skipped."
         />
 
-        {userIsManager && <KindToggle current="tiered" nomineeId={initialNomineeId} />}
+        {showTiered && <KindToggle current="tiered" nomineeId={initialNomineeId} />}
 
         <NominationForm
           employees={employees}
@@ -90,7 +103,7 @@ export default async function NewNominationPage({
         description="Notice when a teammate lives a value. They'll see it, the team will see it."
       />
 
-      {userIsManager && <KindToggle current="peer" nomineeId={initialNomineeId} />}
+      {showTiered && <KindToggle current="peer" nomineeId={initialNomineeId} />}
 
       <PeerRecognitionForm
         employees={employees}
@@ -122,7 +135,7 @@ function KindToggle({
       aria-label="Recognition kind"
       className="mb-8 flex gap-2 rounded-lg border border-novo-border bg-novo-hover/40 p-1.5"
     >
-      <Link
+      <KeepViewLink
         role="tab"
         aria-selected={current === 'peer'}
         href={peerHref}
@@ -136,8 +149,8 @@ function KindToggle({
         <span className="text-xs text-novo-subtle">
           Acknowledge what they did.
         </span>
-      </Link>
-      <Link
+      </KeepViewLink>
+      <KeepViewLink
         role="tab"
         aria-selected={current === 'tiered'}
         href={tieredHref}
@@ -151,7 +164,7 @@ function KindToggle({
         <span className="text-xs text-novo-subtle">
           When the moment deserves something tangible.
         </span>
-      </Link>
+      </KeepViewLink>
     </div>
   )
 }
