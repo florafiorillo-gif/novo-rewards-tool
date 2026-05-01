@@ -220,9 +220,6 @@ export type PeerSubmitState = {
   formError?: string
 }
 
-const PEER_INITIAL_STATE: PeerSubmitState = { ok: false }
-export const peerInitialState: PeerSubmitState = PEER_INITIAL_STATE
-
 export async function submitPeerRecognitionAction(
   _prev: PeerSubmitState,
   formData: FormData

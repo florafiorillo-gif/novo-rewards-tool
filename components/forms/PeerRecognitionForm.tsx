@@ -3,11 +3,12 @@
 import { useMemo, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 import {
-  peerInitialState,
   submitPeerRecognitionAction,
   type PeerSubmitState,
 } from '@/app/nominations/actions'
 import { Button } from '@/components/ui/Button'
+
+const INITIAL_STATE: PeerSubmitState = { ok: false }
 
 // Peer-recognition entry form. Single recipient, no evidence, no
 // reflection, no group flow. Posts directly via
@@ -51,7 +52,7 @@ export function PeerRecognitionForm({
 }: Props) {
   const [state, formAction] = useFormState(
     submitPeerRecognitionAction,
-    peerInitialState
+    INITIAL_STATE
   )
   const [selectedNomineeId, setSelectedNomineeId] = useState<string>(
     initialNomineeId && employees.some((e) => e.id === initialNomineeId)
