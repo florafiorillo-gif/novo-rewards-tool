@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { signOutAction } from '@/app/auth/actions'
+import { KeepViewLink } from './KeepViewLink'
 
 // Avatar + dropdown. Replaces the single-link UserIndicator so
 // "My recognitions" (/dashboard/me) is one click away for every
@@ -86,22 +86,22 @@ export function UserMenu({
               {email}
             </p>
           )}
-          <Link
+          <KeepViewLink
             role="menuitem"
             href="/dashboard/me"
             onClick={() => setOpen(false)}
             className="block rounded-md px-3 py-2 text-sm text-novo-ink hover:bg-novo-hover"
           >
             My recognitions
-          </Link>
-          <Link
+          </KeepViewLink>
+          <KeepViewLink
             role="menuitem"
             href="/settings"
             onClick={() => setOpen(false)}
             className="block rounded-md px-3 py-2 text-sm text-novo-ink hover:bg-novo-hover"
           >
             Settings
-          </Link>
+          </KeepViewLink>
           <div className="my-1 border-t border-novo-border" />
           <form action={signOutAction}>
             <button

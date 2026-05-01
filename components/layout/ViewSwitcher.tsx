@@ -6,11 +6,54 @@ import { useEffect, useRef, useState } from 'react'
 import {
   ALL_VIEWS,
   VIEW_LABELS,
-  highestRealView,
   parseViewParam,
   type DashboardView,
 } from '@/modules/dashboard/views'
 import type { ResolvedRole } from '@/modules/roles/resolver'
+
+// Path prefixes whose pages enforce a real-role gate. Selecting a sim
+// view that doesn't match these prefixes from inside one bounces back
+// to /dashboard so the user lands in their chosen view's home rather
+// than on a page that doesn't match the chrome (or 404s in the worst
+// case for testers without the real role).
+const REAL_ROLE_GATED_PATHS: Array<[string, DashboardView]> = [
+  ['/dashboard/team', 'manager'],
+  ['/leadership', 'committee'],
+  ['/people-ops', 'people_ops'],
+]
+
+function pathRequiredView(path: string): DashboardView | null {
+  for (const [prefix, view] of REAL_ROLE_GATED_PATHS) {
+    if (path === prefix || path.startsWith(prefix + '/')) return view
+  }
+  return null
+}
+
+// Builds the href the dropdown's "View as X" / "Reset" entries should
+// navigate to. Default is preserve-path-update-view; the exception is
+// when the current path is real-role-gated to a different view, in
+// which case we redirect to /dashboard?view=X.
+function buildSwitcherHref(
+  view: DashboardView | null,
+  currentPath: string,
+  currentSearch: string
+): string {
+  // Reset: clear ?view=, keep path. The merged-real-roles fallback
+  // already gated access if the user is on the page now.
+  if (!view) {
+    const next = new URLSearchParams(currentSearch)
+    next.delete('view')
+    const qs = next.toString()
+    return qs ? `${currentPath}?${qs}` : currentPath
+  }
+  const required = pathRequiredView(currentPath)
+  if (required && required !== view) {
+    return `/dashboard?view=${view}`
+  }
+  const next = new URLSearchParams(currentSearch)
+  next.set('view', view)
+  return `${currentPath}?${next.toString()}`
+}
 
 // DEMO-MODE ONLY. This switcher lets a signed-in user preview the
 // dashboard as any of the four views (Employee / Manager / People Ops
@@ -31,7 +74,12 @@ export function ViewSwitcher({ role }: { role: ResolvedRole }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null)
 
   const simulated = parseViewParam(searchParams?.get('view'))
-  const active = simulated ?? highestRealView(role)
+  // Active label only when a simulation is on. With no sim we show
+  // "View as" with no role — a visually distinct "no simulation" state
+  // so testers don't mistake the merged-roles fallback for an active
+  // Leadership sim (the previous fallback was highestRealView, which
+  // for committee+manager viewers always read "Leadership").
+  const isSimulating = simulated !== null
   const realSet = new Set<DashboardView>(['employee'])
   if (role.is_manager) realSet.add('manager')
   if (role.is_people_team) realSet.add('people_ops')
@@ -59,17 +107,18 @@ export function ViewSwitcher({ role }: { role: ResolvedRole }) {
     }
   }, [open])
 
-  // Each option links to /dashboard?view=X. The "Reset" option at
-  // the bottom clears the query param and returns to the default
-  // merged view. Link navigation is used rather than a button + push
-  // so the browser back/forward still works for tester walkthroughs.
+  // Selecting a view from the dropdown preserves the current path and
+  // updates the ?view= param; selecting "Reset" clears the param and
+  // keeps the path. The exception lives in buildSwitcherHref —
+  // real-role-gated paths bounce to /dashboard when the chosen sim
+  // view doesn't match. Link navigation rather than push so the
+  // browser back button still works for tester walkthroughs.
+  const currentSearch = searchParams?.toString() ?? ''
   function hrefFor(view: DashboardView | null): string {
-    if (!view) return '/dashboard'
-    return `/dashboard?view=${view}`
+    return buildSwitcherHref(view, pathname ?? '/dashboard', currentSearch)
   }
 
-  const label = VIEW_LABELS[active]
-  const simulatedBadge = simulated !== null
+  const label = isSimulating ? VIEW_LABELS[simulated] : null
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -82,8 +131,8 @@ export function ViewSwitcher({ role }: { role: ResolvedRole }) {
         title="Demo: switch dashboard view"
       >
         <span className="text-novo-muted">View as</span>
-        <span className="font-medium">{label}</span>
-        {simulatedBadge && (
+        {label && <span className="font-medium">{label}</span>}
+        {isSimulating && (
           <span className="ml-0.5 rounded bg-novo-lime px-1 text-2xs font-medium text-novo-ink">
             sim
           </span>
@@ -102,7 +151,10 @@ export function ViewSwitcher({ role }: { role: ResolvedRole }) {
             Preview dashboard as
           </p>
           {ALL_VIEWS.map((v) => {
-            const isActive = active === v && simulated !== null
+            // Highlighted only when the user is actively simulating this
+            // exact view. With no sim, no row is "active" — matches the
+            // "View as" empty-label state on the trigger.
+            const isActive = simulated === v
             const isReal = realSet.has(v)
             return (
               <Link
@@ -142,7 +194,7 @@ export function ViewSwitcher({ role }: { role: ResolvedRole }) {
             <span className="ml-1 text-novo-muted">(all your roles)</span>
           </Link>
           <p className="px-3 pb-2 pt-1 text-2xs text-novo-muted">
-            Simulation only — approvals and committee actions still
+            Simulation only. Approvals and committee actions still
             require your real role.
           </p>
           <p className="px-3 pb-2 text-2xs text-novo-muted">

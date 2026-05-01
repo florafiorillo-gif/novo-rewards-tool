@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import type { HydratedNomination } from '@/modules/approvals/queries'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 import {
   approveFromQueueAction,
   confirmRewardFromQueueAction,
@@ -170,12 +170,12 @@ function PrimaryAction({
 }) {
   if (action_needed === 'select_reward') {
     return (
-      <Link
+      <KeepViewLink
         href={`/approvals/${nominationId}/reward`}
         className="inline-flex h-9 items-center justify-center rounded-md bg-novo-coral px-4 text-sm font-medium text-novo-paper hover:bg-novo-coral/90"
       >
         Select reward
-      </Link>
+      </KeepViewLink>
     )
   }
   if (action_needed === 'confirm_reward' && pendingRewardId) {

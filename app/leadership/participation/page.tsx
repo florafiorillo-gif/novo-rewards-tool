@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 import { auth } from '@/auth'
 import {
   isCommitteeMember,
@@ -321,12 +321,12 @@ async function ManagerLevel({
       </Section>
 
       <p className="mt-10 text-xs text-novo-muted">
-        <Link
+        <KeepViewLink
           href={backHref}
           className="underline underline-offset-2 hover:text-novo-ink"
         >
           ← Back to {backLabel}
-        </Link>
+        </KeepViewLink>
       </p>
     </main>
   )

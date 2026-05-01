@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 interface PageHeaderProps {
   /** Eyebrow label rendered above the title, e.g. "Committee". */
@@ -22,13 +22,13 @@ export function PageHeader({
   return (
     <header className="mb-8">
       {back && (
-        <Link
+        <KeepViewLink
           href={back.href}
           className="mb-3 inline-flex items-center gap-1 text-xs text-novo-subtle hover:text-novo-ink"
         >
           <span aria-hidden>←</span>
           {back.label}
-        </Link>
+        </KeepViewLink>
       )}
       <div className="flex items-end justify-between gap-6">
         <div>

@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
@@ -59,6 +59,11 @@ interface LinkButtonProps extends CommonProps {
   prefetch?: boolean
 }
 
+// Wraps KeepViewLink (not a plain next/link) so any active demo-mode
+// ?view= simulation persists across the click. This is the default
+// because every LinkButton in the app today targets an internal route;
+// if a future caller needs to opt out for an external destination, add
+// a `keepView={false}` escape hatch then.
 export function LinkButton({
   href,
   variant = 'primary',
@@ -68,12 +73,12 @@ export function LinkButton({
   prefetch,
 }: LinkButtonProps) {
   return (
-    <Link
+    <KeepViewLink
       href={href}
       prefetch={prefetch}
       className={`${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
     >
       {children}
-    </Link>
+    </KeepViewLink>
   )
 }

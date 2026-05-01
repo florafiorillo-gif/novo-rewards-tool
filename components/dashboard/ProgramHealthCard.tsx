@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import type { PeopleTeamDashboardView } from '@/modules/dashboard/people-team-view'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 // Compact summary of program-level health for the dashboard sidebar.
 // Full tables (per-geo pools, exception details, SLA miss rows) live on
@@ -55,13 +55,13 @@ export function ProgramHealthCard({
         />
       </dl>
 
-      <Link
+      <KeepViewLink
         href={href}
         className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
       >
         {hasFlag ? 'See full program view' : 'Open program view'}{' '}
         <span aria-hidden>→</span>
-      </Link>
+      </KeepViewLink>
     </section>
   )
 }

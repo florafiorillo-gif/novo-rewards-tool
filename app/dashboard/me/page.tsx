@@ -1,10 +1,10 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { getRecipientDashboardView } from '@/modules/dashboard/recipient-view'
 import { RecipientRecognitionList } from '@/components/dashboard/RecipientRecognitionList'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,12 +36,12 @@ export default async function RecipientDashboardPage() {
       )}
 
       <p className="mt-10 text-center text-xs text-novo-muted">
-        <Link
+        <KeepViewLink
           href="/settings"
           className="underline underline-offset-2 hover:text-novo-ink"
         >
           Recognition preferences
-        </Link>
+        </KeepViewLink>
       </p>
     </main>
   )

@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useState } from 'react'
 import { valueTagClasses } from '@/modules/values/constants'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 // Three sortable tables shared across the participation drill-down.
 // Each takes typed rows + click-to-sort behavior. Default sort is
@@ -126,9 +126,9 @@ export function GeoBreakdownTable({ rows }: { rows: GeoTableRow[] }) {
           {sorted.map((row) => (
             <tr key={row.geo} className="group transition hover:bg-novo-hover/50">
               <td className="px-5 py-3">
-                <Link href={row.href} className="font-medium text-novo-ink group-hover:underline">
+                <KeepViewLink href={row.href} className="font-medium text-novo-ink group-hover:underline">
                   {row.geo}
-                </Link>
+                </KeepViewLink>
               </td>
               <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.active}</td>
               <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.recogs}</td>
@@ -210,12 +210,12 @@ export function DepartmentBreakdownTable({
               className="group transition hover:bg-novo-hover/50"
             >
               <td className="px-5 py-3">
-                <Link
+                <KeepViewLink
                   href={row.href}
                   className="font-medium text-novo-ink group-hover:underline"
                 >
                   {row.department}
-                </Link>
+                </KeepViewLink>
                 {row.geo && (
                   <span className="ml-2 text-2xs text-novo-muted tabular">
                     {row.geo}
@@ -300,12 +300,12 @@ export function ManagerBreakdownTable({ rows }: { rows: ManagerTableRow[] }) {
               className="group transition hover:bg-novo-hover/50"
             >
               <td className="px-5 py-3">
-                <Link href={row.href} className="block group-hover:underline">
+                <KeepViewLink href={row.href} className="block group-hover:underline">
                   <span className="font-medium text-novo-ink">{row.manager_name}</span>
                   <span className="block text-2xs text-novo-muted">
                     {row.manager_role_title} · {row.geo}
                   </span>
-                </Link>
+                </KeepViewLink>
               </td>
               <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.team_size}</td>
               <td className="px-5 py-3 text-right tabular"><PctChip pct={row.given_pct} /></td>

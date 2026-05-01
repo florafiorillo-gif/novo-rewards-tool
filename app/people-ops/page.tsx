@@ -1,8 +1,8 @@
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { isPeopleTeamRep } from '@/modules/roles/service'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,7 +60,7 @@ export default async function PeopleOpsHomePage() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {TILES.map((tile) => (
-          <Link
+          <KeepViewLink
             key={tile.href}
             href={tile.href}
             className="group rounded-lg border border-novo-border bg-novo-elevated p-5 shadow-card transition hover:bg-novo-hover"
@@ -75,7 +75,7 @@ export default async function PeopleOpsHomePage() {
               </span>
             </div>
             <p className="mt-1.5 text-xs text-novo-subtle">{tile.description}</p>
-          </Link>
+          </KeepViewLink>
         ))}
       </div>
     </main>

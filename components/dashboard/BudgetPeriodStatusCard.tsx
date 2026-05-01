@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import type { BudgetPeriodRecord } from '@/modules/budget/types'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 // Committee-focused "where are we in the period" card. Complements
 // ProgramHealthCard (which says *how much* is committed) with *when*
@@ -53,12 +53,12 @@ export function BudgetPeriodStatusCard({
         <StatusChip tone={tone}>{statusLabel}</StatusChip>
       </div>
       <p className="mt-2 text-xs text-novo-subtle">{statusDetail}</p>
-      <Link
+      <KeepViewLink
         href="/leadership/budget"
         className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
       >
         Open budget <span aria-hidden>→</span>
-      </Link>
+      </KeepViewLink>
     </section>
   )
 }

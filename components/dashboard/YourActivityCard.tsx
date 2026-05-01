@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 // Small two-number card showing the viewer's own recognition activity —
 // given (that they wrote) vs. received (that teammates wrote about them).
@@ -23,13 +23,13 @@ export function YourActivityCard({
         <Stat label="Given" value={given} />
         <Stat label="Received" value={received} />
       </dl>
-      <Link
+      <KeepViewLink
         href="/dashboard/me"
         className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
       >
         {received > 0 ? 'View what teammates noticed' : 'See your history'}{' '}
         <span aria-hidden>→</span>
-      </Link>
+      </KeepViewLink>
     </section>
   )
 }

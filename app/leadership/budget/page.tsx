@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { isCommitteeMember } from '@/modules/roles/service'
@@ -6,6 +5,7 @@ import { listPeriods } from '@/modules/budget/periods'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LinkButton } from '@/components/ui/Button'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,12 +63,12 @@ export default async function BudgetPeriodsPage() {
                   className="group transition hover:bg-novo-hover/50"
                 >
                   <td className="px-5 py-4">
-                    <Link
+                    <KeepViewLink
                       href={`/leadership/budget/${p.id}`}
                       className="font-medium text-novo-ink group-hover:underline"
                     >
                       {p.period_label}
-                    </Link>
+                    </KeepViewLink>
                   </td>
                   <td className="px-5 py-4 text-novo-subtle tabular">
                     {p.start_date.toLocaleDateString()} →{' '}

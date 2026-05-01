@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { auth } from '@/auth'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 import { redirect } from 'next/navigation'
 import { getManagerDashboardView } from '@/modules/dashboard/manager-view'
 import { getDepartmentDashboardView } from '@/modules/dashboard/department-view'
@@ -348,12 +348,12 @@ function PendingForYou({ tier1, tier2 }: { tier1: number; tier2: number }) {
         {tier1 > 0 && <li>{tier1} as direct manager</li>}
         {tier2 > 0 && <li>{tier2} as department head</li>}
       </ul>
-      <Link
+      <KeepViewLink
         href="/review"
         className="mt-4 inline-flex h-8 items-center rounded-md bg-white px-3 text-xs font-medium text-novo-ink hover:bg-white/90"
       >
         Review now <span aria-hidden className="ml-1">→</span>
-      </Link>
+      </KeepViewLink>
     </section>
   )
 }
@@ -393,7 +393,7 @@ function YourQueueCard({
       <ul className="mt-3 divide-y divide-novo-border">
         {rows.map((row) => (
           <li key={row.href}>
-            <Link
+            <KeepViewLink
               href={row.href}
               className="flex items-center justify-between py-2.5 text-sm text-novo-ink hover:text-novo-subtle"
             >
@@ -402,7 +402,7 @@ function YourQueueCard({
                 <span className="text-sm font-semibold tabular">{row.count}</span>
                 <span aria-hidden className="text-novo-muted">→</span>
               </span>
-            </Link>
+            </KeepViewLink>
           </li>
         ))}
       </ul>
