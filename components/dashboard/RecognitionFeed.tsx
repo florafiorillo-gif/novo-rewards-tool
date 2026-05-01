@@ -1,6 +1,6 @@
 import type { RecognitionFeedItem } from '@/modules/dashboard/recognition-feed'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { LinkButton } from '@/components/ui/Button'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 interface Props {
   items: RecognitionFeedItem[]
@@ -15,9 +15,12 @@ export function RecognitionFeed({ items, viewerId }: Props) {
         title="No recognitions yet"
         description="When someone on Novo calls out a teammate for living one of the four values, it lands here. Be the first to notice someone this week."
         action={
-          <LinkButton href="/nominations/new" variant="primary">
+          <KeepViewLink
+            href="/nominations/new"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-novo-ink px-3.5 text-sm font-medium text-novo-paper shadow-card transition hover:bg-novo-ink/90"
+          >
             Recognize a teammate
-          </LinkButton>
+          </KeepViewLink>
         }
       />
     )

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 // Employee landing CTA. The AppHeader always has a "+ Recognize" pill,
 // but for individual contributors without an admin or manager queue
@@ -6,6 +6,9 @@ import Link from 'next/link'
 // surface for the primary action. Ink background matches the "Waiting
 // on you" weighty card for managers — so the inverted-card slot is
 // consistent per role.
+//
+// Uses KeepViewLink so a tester landing here via ?view= simulation
+// keeps that simulation when they click through to /nominations/new.
 export function RecognizeCTACard() {
   return (
     <section className="rounded-lg border border-novo-ink bg-novo-ink p-5 text-novo-paper shadow-elevated">
@@ -18,12 +21,12 @@ export function RecognizeCTACard() {
       <p className="mt-1 text-xs leading-relaxed text-white/70">
         Tell the story behind the behavior — what they did, what it moved.
       </p>
-      <Link
+      <KeepViewLink
         href="/nominations/new"
         className="mt-4 inline-flex h-8 items-center rounded-md bg-white px-3 text-xs font-medium text-novo-ink hover:bg-white/90"
       >
         Write a recognition <span aria-hidden className="ml-1">→</span>
-      </Link>
+      </KeepViewLink>
     </section>
   )
 }

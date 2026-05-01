@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import {
   activeViews,
@@ -8,6 +7,7 @@ import {
   parseViewParam,
 } from '@/modules/dashboard/views'
 import type { ResolvedRole } from '@/modules/roles/resolver'
+import { KeepViewLink } from './KeepViewLink'
 
 // Role-aware primary nav. Client-rendered because the item set has
 // to react to the demo view-switcher's ?view= query param — when a
@@ -57,7 +57,7 @@ function NavLink({
   active: boolean
 }) {
   return (
-    <Link
+    <KeepViewLink
       href={href}
       className={`rounded-md px-2.5 py-1.5 text-sm transition ${
         active
@@ -66,7 +66,7 @@ function NavLink({
       }`}
     >
       {children}
-    </Link>
+    </KeepViewLink>
   )
 }
 

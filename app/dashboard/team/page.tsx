@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { getTeamRhythm, TEAM_RHYTHM_WINDOW_DAYS } from '@/modules/dashboard/manager-view'
 import { isManager } from '@/modules/employees/service'
+import { parseViewParam } from '@/modules/dashboard/views'
 import { getValueById } from '@/modules/values/constants'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { TeamRhythmCard } from '@/components/dashboard/TeamRhythmCard'
@@ -16,13 +17,23 @@ export const dynamic = 'force-dynamic'
 // per-report list with inline "Recognize [name]" CTAs. Nothing
 // approval-side (that's /review) and nothing budget-side (that's on
 // the main dashboard). Kept deliberately narrow.
-export default async function TeamPage() {
+//
+// Reads ?view= so demo-mode simulations propagate forward to the
+// inline Recognize buttons — clicking one in Manager sim should land
+// on /nominations/new still in Manager sim, not the user's real role.
+export default async function TeamPage({
+  searchParams,
+}: {
+  searchParams?: { view?: string }
+}) {
   const session = await auth()
   const employeeId = session?.user?.employeeId
   if (!employeeId) redirect('/auth/signin')
   if (!(await isManager(employeeId))) notFound()
 
   const rhythm = await getTeamRhythm(employeeId)
+  const simulated = parseViewParam(searchParams?.view)
+  const viewSuffix = simulated ? `&view=${simulated}` : ''
 
   return (
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
@@ -76,7 +87,7 @@ export default async function TeamPage() {
                       </div>
                     </div>
                     <LinkButton
-                      href={`/nominations/new?nominee=${entry.report.id}`}
+                      href={`/nominations/new?nominee=${entry.report.id}${viewSuffix}`}
                       variant="secondary"
                       size="sm"
                     >

@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { auth } from '@/auth'
 import { resolveRole } from '@/modules/roles/resolver'
 import { AppNav } from './AppNav'
+import { KeepViewLink } from './KeepViewLink'
 import { UserMenu } from './UserMenu'
 import { ViewSwitcher } from './ViewSwitcher'
 
@@ -18,13 +18,18 @@ export async function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-novo-border bg-novo-surface/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-shell items-center gap-8 px-6">
-        <Link
+        <KeepViewLink
           href={employeeId ? '/dashboard' : '/auth/signin'}
-          className="flex items-center gap-2 text-sm font-semibold tracking-tight text-novo-ink hover:opacity-80"
+          className="flex items-baseline gap-1.5 hover:opacity-80"
+          aria-label="Novo Rewards — home"
         >
-          <Wordmark />
-          <span className="hidden sm:inline">Novo Rewards</span>
-        </Link>
+          <span className="font-display text-lg leading-none tracking-tight text-novo-ink">
+            novo
+          </span>
+          <span className="hidden text-xs uppercase tracking-[0.12em] text-novo-subtle sm:inline">
+            Rewards
+          </span>
+        </KeepViewLink>
 
         {role && <AppNav role={role} />}
 
@@ -32,13 +37,13 @@ export async function AppHeader() {
           {employeeId && session?.user ? (
             <>
               {role && <ViewSwitcher role={role} />}
-              <Link
+              <KeepViewLink
                 href="/nominations/new"
                 className="inline-flex h-8 items-center gap-1.5 rounded-md bg-novo-ink px-3 text-xs font-medium text-novo-paper shadow-card hover:bg-novo-ink/90"
               >
                 <span aria-hidden>+</span>
                 Recognize
-              </Link>
+              </KeepViewLink>
               <UserMenu
                 name={session.user.name ?? session.user.email ?? 'Signed in'}
                 email={session.user.email ?? null}
@@ -52,25 +57,3 @@ export async function AppHeader() {
   )
 }
 
-function Wordmark() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      className="text-novo-ink"
-      aria-hidden
-    >
-      <rect x="1" y="1" width="18" height="18" rx="4" fill="currentColor" />
-      <path
-        d="M6 14V6l4 5.5V6l4 8"
-        stroke="#FAFAF7"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </svg>
-  )
-}
