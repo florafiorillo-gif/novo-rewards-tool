@@ -106,7 +106,18 @@ function ValueTag({ name }: { name: string }) {
 }
 
 function TierChip({ tier }: { tier: number }) {
-  const label = tier === 1 ? 'Peer' : tier === 2 ? 'Cross-team' : 'Leadership'
+  // Tier 0 is the new peer-recognition kind (non-monetary, no approval).
+  // The remaining labels stay descriptive of who acts on the record:
+  // Spot is what a manager approves, Cross-team is the dept-head queue,
+  // Leadership is the committee.
+  const label =
+    tier === 0
+      ? 'Peer'
+      : tier === 1
+        ? 'Spot'
+        : tier === 2
+          ? 'Cross-team'
+          : 'Leadership'
   return (
     <span className="inline-flex items-center rounded border border-novo-border bg-novo-surface px-1.5 py-0.5 text-2xs font-medium text-novo-subtle">
       {label}

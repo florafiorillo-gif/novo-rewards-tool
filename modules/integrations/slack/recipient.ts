@@ -4,6 +4,7 @@ import { getValueById } from '@/modules/values/constants'
 import { getNominationById } from '@/modules/nominations/service'
 import { buildRecipientDMBlocks } from './blocks/recipient-dm'
 import type { RewardRecord } from '@/modules/rewards/types'
+import type { NominationRecord } from '@/modules/nominations/types'
 
 // Spec §9.4 — recipient gets a short DM when the reward is issued, with a
 // "React to acknowledge" button (spec §9.8). Clicking fires the
@@ -104,4 +105,47 @@ function describeDelivery(reward: RewardRecord): string {
     default:
       return 'Details coming soon.'
   }
+}
+
+// ─── Peer recognition (Round 5) ──────────────────────────────────────
+// Lightweight DM fired right after a peer-recognition record is
+// created. No reward, no acknowledge button, no 24h timer — just a
+// short notification so the recipient sees they were recognized.
+// No-op when SLACK_BOT_TOKEN is unset (mock / local dev).
+export async function sendPeerRecognitionDM(args: {
+  nomination: NominationRecord
+}): Promise<void> {
+  if (!slackEnabled()) return
+  const { nomination } = args
+  const [nominator, nominee] = await Promise.all([
+    getEmployeeById(nomination.nominator_id),
+    getEmployeeById(nomination.nominee_id),
+  ])
+  if (!nominee || !nominator) return
+  const value = getValueById(nomination.value_id)
+
+  const channel = await openDMChannel(nominee.email)
+  if (!channel) return
+
+  // First sentence (or full text up to 200 chars) of the behavior
+  // narrative. Keeps the DM short — full record is in the web app.
+  const behaviorSummary = summarize(nomination.behavior_text, 200)
+  const valueName = value?.name ?? 'a Novo value'
+
+  try {
+    await getSlackClient().chat.postMessage({
+      channel,
+      text:
+        `${nominator.name} recognized you for ${valueName}: ` +
+        `“${behaviorSummary}” — see your dashboard for the full note.`,
+    })
+  } catch (err) {
+    console.error('[slack] peer recognition DM failed', err)
+  }
+}
+
+function summarize(raw: string, max: number): string {
+  const trimmed = raw.trim()
+  if (trimmed.length <= max) return trimmed
+  return trimmed.slice(0, max - 1).trimEnd() + '…'
 }

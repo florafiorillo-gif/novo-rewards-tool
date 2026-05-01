@@ -60,12 +60,19 @@ async function renderSingle(id: string, sessionEmployeeId: string) {
     Date.now() - nomination.submitted_at.getTime() < CANCEL_WINDOW_MS
 
   const firstName = nominee?.name?.split(' ')[0] ?? 'your teammate'
+  // Peer recognitions post immediately at status='approved' with
+  // current_tier=0 — there's no approver, no SLA, and nothing to cancel.
+  const isPeer = nomination.current_tier === 0
 
   return (
     <main className="mx-auto max-w-content px-6 py-16">
       <ConfirmHeader
         title={`Thank you for noticing ${firstName}.`}
-        subtitle="Your nomination has been routed to the right approver. You&rsquo;ll get a note when it&rsquo;s been reviewed."
+        subtitle={
+          isPeer
+            ? `Your peer recognition is live. ${firstName} will see it on their dashboard, and it'll show up in the recognition feed.`
+            : "Your nomination has been routed to the right approver. You'll get a note when it's been reviewed."
+        }
       />
 
       <Card className="mt-10">
