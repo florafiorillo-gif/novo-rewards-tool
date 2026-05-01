@@ -39,7 +39,7 @@ export async function AppHeader() {
               {role && <ViewSwitcher role={role} />}
               <KeepViewLink
                 href="/nominations/new"
-                className="inline-flex h-8 items-center gap-1.5 rounded-md bg-novo-ink px-3 text-xs font-medium text-novo-paper shadow-card hover:bg-novo-ink/90"
+                className="inline-flex h-8 items-center gap-1.5 rounded-md bg-novo-coral px-3 text-xs font-medium text-novo-paper shadow-card hover:bg-novo-coral/90"
               >
                 <span aria-hidden>+</span>
                 Recognize

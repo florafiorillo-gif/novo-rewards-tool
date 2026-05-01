@@ -1,6 +1,7 @@
 import type { HydratedTier3 } from '@/modules/committee/service'
 import { recuseCommitteeAction } from '@/app/leadership/queue/actions'
 import { TIER_RANGES } from '@/modules/catalog/types'
+import { valueTagClasses } from '@/modules/values/constants'
 import { CommitteeDecisionForm } from './CommitteeDecisionForm'
 import { Button } from '@/components/ui/Button'
 
@@ -32,7 +33,9 @@ export function CommitteeCard({ item, viewerEmployeeId, scopeNotes }: Props) {
             <span className="inline-flex items-center rounded border border-novo-border bg-novo-paper px-1.5 py-0.5 font-medium text-novo-subtle">
               Tier 3 · committee
             </span>
-            <span className="inline-flex items-center rounded-full bg-novo-pink-tint px-2 py-0.5 font-medium text-novo-oxblood">
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${valueTagClasses(nomination.value_id)}`}
+            >
               {nomination.value_id.replace('val_', '').replace(/_/g, ' ')}
             </span>
             <span>{nominee?.geo ?? '—'}</span>

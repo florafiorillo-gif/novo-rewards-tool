@@ -263,6 +263,7 @@ async function ManagerLevel({
     role_title: r.role_title,
     geo: r.geo,
     last_at: r.last_recognition?.at.toISOString() ?? null,
+    last_value_id: r.last_recognition?.value_id ?? null,
     last_value_name: r.last_recognition?.value_name ?? null,
     last_nominator_name: r.last_recognition?.nominator_name ?? null,
     received_count: r.received_count,

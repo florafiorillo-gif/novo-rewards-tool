@@ -9,12 +9,17 @@ const BASE =
   'disabled:cursor-not-allowed disabled:opacity-50'
 
 const VARIANTS: Record<Variant, string> = {
+  // Primary action — Novo red. Hover slightly darker. Disabled state
+  // muted via the BASE `disabled:opacity-50` already in place.
   primary:
-    'bg-novo-ink text-novo-paper hover:bg-novo-ink/90 active:bg-novo-ink shadow-card',
+    'bg-novo-coral text-novo-paper hover:bg-novo-coral/90 active:bg-novo-coral shadow-card',
   secondary:
     'border border-novo-border bg-novo-paper text-novo-ink hover:bg-novo-hover',
   ghost:
     'bg-transparent text-novo-subtle hover:bg-novo-hover hover:text-novo-ink',
+  // Danger now overlaps visually with primary — both Novo red. Kept as
+  // a separate variant for callsite intent (one is "ship it",
+  // other is "destroy it") and so we can diverge later if needed.
   danger:
     'bg-novo-coral text-novo-paper hover:bg-novo-coral/90 shadow-card',
 }

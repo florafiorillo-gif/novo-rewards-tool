@@ -84,7 +84,7 @@ export function ViewSwitcher({ role }: { role: ResolvedRole }) {
         <span className="text-novo-muted">View as</span>
         <span className="font-medium">{label}</span>
         {simulatedBadge && (
-          <span className="ml-0.5 rounded border border-novo-border bg-novo-hover px-1 text-2xs font-medium text-novo-subtle">
+          <span className="ml-0.5 rounded bg-novo-lime px-1 text-2xs font-medium text-novo-ink">
             sim
           </span>
         )}

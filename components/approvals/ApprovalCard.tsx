@@ -7,6 +7,7 @@ import {
   requestInfoFromQueueAction,
   upgradeFromQueueAction,
 } from '@/app/review/actions'
+import { valueTagClasses } from '@/modules/values/constants'
 import { Button } from '@/components/ui/Button'
 
 interface Props {
@@ -55,7 +56,9 @@ export function ApprovalCard({ hydrated, viewerEmployeeId }: Props) {
           <div className="flex flex-wrap items-center gap-2 text-2xs text-novo-muted">
             <TierChip tier={tier} />
             {value && (
-              <span className="inline-flex items-center rounded-full bg-novo-pink-tint px-2 py-0.5 font-medium text-novo-oxblood">
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${valueTagClasses(value.id)}`}
+              >
                 {value.name}
               </span>
             )}
@@ -169,7 +172,7 @@ function PrimaryAction({
     return (
       <Link
         href={`/approvals/${nominationId}/reward`}
-        className="inline-flex h-9 items-center justify-center rounded-md bg-novo-ink px-4 text-sm font-medium text-novo-paper hover:bg-novo-ink/90"
+        className="inline-flex h-9 items-center justify-center rounded-md bg-novo-coral px-4 text-sm font-medium text-novo-paper hover:bg-novo-coral/90"
       >
         Select reward
       </Link>

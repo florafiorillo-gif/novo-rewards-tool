@@ -1,6 +1,7 @@
 import type { RecognitionFeedItem } from '@/modules/dashboard/recognition-feed'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { KeepViewLink } from '@/components/layout/KeepViewLink'
+import { valueTagClasses } from '@/modules/values/constants'
 
 interface Props {
   items: RecognitionFeedItem[]
@@ -17,7 +18,7 @@ export function RecognitionFeed({ items, viewerId }: Props) {
         action={
           <KeepViewLink
             href="/nominations/new"
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-novo-ink px-3.5 text-sm font-medium text-novo-paper shadow-card transition hover:bg-novo-ink/90"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-novo-coral px-3.5 text-sm font-medium text-novo-paper shadow-card transition hover:bg-novo-coral/90"
           >
             Recognize a teammate
           </KeepViewLink>
@@ -51,6 +52,7 @@ function FeedRow({
       ? 'you'
       : item.nominee?.name ?? 'a teammate'
   const valueName = item.value?.name ?? 'a Novo value'
+  const valueId = item.value?.id ?? item.nomination.value_id
 
   return (
     <li className="flex gap-4 p-5 hover:bg-novo-hover/60">
@@ -61,7 +63,7 @@ function FeedRow({
           recognized{' '}
           <span className="font-medium text-novo-ink">{nomineeName}</span>{' '}
           for{' '}
-          <ValueTag name={valueName} />
+          <ValueTag valueId={valueId} name={valueName} />
         </p>
         <p className="mt-2 text-[15px] leading-6 text-novo-ink">
           &ldquo;{item.nomination.behavior_text}&rdquo;
@@ -100,9 +102,12 @@ function Avatar({ name }: { name: string }) {
   )
 }
 
-function ValueTag({ name }: { name: string }) {
+function ValueTag({ valueId, name }: { valueId: string; name: string }) {
+  const tone = valueTagClasses(valueId)
   return (
-    <span className="inline-flex items-center rounded-full bg-novo-pink-tint px-2 py-0.5 text-2xs font-medium text-novo-oxblood">
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-2xs font-medium ${tone}`}
+    >
       {name}
     </span>
   )

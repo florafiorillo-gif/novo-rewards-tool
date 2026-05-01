@@ -27,6 +27,11 @@ const config: Config = {
         'novo-coral': '#EF1F2D',
         'novo-pink-tint': '#FBE6EC',
         'novo-hot-pink': '#D4356D',
+        // Novo yellow-green pair. Used on Assume Best Intention +
+        // Intellectual Honesty value pills, on the demo "sim" badge,
+        // and anywhere a positive/affirmative brand accent is wanted.
+        'novo-lime': '#C4DD3D',
+        'novo-lime-soft': '#E5EBC8',
       },
       // ── Type scale ────────────────────────────────────────────────────────
       // Tight scale, Linear-ish. Paired with tight letter-spacing at the top

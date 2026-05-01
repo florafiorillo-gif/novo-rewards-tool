@@ -50,3 +50,24 @@ export const VALUE_IDS = new Set(VALUES.map((v) => v.id))
 export function getValueById(id: string): ValueDef | null {
   return VALUES.find((v) => v.id === id) ?? null
 }
+
+// Returns the Tailwind color classes (bg + text) for a value pill.
+// Each value gets a distinct colour from the Novo palette: coral and
+// oxblood for the two "act" values, lime and lime-soft for the two
+// "trust / honesty" values. Centralised so feed/approval/committee/
+// participation pills stay in sync. Unknown ids fall back to a
+// neutral hover tone so we never crash on a stale value id.
+export function valueTagClasses(valueId: string): string {
+  switch (valueId) {
+    case 'val_run_for_the_bus':
+      return 'bg-novo-coral text-novo-paper'
+    case 'val_hierarchy_not_authority':
+      return 'bg-novo-oxblood text-novo-paper'
+    case 'val_assume_best_intention':
+      return 'bg-novo-lime text-novo-ink'
+    case 'val_intellectual_honesty':
+      return 'bg-novo-lime-soft text-novo-ink'
+    default:
+      return 'bg-novo-hover text-novo-ink'
+  }
+}

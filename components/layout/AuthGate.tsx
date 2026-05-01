@@ -118,7 +118,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             {error && <p className="text-xs text-novo-coral">{error}</p>}
             <button
               type="submit"
-              className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-md bg-novo-ink px-4 text-sm font-medium text-novo-paper shadow-card transition hover:bg-novo-ink/90"
+              className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-md bg-novo-coral px-4 text-sm font-medium text-novo-paper shadow-card transition hover:bg-novo-coral/90"
             >
               Continue
             </button>

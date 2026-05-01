@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { valueTagClasses } from '@/modules/values/constants'
 
 // Three sortable tables shared across the participation drill-down.
 // Each takes typed rows + click-to-sort behavior. Default sort is
@@ -331,6 +332,7 @@ export interface ReportTableRow {
   // ISO string so the row stays plain-serializable across the
   // server/client boundary.
   last_at: string | null
+  last_value_id: string | null
   last_value_name: string | null
   last_nominator_name: string | null
   received_count: number
@@ -389,7 +391,9 @@ export function ReportTable({ rows }: { rows: ReportTableRow[] }) {
               <td className="px-5 py-3">
                 {row.last_at && row.last_value_name ? (
                   <>
-                    <span className="inline-flex items-center rounded-full bg-novo-pink-tint px-2 py-0.5 text-2xs font-medium text-novo-oxblood">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-2xs font-medium ${valueTagClasses(row.last_value_id ?? '')}`}
+                    >
                       {row.last_value_name}
                     </span>
                     {row.last_nominator_name && (
