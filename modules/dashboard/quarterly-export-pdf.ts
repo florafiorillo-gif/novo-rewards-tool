@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit'
+import { tierLabel } from '@/modules/nominations/types'
 import type {
   TeamRecognitionsForQuarter,
   TeamRecognitionGroup,
@@ -112,7 +113,7 @@ function drawRecognition(
     .fontSize(10)
     .fillColor('#555555')
     .text(
-      `${formatDate(r.date)}  ·  [${r.value_name}]  ·  ${r.giver_name} → ${recipientName}  ·  ${r.tier_label}`
+      `${formatDate(r.date)}  ·  [${r.value_name}]  ·  ${r.giver_name} → ${recipientName}  ·  ${tierLabel(r.current_tier)}`
     )
   // Narrative — black, body size, quoted to match the in-app convention.
   doc.font('Helvetica').fontSize(11).fillColor('#000000').text(`"${r.behavior_text}"`)

@@ -16,7 +16,6 @@ import type { NominationRecord } from '@/modules/nominations/types'
 // so 1:1 prep starts with the freshest material.
 
 export type Quarter = 1 | 2 | 3 | 4
-export type TierLabel = 'Peer' | 'Spot' | 'Impact' | 'Ceremonial'
 
 export interface QuarterRange {
   quarter: Quarter
@@ -43,7 +42,10 @@ export interface TeamRecognitionItem {
   // Empty string when not provided. Both consumers skip the line rather
   // than printing a blank.
   outcome_text: string
-  tier_label: TierLabel
+  // Raw tier number; consumers derive the user-facing label via
+  // tierLabel() in modules/nominations/types so every recipient-facing
+  // surface stays in sync.
+  current_tier: number
 }
 
 export interface TeamRecognitionGroup {
@@ -71,17 +73,6 @@ export function quarterRangeFor(now: Date): QuarterRange {
   const start = new Date(year, startMonth, 1, 0, 0, 0, 0)
   const end = new Date(year, startMonth + 3, 1, 0, 0, 0, 0)
   return { quarter, year, start, end }
-}
-
-const TIER_LABELS: Record<number, TierLabel> = {
-  0: 'Peer',
-  1: 'Spot',
-  2: 'Impact',
-  3: 'Ceremonial',
-}
-
-function tierLabelOf(tier: number): TierLabel {
-  return TIER_LABELS[tier] ?? 'Spot'
 }
 
 export async function getTeamRecognitionsForQuarter(
@@ -127,7 +118,7 @@ export async function getTeamRecognitionsForQuarter(
       date: n.approved_at ?? n.submitted_at,
       behavior_text: n.behavior_text,
       outcome_text: n.outcome_text ?? '',
-      tier_label: tierLabelOf(n.current_tier),
+      current_tier: n.current_tier,
     })
   }
 

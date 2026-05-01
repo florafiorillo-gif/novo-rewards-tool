@@ -14,6 +14,7 @@ process.env.USE_MOCK_DATA = process.env.USE_MOCK_DATA ?? 'true'
 import { insertMock } from '@/modules/nominations/mock-store'
 import { buildDemoNominations } from '@/modules/seed/demo-nominations'
 import { getAllActiveEmployees } from '@/modules/employees/service'
+import { tierLabel } from '@/modules/nominations/types'
 import {
   getTeamRecognitionsForQuarter,
   managerLastNameSlug,
@@ -68,7 +69,7 @@ async function main() {
     )
     for (const r of g.recognitions.slice(0, 3)) {
       console.log(
-        `      · ${r.tier_label} · ${r.value_name} · ${r.giver_name} · ${r.date.toISOString().slice(0, 10)}`
+        `      · ${tierLabel(r.current_tier)} · ${r.value_name} · ${r.giver_name} · ${r.date.toISOString().slice(0, 10)}`
       )
     }
   }

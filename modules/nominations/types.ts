@@ -39,6 +39,24 @@ export function kindOfNomination(record: {
   }
 }
 
+// User-facing recipient-perspective label for a tier. The single source of
+// truth for what tier chips and exported PDFs display. Recipients see
+// these in the recognition feed, the My team feed, and the quarterly
+// export. ApprovalCard intentionally uses approver-perspective labels
+// ("Tier 1 · manager approval") because approvers think in tier numbers.
+export type TierLabel = 'Peer' | 'Spot' | 'Impact' | 'Ceremonial'
+
+const TIER_LABEL_BY_KIND: Record<NominationKind, TierLabel> = {
+  peer: 'Peer',
+  spot: 'Spot',
+  impact: 'Impact',
+  ceremonial: 'Ceremonial',
+}
+
+export function tierLabel(tier: number): TierLabel {
+  return TIER_LABEL_BY_KIND[kindOfNomination({ current_tier: tier })]
+}
+
 // In-memory / DB-shaped record used by service + mock store.
 // Field names match the Prisma model so DB and mock paths are symmetric.
 export interface NominationRecord {

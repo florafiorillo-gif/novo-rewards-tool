@@ -2,6 +2,7 @@ import type { RecognitionFeedItem } from '@/modules/dashboard/recognition-feed'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { KeepViewLink } from '@/components/layout/KeepViewLink'
 import { valueTagClasses } from '@/modules/values/constants'
+import { TierChip } from './TierChip'
 
 interface Props {
   items: RecognitionFeedItem[]
@@ -108,26 +109,6 @@ function ValueTag({ valueId, name }: { valueId: string; name: string }) {
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-2xs font-medium ${tone}`}
     >
       {name}
-    </span>
-  )
-}
-
-function TierChip({ tier }: { tier: number }) {
-  // Tier 0 is the new peer-recognition kind (non-monetary, no approval).
-  // The remaining labels stay descriptive of who acts on the record:
-  // Spot is what a manager approves, Cross-team is the dept-head queue,
-  // Leadership is the committee.
-  const label =
-    tier === 0
-      ? 'Peer'
-      : tier === 1
-        ? 'Spot'
-        : tier === 2
-          ? 'Cross-team'
-          : 'Leadership'
-  return (
-    <span className="inline-flex items-center rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-700">
-      {label}
     </span>
   )
 }

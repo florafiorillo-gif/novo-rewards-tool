@@ -3,6 +3,7 @@ import type {
   TeamRecognitionItem,
 } from '@/modules/dashboard/team-recognitions-view'
 import { valueTagClasses } from '@/modules/values/constants'
+import { TierChip } from './TierChip'
 
 // Read-only feed of recognitions received by a manager's direct reports.
 // One section per recipient, recognitions stacked newest-first beneath.
@@ -77,7 +78,7 @@ function RecognitionRow({
         <p className="mt-1 text-sm text-novo-subtle">{item.outcome_text}</p>
       )}
       <div className="mt-3 flex items-center gap-3 text-xs text-novo-muted">
-        <TierChip label={item.tier_label} />
+        <TierChip tier={item.current_tier} />
         <span className="tabular" suppressHydrationWarning>
           {formatRelative(item.date)}
         </span>
@@ -93,14 +94,6 @@ function ValueTag({ valueId, name }: { valueId: string; name: string }) {
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-2xs font-medium ${tone}`}
     >
       {name}
-    </span>
-  )
-}
-
-function TierChip({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-700">
-      {label}
     </span>
   )
 }
