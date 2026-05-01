@@ -92,3 +92,29 @@ export function findByGroupIdMock(group_id: string): NominationRecord[] {
     .filter((r) => r.team_award_group_id === group_id)
     .sort((a, b) => a.submitted_at.getTime() - b.submitted_at.getTime())
 }
+
+// Peer-recognition frequency-cap helper (Round 5). Counts records
+// from this nominator → nominee with current_tier=0 submitted at or
+// after `since`. Used in createPeerNomination to enforce the rolling
+// 7-day cap. We count regardless of status because peer rows post
+// immediately as 'approved' and don't move; if that changes later
+// (e.g. someone introduces a withdrawal flow), the cap should still
+// apply to "did you already use the slot."
+export function countPeerNominationsBetweenMock(
+  nominator_id: string,
+  nominee_id: string,
+  since: Date
+): number {
+  let n = 0
+  for (const rec of store.values()) {
+    if (
+      rec.current_tier === 0 &&
+      rec.nominator_id === nominator_id &&
+      rec.nominee_id === nominee_id &&
+      rec.submitted_at >= since
+    ) {
+      n++
+    }
+  }
+  return n
+}

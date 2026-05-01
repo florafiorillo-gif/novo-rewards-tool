@@ -1,20 +1,28 @@
 import { randomUUID } from 'crypto'
 import { db } from '@/lib/db'
-import { getEmployeeById } from '@/modules/employees/service'
+import {
+  getEmployeeById,
+  getReportingChainAbove,
+} from '@/modules/employees/service'
 import { VALUE_IDS } from '@/modules/values/constants'
 import {
   GroupNominationInputSchema,
   NominationInputSchema,
+  PeerNominationInputSchema,
   type GroupNominationInput,
   type NominationInput,
 } from './schema'
 import * as mockStore from './mock-store'
-import type {
-  CancelNominationResult,
-  CreateGroupNominationResult,
-  CreateNominationResult,
-  NominationRecord,
-  RoutingResult,
+import {
+  PEER_FREQUENCY_CAP,
+  PEER_FREQUENCY_WINDOW_MS,
+  PEER_TIER,
+  type CancelNominationResult,
+  type CreateGroupNominationResult,
+  type CreateNominationResult,
+  type CreatePeerNominationResult,
+  type NominationRecord,
+  type RoutingResult,
 } from './types'
 
 const useMock = () => process.env.USE_MOCK_DATA === 'true'
@@ -474,4 +482,145 @@ export async function listPendingForApprover(
     orderBy: { submitted_at: 'asc' },
   })
   return rows as NominationRecord[]
+}
+
+// ─── Peer recognition (Round 5) ──────────────────────────────────────
+// Non-monetary, no-approval acknowledgment. Records persist with
+// current_tier=PEER_TIER (0) and status='approved' from the moment of
+// creation — no approver pipeline, no reward, no budget pull. Two
+// guardrails enforced here: org-direction (no upward recognitions) and
+// per-pair frequency cap (default 3 / 7 days).
+
+export async function countPeerNominationsBetween(
+  nominator_id: string,
+  nominee_id: string,
+  now: Date = new Date()
+): Promise<number> {
+  const since = new Date(now.getTime() - PEER_FREQUENCY_WINDOW_MS)
+  if (useMock()) {
+    return mockStore.countPeerNominationsBetweenMock(
+      nominator_id,
+      nominee_id,
+      since
+    )
+  }
+  return db.nomination.count({
+    where: {
+      nominator_id,
+      nominee_id,
+      current_tier: PEER_TIER,
+      submitted_at: { gte: since },
+    },
+  })
+}
+
+export async function createPeerNomination(
+  raw: unknown,
+  nominator_id: string,
+  now: Date = new Date()
+): Promise<CreatePeerNominationResult> {
+  const parsed = PeerNominationInputSchema.safeParse(raw)
+  if (!parsed.success) {
+    return { ok: false, error: { code: 'validation', issues: parsed.error.issues } }
+  }
+  const input = parsed.data
+
+  if (input.nominee_id === nominator_id) {
+    return { ok: false, error: { code: 'self_nomination' } }
+  }
+
+  if (!VALUE_IDS.has(input.value_id)) {
+    return { ok: false, error: { code: 'value_not_found' } }
+  }
+
+  const [nominator, nominee] = await Promise.all([
+    getEmployeeById(nominator_id),
+    getEmployeeById(input.nominee_id),
+  ])
+  if (!nominator) return { ok: false, error: { code: 'nominator_not_found' } }
+  if (!nominee) return { ok: false, error: { code: 'nominee_not_found' } }
+  if (!nominee.active) return { ok: false, error: { code: 'nominee_inactive' } }
+
+  // Org-direction: refuse if the nominee sits anywhere above the
+  // nominator in the reporting chain. Lateral and downward are fine.
+  // We walk the nominator's ancestors (not the nominee's descendants)
+  // because the rule is symmetric in intent but cheaper this way: the
+  // chain-up is bounded by org depth, where chain-down would have to
+  // enumerate the whole subtree.
+  const chainAbove = await getReportingChainAbove(nominator_id)
+  if (chainAbove.has(input.nominee_id)) {
+    return { ok: false, error: { code: 'upward_chain' } }
+  }
+
+  // Frequency cap: count peer nominations already on file from this
+  // nominator → nominee in the rolling window. >= cap rejects.
+  const recentCount = await countPeerNominationsBetween(
+    nominator_id,
+    input.nominee_id,
+    now
+  )
+  if (recentCount >= PEER_FREQUENCY_CAP) {
+    return {
+      ok: false,
+      error: {
+        code: 'frequency_cap',
+        cap: PEER_FREQUENCY_CAP,
+        window_days: Math.round(PEER_FREQUENCY_WINDOW_MS / (24 * 60 * 60 * 1000)),
+      },
+    }
+  }
+
+  const id = useMock() ? `nom_${randomUUID()}` : undefined
+
+  const record: NominationRecord = {
+    id: id ?? '',
+    nominator_id,
+    nominee_id: nominee.id,
+    value_id: input.value_id,
+    behavior_text: input.behavior_text,
+    outcome_text: input.outcome_text,
+    evidence_links: [],
+    submitted_at: now,
+    current_tier: PEER_TIER,
+    // Peer posts immediately. No approver, no audit-trail entry, no
+    // pending state to render — feeds and dashboards already filter on
+    // status ∈ {approved, fulfilled} so this row surfaces by default.
+    status: 'approved',
+    current_approver_id: null,
+    duplicate_of_id: null,
+    team_award_group_id: null,
+    tier2_dept_head_id: null,
+    tier2_people_team_rep_id: null,
+    urgent: false,
+    last_nudge_at: null,
+    last_escalation_at: null,
+    approved_at: now,
+    denied_at: null,
+    acknowledged_at: null,
+    post_fired_at: null,
+    post_message_ts: null,
+    created_at: now,
+    updated_at: now,
+  }
+
+  if (useMock()) {
+    mockStore.insertMock(record)
+    return { ok: true, nomination: record }
+  }
+
+  const created = await db.nomination.create({
+    data: {
+      nominator_id,
+      nominee_id: nominee.id,
+      value_id: input.value_id,
+      behavior_text: input.behavior_text,
+      outcome_text: input.outcome_text,
+      evidence_links: [],
+      current_tier: PEER_TIER,
+      status: 'approved',
+      current_approver_id: null,
+      approved_at: now,
+    },
+  })
+  return { ok: true, nomination: created as NominationRecord }
 }

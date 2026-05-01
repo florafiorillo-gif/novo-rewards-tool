@@ -59,3 +59,16 @@ export const GroupNominationInputSchema = z.object({
 })
 
 export type GroupNominationInput = z.infer<typeof GroupNominationInputSchema>
+
+// Peer-recognition input. Single recipient. Same narrative discipline
+// as the tiered flow (30-char minimum on behavior + outcome) so the
+// feed copy quality is consistent across kinds. No evidence_links —
+// peer is intentionally lightweight; reviewers don't read it.
+export const PeerNominationInputSchema = z.object({
+  nominee_id: z.string().min(1, 'Please pick someone to recognize.'),
+  value_id: NominationNarrativeShape.value_id,
+  behavior_text: NominationNarrativeShape.behavior_text,
+  outcome_text: NominationNarrativeShape.outcome_text,
+})
+
+export type PeerNominationInput = z.infer<typeof PeerNominationInputSchema>

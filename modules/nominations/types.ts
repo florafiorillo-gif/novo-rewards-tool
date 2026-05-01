@@ -9,6 +9,36 @@ export type NominationStatus =
   | 'fulfilled'
   | 'cancelled'
 
+// Conceptual "kind" of a recognition. Backed by current_tier on the
+// record (peer = 0, spot = 1, impact = 2, ceremonial = 3) so adding
+// peer requires no schema migration. Use kindOfNomination() to map.
+export type NominationKind = 'peer' | 'spot' | 'impact' | 'ceremonial'
+
+export const PEER_TIER = 0
+
+// 7-day rolling window for the peer-recognition frequency cap. A
+// nominator can recognize the same teammate at most PEER_FREQUENCY_CAP
+// times in this window — enforced in createPeerNomination.
+export const PEER_FREQUENCY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
+export const PEER_FREQUENCY_CAP = 3
+
+export function kindOfNomination(record: {
+  current_tier: number
+}): NominationKind {
+  switch (record.current_tier) {
+    case 0:
+      return 'peer'
+    case 1:
+      return 'spot'
+    case 2:
+      return 'impact'
+    case 3:
+      return 'ceremonial'
+    default:
+      return 'spot'
+  }
+}
+
 // In-memory / DB-shaped record used by service + mock store.
 // Field names match the Prisma model so DB and mock paths are symmetric.
 export interface NominationRecord {
@@ -106,3 +136,33 @@ export type CreateGroupNominationResult =
       excluded_missing_ids: string[]
     }
   | { ok: false; error: CreateGroupNominationError }
+
+// ─── Peer recognition (Round 5) ─────────────────────────────────────
+// Non-monetary, no-approval acknowledgment. Posts immediately at
+// status='approved' with current_tier=PEER_TIER. Two guardrails:
+//   1. Org-direction: a nominator cannot recognize anyone above them
+//      in their own reporting chain (their manager, their manager's
+//      manager, …). Lateral and downward are fine.
+//   2. Frequency cap: no more than PEER_FREQUENCY_CAP recognitions
+//      from the same nominator to the same nominee in a rolling
+//      PEER_FREQUENCY_WINDOW_MS window.
+
+export type CreatePeerNominationError =
+  | { code: 'validation'; issues: ZodIssue[] }
+  | { code: 'self_nomination' }
+  | { code: 'nominator_not_found' }
+  | { code: 'nominee_not_found' }
+  | { code: 'nominee_inactive' }
+  | { code: 'value_not_found' }
+  // Nominator tried to recognize their manager or someone further up
+  // their reporting chain. Org-direction rule per the peer-recognition
+  // brief — intentionally one-directional even though tiered flows
+  // permit upward nominations.
+  | { code: 'upward_chain' }
+  // Frequency cap exhausted: the nominator has already recognized the
+  // same nominee PEER_FREQUENCY_CAP times in the rolling window.
+  | { code: 'frequency_cap'; window_days: number; cap: number }
+
+export type CreatePeerNominationResult =
+  | { ok: true; nomination: NominationRecord }
+  | { ok: false; error: CreatePeerNominationError }

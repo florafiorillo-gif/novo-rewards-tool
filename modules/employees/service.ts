@@ -94,6 +94,30 @@ export async function getManager(employeeId: string): Promise<Employee | null> {
   return getEmployeeById(employee.manager_id)
 }
 
+// Walks up the reporting chain from `employeeId` and returns the set of
+// every ancestor (manager, manager's manager, … all the way to a root
+// node). The starting employee is NOT included. Used by peer
+// recognition to enforce the org-direction rule: a nominator must not
+// recognize anyone above them in their own chain.
+//
+// Has a hard depth cap to fail safe in the presence of a malformed
+// directory cycle (manager_id loop). 32 is well beyond any plausible
+// real org chart depth and stops the loop without throwing.
+export async function getReportingChainAbove(
+  employeeId: string
+): Promise<Set<string>> {
+  const ancestors = new Set<string>()
+  let cursor = await getEmployeeById(employeeId)
+  let depth = 0
+  while (cursor?.manager_id && depth < 32) {
+    if (ancestors.has(cursor.manager_id)) break
+    ancestors.add(cursor.manager_id)
+    cursor = await getEmployeeById(cursor.manager_id)
+    depth++
+  }
+  return ancestors
+}
+
 // Bulk lookup. Returns a Map keyed by employee id. Unknown ids are
 // simply absent from the map. Consumers should handle the miss case.
 export async function getEmployeesByIds(
