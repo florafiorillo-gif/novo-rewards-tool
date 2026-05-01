@@ -52,12 +52,14 @@ Ink is for primary text and the single primary action per page. Coral is for cri
 | `novo-subtle` | `#6B675E` | Secondary body text |
 | `novo-muted` | `#9A958A` | Tertiary text, metadata |
 | `novo-hover` | `#F4F1EA` | Row/card hover fill |
-| `novo-oxblood` | `#6F1721` | Value-tag text |
+| `novo-oxblood` | `#6F1721` | Accent text on pink-tint — form error copy, recognition-avatar initials |
 | `novo-coral` | `#EF1F2D` | Critical state text/bg — **do not use for primary actions** |
-| `novo-pink-tint` | `#FBE6EC` | Value-tag background |
+| `novo-pink-tint` | `#FBE6EC` | Form error / "Deferred twice" badge / recognition-avatar fill |
 | `novo-hot-pink` | `#D4356D` | Reserved accent (use sparingly) |
 
-Semantic chip tones use Tailwind's `emerald-*` (positive / done), `amber-*` (warning / running-hot / urgent), `sky-*` (informational / approved-but-not-active). These are intentional exceptions to the novo palette because they carry universal status meaning.
+**Value tags are neutral.** All four Novo values render as a single `bg-neutral-100 text-neutral-700` pill. The earlier per-value palette (coral / oxblood / lime / lime-soft) was removed in the design overhaul because it dominated the visual hierarchy on otherwise quiet recognition cards. The value name does the differentiating work now. Centralised through `valueTagClasses()` in [modules/values/constants.ts](modules/values/constants.ts).
+
+Semantic chip tones use Tailwind's `emerald-*` (positive / done), `amber-*` (warning / urgent / grace-period / closing-soon), `sky-*` (informational / approved-but-not-active). These are intentional exceptions to the novo palette because they carry universal status meaning. Pool pacing chips intentionally do *not* use these tones — they render neutral grey across all states; the chip label carries the meaning instead.
 
 ### Type scale
 
@@ -76,8 +78,8 @@ Tight. Headlines earn their size with negative letter-spacing; small labels earn
 | `text-4xl` | 34 | Hero moments (unused so far) |
 
 Font families:
-- `font-sans` = **Inter** (default; set via `--font-inter` in [app/layout.tsx](app/layout.tsx))
-- `font-display` = **Archivo Black** (reserved for deliberate display moments; currently used for the signin page in past revs — favor tight-tracked Inter semibold for headlines instead)
+- `font-sans` = **Montserrat** (default; set via `--font-montserrat` in [app/layout.tsx](app/layout.tsx)). Brand-deck-aligned. Weights loaded: 400 / 500 / 600 / 700.
+- `font-display` = **Archivo Black** (reserved for deliberate display moments; currently used for the signin page in past revs — favor tight-tracked Montserrat semibold for headlines instead)
 - `font-mono` = system monospace (unused currently; reach for it only if Linear-style hash/ID display is needed)
 
 ### Numerics
@@ -142,10 +144,10 @@ Rendered once in [app/layout.tsx](app/layout.tsx). It's the only persistent nav.
 
 ### Status pills, eyebrows, and chips
 
-- **Eyebrow label**: `text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted` — use above section titles, in PageHeader, and as card section markers.
-- **Value tag**: `bg-novo-pink-tint text-novo-oxblood` pill — only for Novo values.
-- **Tier chip**: `border border-novo-border bg-novo-surface text-novo-subtle` — for "Tier 1 · peer", "Tier 2 · two approvers required", etc.
-- **Status pill**: emerald / sky / amber / neutral tones by state (see [/committee/budget](app/committee/budget/page.tsx) for the canonical pattern).
+- **Eyebrow label**: `text-2xs font-medium uppercase tracking-[0.08em] text-novo-muted` — use **inside cards** to label data ("Your pool · Q2 2026", "Tier 3 decisions"). The PageHeader `eyebrow` prop is no longer passed by any callsite (the eyebrow-above-title pattern was retired in the design overhaul because it duplicated the page title and the nav highlight). The prop still exists for now; do not pass it.
+- **Value tag**: `bg-neutral-100 text-neutral-700` pill — single neutral treatment for all four Novo values; go through `valueTagClasses()` so future surfaces stay in sync.
+- **Tier chip**: `bg-neutral-100 text-neutral-700 text-[10px] font-medium` (no border) — smaller font than value tags so tier reads as metadata, not a feature. Used on the home recognition feed, the My team feed, and the approval queue.
+- **Status pill**: emerald / sky / amber / neutral tones by state (see [/committee/budget](app/committee/budget/page.tsx) for the canonical pattern). Pool pacing chips intentionally use neutral grey across all states.
 
 ---
 
