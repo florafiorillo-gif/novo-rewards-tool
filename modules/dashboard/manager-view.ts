@@ -44,9 +44,9 @@ export interface ManagerDashboardView {
 
 const RECENT_LIMIT = 5
 
-// Rolling window used by the Team Rhythm card. A manager looking at their
+// Rolling window used by the My team page. A manager looking at their
 // team needs a consistent cadence signal, not a quarter-boundary reset —
-// at the start of a new period the card would otherwise show "nobody
+// at the start of a new period the page would otherwise show "nobody
 // recognized yet" for a week, which is misleading. Kept as a constant
 // here so product can tune without touching UI code.
 export const TEAM_RHYTHM_WINDOW_DAYS = 30
@@ -59,8 +59,7 @@ export interface TeamRhythmEntry {
   last_recognized_at: Date | null
   // Value id attached to the most-recent recognition, so the /dashboard/team
   // page can render a value tag alongside the date. Null when there's no
-  // recognition in the window; the sidebar TeamRhythmCard ignores this
-  // field.
+  // recognition in the window.
   last_value_id: string | null
   count_in_window: number
 }
@@ -102,9 +101,9 @@ export async function getManagerDashboardView(
 
 // Per-report recognition cadence over a rolling window. Returns empty when
 // the viewer has no active reports (individual contributor) so the page
-// can hide the Team Rhythm card entirely. Reports are sorted with "never
-// recognized in window" first so the manager's eye catches them — the
-// whole point of this card.
+// can show its empty state. Reports are sorted with "never recognized in
+// window" first so the manager's eye catches them — the whole point of
+// this view.
 export async function getTeamRhythm(
   managerId: string,
   now: Date = new Date()

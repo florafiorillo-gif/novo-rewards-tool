@@ -1,10 +1,7 @@
 import Link from 'next/link'
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
-import {
-  getManagerDashboardView,
-  getTeamRhythm,
-} from '@/modules/dashboard/manager-view'
+import { getManagerDashboardView } from '@/modules/dashboard/manager-view'
 import { getDepartmentDashboardView } from '@/modules/dashboard/department-view'
 import { getRecognitionFeed } from '@/modules/dashboard/recognition-feed'
 import { getRecipientDashboardView } from '@/modules/dashboard/recipient-view'
@@ -31,7 +28,6 @@ import { RecognitionFeed } from '@/components/dashboard/RecognitionFeed'
 import { BudgetPeriodStatusCard } from '@/components/dashboard/BudgetPeriodStatusCard'
 import { ProgramHealthCard } from '@/components/dashboard/ProgramHealthCard'
 import { RecognizeCTACard } from '@/components/dashboard/RecognizeCTACard'
-import { TeamRhythmCard } from '@/components/dashboard/TeamRhythmCard'
 import { TierThreeQueueCard } from '@/components/dashboard/TierThreeQueueCard'
 import { YourActivityCard } from '@/components/dashboard/YourActivityCard'
 
@@ -71,7 +67,6 @@ export default async function DashboardPage({
     deptView,
     feed,
     recipientView,
-    teamRhythm,
     tier3Queue,
     fulfillmentQueue,
     programView,
@@ -87,7 +82,6 @@ export default async function DashboardPage({
     showEmployee
       ? getRecipientDashboardView(employeeId)
       : Promise.resolve(null),
-    showManager ? getTeamRhythm(employeeId) : Promise.resolve(null),
     showCommittee ? listCommitteeQueue(employeeId) : Promise.resolve([]),
     showPeopleOps
       ? listManualFulfillmentQueue()
@@ -149,9 +143,6 @@ export default async function DashboardPage({
   // Employee). Matches the intent of "give them somewhere to start."
   const showRecognizeCTA = showEmployee && views.size === 1
 
-  const hasTeamRhythm =
-    showManager && !!teamRhythm && teamRhythm.entries.length > 0
-
   const hasProgramHealth =
     (showPeopleOps || showCommittee) && !!programView?.period
   // Real-role routing (not simulated): Leadership members always get
@@ -182,7 +173,6 @@ export default async function DashboardPage({
       deptHead?.department &&
       deptHead?.geo
     ) ||
-    hasTeamRhythm ||
     hasPeopleOpsQueue ||
     hasBudgetPeriodStatus ||
     hasProgramHealth ||
@@ -263,10 +253,6 @@ export default async function DashboardPage({
                   grace_ends_at={deptHead.grace_ends_at}
                 />
               )}
-
-            {hasTeamRhythm && teamRhythm && (
-              <TeamRhythmCard view={teamRhythm} />
-            )}
 
             {hasPeopleOpsQueue && (
               <YourQueueCard
