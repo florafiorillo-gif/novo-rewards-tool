@@ -87,7 +87,7 @@ export default async function NewNominationPage({
         back={{ href: '/dashboard', label: 'Dashboard' }}
         eyebrow="Peer recognition"
         title="Recognize a peer"
-        description="A short public acknowledgment for someone who lived a Novo value. No approval, no reward — just visible appreciation. Posts immediately."
+        description="Notice when a teammate lives a value. They'll see it, the team will see it."
       />
 
       {userIsManager && <KindToggle current="peer" nomineeId={initialNomineeId} />}
