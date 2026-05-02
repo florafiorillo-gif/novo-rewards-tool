@@ -101,6 +101,11 @@ export type CreateNominationError =
   | { code: 'nominee_inactive' }
   | { code: 'nominator_not_found' }
   | { code: 'value_not_found' }
+  // Service-layer defence in depth: tiered nominations are manager-only.
+  // The action handler and Slack modal handler already gate on the same
+  // helper, so this code only ever surfaces if a future caller invokes
+  // the service directly without checking. See modules/nominations/authz.ts.
+  | { code: 'not_authorized' }
 
 export type CreateNominationResult =
   | {
@@ -140,6 +145,9 @@ export type CreateGroupNominationError =
   // that one separately (the single-recipient path handles the
   // self-approval reflection inline).
   | { code: 'self_approval_in_group' }
+  // Service-layer defence in depth: tiered nominations are manager-only.
+  // Mirrors CreateNominationError; see authz.ts for the gate.
+  | { code: 'not_authorized' }
 
 export type CreateGroupNominationResult =
   | {

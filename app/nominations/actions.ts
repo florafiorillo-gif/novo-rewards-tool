@@ -150,6 +150,8 @@ export async function submitNominationAction(
 
 function mapCreateError(error: { code: string; issues?: unknown[] }): SubmitState {
   switch (error.code) {
+    case 'not_authorized':
+      return { ok: false, formError: TIERED_AUTHZ_MESSAGE }
     case 'self_nomination':
       return errorStateForIssue(
         'nominee_id',

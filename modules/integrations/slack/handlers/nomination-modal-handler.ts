@@ -138,6 +138,8 @@ export async function handleNominationSubmit(
 
 function mapCreateErrorToModalError(code: string): ResponseOrVoid {
   switch (code) {
+    case 'not_authorized':
+      return modalError({ [BLOCK_NOMINEE]: TIERED_AUTHZ_MESSAGE })
     case 'self_nomination':
       return modalError({
         [BLOCK_NOMINEE]: copy.nominationModalErrorSelfNomination,

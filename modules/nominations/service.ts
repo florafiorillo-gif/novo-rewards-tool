@@ -5,6 +5,7 @@ import {
   getReportingChainAbove,
 } from '@/modules/employees/service'
 import { VALUE_IDS } from '@/modules/values/constants'
+import { ensureCanInitiateTieredNomination } from './authz'
 import {
   GroupNominationInputSchema,
   NominationInputSchema,
@@ -79,6 +80,14 @@ export async function createNomination(
   raw: unknown,
   nominator_id: string
 ): Promise<CreateNominationResult> {
+  // Defence in depth: tiered nominations are manager-only. Action and
+  // Slack handlers already gate, but enforcing here protects future
+  // callers (scripts, new routes, webhooks) regardless of entry point.
+  const authz = await ensureCanInitiateTieredNomination(nominator_id)
+  if (!authz.ok) {
+    return { ok: false, error: { code: 'not_authorized' } }
+  }
+
   const parsed = NominationInputSchema.safeParse(raw)
   if (!parsed.success) {
     return { ok: false, error: { code: 'validation', issues: parsed.error.issues } }
@@ -182,6 +191,17 @@ export async function createGroupNomination(
   raw: unknown,
   nominator_id: string
 ): Promise<CreateGroupNominationResult> {
+  // Defence in depth: tiered nominations are manager-only. Same rationale
+  // as createNomination — the action layer already gates, but we re-check
+  // here so any future caller (script, new route, webhook) is governed by
+  // the same rule. The single-recipient fallthrough below recurses into
+  // createNomination which re-runs the same check; that's redundant but
+  // cheap and keeps each function self-defended.
+  const authz = await ensureCanInitiateTieredNomination(nominator_id)
+  if (!authz.ok) {
+    return { ok: false, error: { code: 'not_authorized' } }
+  }
+
   const parsed = GroupNominationInputSchema.safeParse(raw)
   if (!parsed.success) {
     return { ok: false, error: { code: 'validation', issues: parsed.error.issues } }
@@ -269,6 +289,12 @@ export async function createGroupNomination(
       // round-tripped through the group schema; any that do come
       // back as a generic validation error.
       switch (single.error.code) {
+        case 'not_authorized':
+          // Theoretically unreachable: the group gate above already
+          // rejected non-managers before we recursed in. We forward it
+          // anyway so the type system stays exhaustive and the contract
+          // survives any future refactor that loosens the outer gate.
+          return { ok: false, error: { code: 'not_authorized' } }
         case 'self_nomination':
           return { ok: false, error: { code: 'self_nomination' } }
         case 'nominator_not_found':
