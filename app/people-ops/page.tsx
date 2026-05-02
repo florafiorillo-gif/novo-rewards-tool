@@ -21,7 +21,7 @@ const TILES: Array<{
     href: '/leadership/participation',
     title: 'Participation patterns',
     description:
-      "Drill into who's giving and receiving across geos, departments, and managers. Lowest participation surfaces first.",
+      'Where recognition is flowing across geos and departments this period.',
   },
   {
     href: '/people-ops/fulfillment',

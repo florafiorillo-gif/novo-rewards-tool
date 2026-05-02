@@ -6,9 +6,11 @@ import { KeepViewLink } from '@/components/layout/KeepViewLink'
 
 // Three sortable tables shared across the participation drill-down.
 // Each takes typed rows + click-to-sort behavior. Default sort is
-// always "lowest given_pct first" so problem rows sit at the top —
-// the user can flip direction or pick a different column with a
-// header click.
+// alphabetical by name for the geo and department tables — the
+// participation page is a distribution view at leadership altitude,
+// not a problem-hunt scorecard, so we no longer surface lowest-
+// participation rows first. Users can still re-sort by any column
+// from the header.
 //
 // Kept un-abstracted on purpose: each table has different columns
 // and an extracted-generic version was harder to read than three
@@ -80,7 +82,7 @@ export interface GeoTableRow {
 
 export function GeoBreakdownTable({ rows }: { rows: GeoTableRow[] }) {
   const [sort, setSort] = useState<SortState>({
-    key: 'given_pct',
+    key: 'geo',
     direction: 'asc',
   })
 
@@ -132,8 +134,8 @@ export function GeoBreakdownTable({ rows }: { rows: GeoTableRow[] }) {
               </td>
               <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.active}</td>
               <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.recogs}</td>
-              <td className="px-5 py-3 text-right tabular"><PctChip pct={row.given_pct} /></td>
-              <td className="px-5 py-3 text-right tabular"><PctChip pct={row.received_pct} /></td>
+              <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.given_pct}%</td>
+              <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.received_pct}%</td>
               <td className="px-5 py-3 text-right text-novo-muted">→</td>
             </tr>
           ))}
@@ -145,10 +147,13 @@ export function GeoBreakdownTable({ rows }: { rows: GeoTableRow[] }) {
 
 // ─── Department breakdown ───────────────────────────────────────────
 
+// Department rows are non-clickable on this page. The drill-down to
+// per-manager detail was retired — the participation page intentionally
+// stops at department altitude. The /leadership/participation?manager=X
+// route still exists if hit directly, but no UI links to it.
 export interface DepartmentTableRow {
   department: string
   geo: string | null
-  href: string
   active: number
   recogs: number
   given_pct: number
@@ -161,7 +166,7 @@ export function DepartmentBreakdownTable({
   rows: DepartmentTableRow[]
 }) {
   const [sort, setSort] = useState<SortState>({
-    key: 'given_pct',
+    key: 'department',
     direction: 'asc',
   })
 
@@ -200,22 +205,13 @@ export function DepartmentBreakdownTable({
             <th className="px-5 py-2.5 text-right">{head('recogs', 'Recogs', 'right')}</th>
             <th className="px-5 py-2.5 text-right">{head('given_pct', '% Gave', 'right')}</th>
             <th className="px-5 py-2.5 text-right">{head('received_pct', '% Received', 'right')}</th>
-            <th className="px-5 py-2.5" aria-label="drill" />
           </tr>
         </thead>
         <tbody className="divide-y divide-novo-border">
           {sorted.map((row) => (
-            <tr
-              key={row.department}
-              className="group transition hover:bg-novo-hover/50"
-            >
+            <tr key={row.department}>
               <td className="px-5 py-3">
-                <KeepViewLink
-                  href={row.href}
-                  className="font-medium text-novo-ink group-hover:underline"
-                >
-                  {row.department}
-                </KeepViewLink>
+                <span className="font-medium text-novo-ink">{row.department}</span>
                 {row.geo && (
                   <span className="ml-2 text-2xs text-novo-muted tabular">
                     {row.geo}
@@ -224,9 +220,8 @@ export function DepartmentBreakdownTable({
               </td>
               <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.active}</td>
               <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.recogs}</td>
-              <td className="px-5 py-3 text-right tabular"><PctChip pct={row.given_pct} /></td>
-              <td className="px-5 py-3 text-right tabular"><PctChip pct={row.received_pct} /></td>
-              <td className="px-5 py-3 text-right text-novo-muted">→</td>
+              <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.given_pct}%</td>
+              <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.received_pct}%</td>
             </tr>
           ))}
         </tbody>
@@ -308,8 +303,8 @@ export function ManagerBreakdownTable({ rows }: { rows: ManagerTableRow[] }) {
                 </KeepViewLink>
               </td>
               <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.team_size}</td>
-              <td className="px-5 py-3 text-right tabular"><PctChip pct={row.given_pct} /></td>
-              <td className="px-5 py-3 text-right tabular"><PctChip pct={row.received_pct} /></td>
+              <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.given_pct}%</td>
+              <td className="px-5 py-3 text-right text-novo-subtle tabular">{row.received_pct}%</td>
               <td className="px-5 py-3 text-right text-novo-subtle tabular">
                 {row.pool_remaining_pct === null ? '—' : `${row.pool_remaining_pct}%`}
               </td>
@@ -419,22 +414,6 @@ export function ReportTable({ rows }: { rows: ReportTableRow[] }) {
         </tbody>
       </table>
     </div>
-  )
-}
-
-function PctChip({ pct }: { pct: number }) {
-  const tone =
-    pct >= 60
-      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-      : pct >= 30
-        ? 'border-novo-border bg-novo-surface text-novo-subtle'
-        : 'border-amber-200 bg-amber-50 text-amber-900'
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-medium tabular ${tone}`}
-    >
-      {pct}%
-    </span>
   )
 }
 

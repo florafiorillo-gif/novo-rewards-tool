@@ -111,7 +111,6 @@ async function CompanyLevel({
   const deptRows: DepartmentTableRow[] = view.by_department.map((d) => ({
     department: d.department,
     geo: d.geo,
-    href: `/leadership/participation?department=${encodeURIComponent(d.department)}`,
     active: d.stats.total_active_employees,
     recogs: d.stats.total_recognitions,
     given_pct: d.stats.given_pct,
@@ -125,21 +124,18 @@ async function CompanyLevel({
         title="Company-wide patterns"
         description={
           view.period
-            ? `${view.period.period_label}. Who's giving and receiving across geos and departments. Lowest participation appears first.`
+            ? `${view.period.period_label} recognition flow across geos and departments.`
             : 'No active recognition period right now.'
         }
       />
 
       <StatBlock stats={view.stats} hint="Across all active employees this period." />
 
-      <Section title="By geo" hint="Click any row to drill into that geo's departments.">
+      <Section title="By geo" hint="Click any row to see departments in that geo.">
         <GeoBreakdownTable rows={geoRows} />
       </Section>
 
-      <Section
-        title="By department"
-        hint="Cross-geo where applicable; click a row to drill into managers."
-      >
+      <Section title="By department" hint="Cross-geo where applicable.">
         <DepartmentBreakdownTable rows={deptRows} />
       </Section>
     </main>
@@ -156,7 +152,6 @@ async function GeoLevel({
   const deptRows: DepartmentTableRow[] = view.by_department.map((d) => ({
     department: d.department,
     geo: d.geo,
-    href: `/leadership/participation?department=${encodeURIComponent(d.department)}`,
     active: d.stats.total_active_employees,
     recogs: d.stats.total_recognitions,
     given_pct: d.stats.given_pct,
@@ -350,14 +345,14 @@ function StatBlock({
         secondary="approved or fulfilled this period"
       />
       <StatTile
-        label="% who gave"
-        primary={`${stats.given_pct}%`}
-        secondary={`${stats.given_count} of ${stats.total_active_employees}`}
+        label="Gave this period"
+        primary={`${stats.given_count} of ${stats.total_active_employees}`}
+        secondary={`${stats.given_pct}%`}
       />
       <StatTile
-        label="% who received"
-        primary={`${stats.received_pct}%`}
-        secondary={`${stats.received_count} of ${stats.total_active_employees}`}
+        label="Received this period"
+        primary={`${stats.received_count} of ${stats.total_active_employees}`}
+        secondary={`${stats.received_pct}%`}
       />
     </div>
   )

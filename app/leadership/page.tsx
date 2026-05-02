@@ -37,7 +37,7 @@ const TILES: Array<{
     href: '/leadership/participation',
     title: 'Participation patterns',
     description:
-      'Who is giving and receiving recognition, by geo, department, and manager.',
+      'Where recognition is flowing across geos and departments this period.',
   },
 ]
 
