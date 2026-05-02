@@ -46,13 +46,24 @@ export async function onApproveButton(
   const channel = payload.container?.channel_id ?? payload.channel?.id
   const ts = payload.container?.message_ts ?? payload.message?.ts
   if (channel && ts && nominee && value) {
-    await updateApproverDMToApproved({
+    const updated = await updateApproverDMToApproved({
       channel,
       ts,
       nominee_name: nominee.name,
       value_name: value.name,
       nomination_id: nominationId,
     })
+    if (!updated) {
+      // Approval succeeded but the DM rewrite failed (Slack disabled,
+      // network blip, message expired, etc.). Surface an ephemeral
+      // follow-up so the approver isn't left wondering whether the
+      // click registered. Stale-but-clickable buttons stay above; the
+      // ephemeral nudges them to refresh.
+      await respondEphemeral(
+        payload,
+        `Approved. ${nominee.name} will be recognized. The buttons above didn't refresh — please refresh Slack to see the latest.`
+      )
+    }
   }
 
   // Spec §9.2 — nominator DM only when nominator != actor.
@@ -137,6 +148,12 @@ export async function onUndoButton(
       })
     } catch (err) {
       console.error('[slack] undo update failed', err)
+      // Undo succeeded server-side but the DM rewrite failed. Post
+      // an ephemeral so the approver knows the click registered.
+      await respondEphemeral(
+        payload,
+        "Undone. The nomination is back in your queue. The buttons above didn't refresh — please refresh Slack to see the latest."
+      )
     }
   }
 }

@@ -112,14 +112,19 @@ export async function sendNominatorDenialDM(args: {
 
 // Update the approver's own DM in place after they act. Removes the action
 // buttons and surfaces an Undo button for 10 minutes (spec §13.3).
+//
+// Returns true on a successful update, false on Slack-disabled or failure
+// so callers can post a follow-up ephemeral confirming the underlying
+// action (the approval already succeeded; only the DM-rewrite failed).
+// Stale buttons that look clickable are worse than no feedback.
 export async function updateApproverDMToApproved(args: {
   channel: string
   ts: string
   nominee_name: string
   value_name: string
   nomination_id: string
-}): Promise<void> {
-  if (!slackEnabled()) return
+}): Promise<boolean> {
+  if (!slackEnabled()) return false
   try {
     await getSlackClient().chat.update({
       channel: args.channel,
@@ -131,8 +136,10 @@ export async function updateApproverDMToApproved(args: {
         nomination_id: args.nomination_id,
       }),
     })
-  } catch {
-    // Silent.
+    return true
+  } catch (err) {
+    console.error('[slack] approver DM update failed', err)
+    return false
   }
 }
 
