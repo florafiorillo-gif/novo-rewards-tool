@@ -37,7 +37,7 @@ export default async function BudgetPeriodsPage() {
       {periods.length === 0 ? (
         <EmptyState
           title="No periods yet"
-          description="Periods are the container for all pools and nominations in a quarter. Start with a new allocation."
+          description="Each period holds the pools and nominations for a quarter."
           action={
             <LinkButton href="/leadership/budget/new" variant="primary">
               Create first period

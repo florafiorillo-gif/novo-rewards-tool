@@ -38,7 +38,7 @@ export default async function CatalogPage() {
       {items.length === 0 ? (
         <EmptyState
           title="No catalog items yet"
-          description="Add at least one item per geo so approvers have something to pick from at reward selection time."
+          description="Approvers pick from the catalog at reward selection. Add at least one item per geo."
           action={
             <LinkButton href="/people-ops/catalog/new" variant="primary">
               Add first item

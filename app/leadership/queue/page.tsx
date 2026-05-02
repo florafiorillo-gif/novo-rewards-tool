@@ -41,7 +41,7 @@ export default async function CommitteeQueuePage() {
       {items.length === 0 ? (
         <EmptyState
           title="No Tier 3 nominations pending"
-          description="Next review happens at the monthly cadence. Urgent items will jump the queue when they arrive."
+          description="Reviewed monthly. Urgent items appear immediately."
           action={
             <LinkButton href="/leadership/dashboard" variant="secondary">
               Back to leadership dashboard
