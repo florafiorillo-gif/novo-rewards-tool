@@ -6,6 +6,7 @@ import { ProgramExceptionsList } from '@/components/dashboard/ProgramExceptionsL
 import { SlaMissesList } from '@/components/dashboard/SlaMissesList'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,6 +42,8 @@ export default async function PeopleOpsDashboardPage() {
           Pools stay drawable until {view.grace_ends_at.toLocaleDateString()}.
         </div>
       )}
+
+      {!view.period && <EmptyState title="No active period." />}
 
       {view.period && (
         <div className="space-y-8">
