@@ -60,6 +60,11 @@ export interface TeamRecognitionsForQuarter {
   year: number
   start: Date
   end: Date
+  // Total active direct reports the manager has, regardless of whether
+  // any received recognitions this quarter. Lets the page distinguish
+  // "no direct reports" from "has reports, none recognized" — different
+  // UX scenarios that deserve different empty-state copy.
+  direct_reports_count: number
   // Recipients with zero recognitions in the quarter are filtered out;
   // remaining groups are sorted alphabetically by recipient name.
   groups: TeamRecognitionGroup[]
@@ -88,7 +93,15 @@ export async function getTeamRecognitionsForQuarter(
   const manager_name = managerLookup.get(managerId)?.name ?? 'Manager'
 
   if (reports.length === 0) {
-    return { manager_name, quarter, year, start, end, groups: [] }
+    return {
+      manager_name,
+      quarter,
+      year,
+      start,
+      end,
+      direct_reports_count: 0,
+      groups: [],
+    }
   }
 
   const reportIds = reports.map((r) => r.id)
@@ -132,7 +145,15 @@ export async function getTeamRecognitionsForQuarter(
     .filter((g) => g.recognitions.length > 0)
     .sort((a, b) => a.recipient.name.localeCompare(b.recipient.name))
 
-  return { manager_name, quarter, year, start, end, groups }
+  return {
+    manager_name,
+    quarter,
+    year,
+    start,
+    end,
+    direct_reports_count: reports.length,
+    groups,
+  }
 }
 
 // Approved/fulfilled recognitions where nominee_id ∈ nomineeIds and the

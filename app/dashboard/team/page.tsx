@@ -25,6 +25,7 @@ export default async function TeamPage() {
 
   const data = await getTeamRecognitionsForQuarter(employeeId)
   const hasContent = data.groups.length > 0
+  const hasReports = data.direct_reports_count > 0
 
   return (
     <main className="mx-auto max-w-app px-6 py-10 lg:py-12">
@@ -32,13 +33,17 @@ export default async function TeamPage() {
         back={{ href: '/dashboard', label: 'Dashboard' }}
         title="My team"
         description="This quarter's recognitions for your direct reports."
-        actions={<TeamExportButton enabled={hasContent} />}
+        actions={
+          hasReports ? <TeamExportButton enabled={hasContent} /> : null
+        }
       />
 
       {hasContent ? (
         <TeamRecognitionsFeed groups={data.groups} />
-      ) : (
+      ) : hasReports ? (
         <EmptyState title="No recognitions this quarter." />
+      ) : (
+        <EmptyState title="No direct reports right now." />
       )}
     </main>
   )
