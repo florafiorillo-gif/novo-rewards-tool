@@ -21,7 +21,7 @@ export async function selectRewardAction(
   const session = await auth()
   const actorId = session?.user?.employeeId
   if (!actorId) {
-    return { ok: false, error: 'Please sign in again — your session expired.' }
+    return { ok: false, error: 'Please sign in again. Your session expired.' }
   }
 
   const nominationId = (formData.get('nomination_id') ?? '').toString()
@@ -217,7 +217,7 @@ function messageForSelectError(
     case 'reward_already_selected':
       return 'A reward was already chosen for this nomination.'
     case 'no_active_period':
-      return 'No active budget period — reach out to the committee.'
+      return 'No active budget period. Reach out to the committee.'
     case 'period_lapsed':
       return 'This recognition period closed before the reward could be committed. Please refresh to see the latest periods, or reach out to the People team if this nomination still needs a reward.'
     case 'catalog_item_not_found':
@@ -229,13 +229,13 @@ function messageForSelectError(
     case 'scope_note_required':
       return 'Add a short scope note before confirming.'
     case 'insufficient_balance':
-      return `Budget depleted since you started. Pool has $${error.remaining} left — retry, or mark as a budget exception.`
+      return `Budget depleted since you started. Pool has $${error.remaining} left. Retry, or mark as a budget exception.`
     case 'invalid_amount':
       return 'Enter a valid amount.'
     case 'forbidden':
       return "You're not authorized to select a reward for this nomination."
     default:
-      return "We couldn't record that reward. Please try again — if this keeps happening, reach out to the People team."
+      return "We couldn't record that reward. Please try again. If this keeps happening, reach out to the People team."
   }
 }
 

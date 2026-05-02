@@ -49,7 +49,7 @@ export async function submitNominationAction(
   const session = await auth()
   const nominatorId = session?.user?.employeeId
   if (!nominatorId) {
-    return { ok: false, formError: 'Please sign in again — your session expired.' }
+    return { ok: false, formError: 'Please sign in again. Your session expired.' }
   }
 
   // Real-role authz check. Tiered submissions are manager-only; the UI
@@ -153,7 +153,7 @@ function mapCreateError(error: { code: string; issues?: unknown[] }): SubmitStat
     case 'self_nomination':
       return errorStateForIssue(
         'nominee_id',
-        "You can't recognize yourself — pick a teammate who showed up for you."
+        "You can't recognize yourself. Pick a teammate who showed up for you."
       )
     case 'self_approval_in_group':
       return errorStateForIssue(
@@ -197,7 +197,7 @@ function mapCreateError(error: { code: string; issues?: unknown[] }): SubmitStat
       return {
         ok: false,
         formError:
-          "We couldn't submit your nomination. Please try again — if this keeps happening, reach out to the People team.",
+          "We couldn't submit your nomination. Please try again. If this keeps happening, reach out to the People team.",
       }
   }
 }
@@ -239,7 +239,7 @@ export async function submitPeerRecognitionAction(
   const session = await auth()
   const nominatorId = session?.user?.employeeId
   if (!nominatorId) {
-    return { ok: false, formError: 'Please sign in again — your session expired.' }
+    return { ok: false, formError: 'Please sign in again. Your session expired.' }
   }
 
   const input = {
@@ -275,7 +275,7 @@ function mapPeerError(error: {
         ok: false,
         fieldErrors: {
           nominee_id:
-            "You can't recognize yourself — pick a teammate who showed up for you.",
+            "You can't recognize yourself. Pick a teammate who showed up for you.",
         },
       }
     case 'nominee_not_found':
@@ -335,7 +335,7 @@ function mapPeerError(error: {
       return {
         ok: false,
         formError:
-          "We couldn't post your peer recognition. Please try again — if this keeps happening, reach out to the People team.",
+          "We couldn't post your peer recognition. Please try again. If this keeps happening, reach out to the People team.",
       }
   }
 }
