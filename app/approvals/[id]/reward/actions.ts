@@ -219,7 +219,7 @@ function messageForSelectError(
     case 'no_active_period':
       return 'No active budget period — reach out to the committee.'
     case 'period_lapsed':
-      return 'The budget period closed more than 14 days ago. This nomination needs re-approval.'
+      return 'This recognition period closed before the reward could be committed. Please refresh to see the latest periods, or reach out to the People team if this nomination still needs a reward.'
     case 'catalog_item_not_found':
       return "That catalog item isn't available."
     case 'catalog_geo_mismatch':
