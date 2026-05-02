@@ -197,6 +197,7 @@ export default async function DashboardPage({
               <TierThreeQueueCard
                 total={tier3Count}
                 urgent={tier3UrgentCount}
+                disabled={!role.is_committee}
               />
             )}
 
@@ -238,6 +239,7 @@ export default async function DashboardPage({
                 period={displayablePeriod.period}
                 inGrace={displayablePeriod.in_grace}
                 graceEndsAt={displayablePeriod.grace_ends_at}
+                disabled={!role.is_committee}
               />
             )}
 
@@ -246,6 +248,7 @@ export default async function DashboardPage({
                 view={programView}
                 href={programHealthHref}
                 eyebrow="Program health"
+                disabled={!role.is_committee && !role.is_people_team}
               />
             )}
 

@@ -6,14 +6,20 @@ import { KeepViewLink } from '@/components/layout/KeepViewLink'
 // /people-ops/dashboard; this card surfaces three numbers + a link so
 // the People team sees the pulse from the landing without burying the
 // feed under admin chrome.
+// `disabled` renders the action link as a non-clickable muted control
+// for users in a simulated view who don't actually hold the role the
+// destination requires (committee for /leadership/dashboard, people-ops
+// for /people-ops/dashboard).
 export function ProgramHealthCard({
   view,
   href,
   eyebrow,
+  disabled = false,
 }: {
   view: PeopleTeamDashboardView
   href: string
   eyebrow: string
+  disabled?: boolean
 }) {
   const totals = aggregate(view)
   const hasFlag = totals.exception_count > 0 || totals.sla_miss_count > 0
@@ -55,13 +61,25 @@ export function ProgramHealthCard({
         />
       </dl>
 
-      <KeepViewLink
-        href={href}
-        className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
-      >
-        {hasFlag ? 'See full program view' : 'Open program view'}{' '}
-        <span aria-hidden>→</span>
-      </KeepViewLink>
+      {disabled ? (
+        <button
+          type="button"
+          disabled
+          title="Available in your real role only"
+          className="mt-4 inline-flex cursor-not-allowed items-center gap-1 text-xs font-medium text-novo-muted"
+        >
+          {hasFlag ? 'See full program view' : 'Open program view'}{' '}
+          <span aria-hidden>→</span>
+        </button>
+      ) : (
+        <KeepViewLink
+          href={href}
+          className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
+        >
+          {hasFlag ? 'See full program view' : 'Open program view'}{' '}
+          <span aria-hidden>→</span>
+        </KeepViewLink>
+      )}
     </section>
   )
 }

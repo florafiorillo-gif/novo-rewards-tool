@@ -5,16 +5,22 @@ import { KeepViewLink } from '@/components/layout/KeepViewLink'
 // ProgramHealthCard (which says *how much* is committed) with *when*
 // the period closes and whether the grace window is open. Budget
 // mechanics live on /committee/budget; this card is the pulse.
+// `disabled` renders the action link as a non-clickable muted control
+// for users in a simulated view who don't actually hold committee role.
+// Same rationale as TierThreeQueueCard: /leadership/budget itself
+// real-role-gates committee, so the click would 404 in sim.
 export function BudgetPeriodStatusCard({
   period,
   inGrace,
   graceEndsAt,
   now = new Date(),
+  disabled = false,
 }: {
   period: BudgetPeriodRecord
   inGrace: boolean
   graceEndsAt: Date | null
   now?: Date
+  disabled?: boolean
 }) {
   const end = new Date(period.end_date)
   const daysToEnd = daysBetween(now, end)
@@ -53,12 +59,23 @@ export function BudgetPeriodStatusCard({
         <StatusChip tone={tone}>{statusLabel}</StatusChip>
       </div>
       <p className="mt-2 text-xs text-novo-subtle">{statusDetail}</p>
-      <KeepViewLink
-        href="/leadership/budget"
-        className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
-      >
-        Open budget <span aria-hidden>→</span>
-      </KeepViewLink>
+      {disabled ? (
+        <button
+          type="button"
+          disabled
+          title="Available in your real role only"
+          className="mt-4 inline-flex cursor-not-allowed items-center gap-1 text-xs font-medium text-novo-muted"
+        >
+          Open budget <span aria-hidden>→</span>
+        </button>
+      ) : (
+        <KeepViewLink
+          href="/leadership/budget"
+          className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-novo-ink hover:opacity-80"
+        >
+          Open budget <span aria-hidden>→</span>
+        </KeepViewLink>
+      )}
     </section>
   )
 }
