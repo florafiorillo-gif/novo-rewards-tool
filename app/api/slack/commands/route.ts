@@ -28,7 +28,13 @@ export async function POST(req: NextRequest) {
   const body = Object.fromEntries(params.entries())
 
   try {
-    await handleSlashCommand(body)
+    const result = await handleSlashCommand(body)
+    if (result.kind === 'rejected') {
+      return NextResponse.json(
+        { response_type: 'ephemeral', text: result.ephemeral_text },
+        { status: 200 }
+      )
+    }
   } catch (err) {
     console.error('[slack] slash command handler failed', err)
     return NextResponse.json(

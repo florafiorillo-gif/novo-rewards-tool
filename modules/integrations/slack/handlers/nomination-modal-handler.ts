@@ -1,4 +1,8 @@
 import { createNomination } from '@/modules/nominations/service'
+import {
+  ensureCanInitiateTieredNomination,
+  TIERED_AUTHZ_MESSAGE,
+} from '@/modules/nominations/authz'
 import { getSlackClient } from '../client'
 import {
   ACTION_BEHAVIOR,
@@ -87,6 +91,16 @@ export async function handleNominationSubmit(
     return modalError({
       [BLOCK_NOMINEE]: "We couldn't find that teammate in our directory.",
     })
+  }
+
+  // Real-role authz: tiered nomination submission is manager-only.
+  // The slash command also gates on this, but check here too —
+  // defence in depth in case the modal was opened from a stale
+  // trigger_id by a now-non-manager actor, or was reached via some
+  // other path that skipped the slash-command gate.
+  const authz = await ensureCanInitiateTieredNomination(nominator.id)
+  if (!authz.ok) {
+    return modalError({ [BLOCK_NOMINEE]: TIERED_AUTHZ_MESSAGE })
   }
 
   const result = await createNomination(

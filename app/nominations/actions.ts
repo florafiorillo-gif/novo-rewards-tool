@@ -9,6 +9,10 @@ import {
   createGroupNomination,
   createPeerNomination,
 } from '@/modules/nominations/service'
+import {
+  ensureCanInitiateTieredNomination,
+  TIERED_AUTHZ_MESSAGE,
+} from '@/modules/nominations/authz'
 import { getEmployeeById } from '@/modules/employees/service'
 import { sendApproverDM } from '@/modules/integrations/slack/notifications'
 import { sendPeerRecognitionDM } from '@/modules/integrations/slack/recipient'
@@ -46,6 +50,14 @@ export async function submitNominationAction(
   const nominatorId = session?.user?.employeeId
   if (!nominatorId) {
     return { ok: false, formError: 'Please sign in again — your session expired.' }
+  }
+
+  // Real-role authz check. Tiered submissions are manager-only; the UI
+  // gate at /nominations/new only hides the form, so a crafted POST
+  // would bypass without this server-side guard.
+  const authz = await ensureCanInitiateTieredNomination(nominatorId)
+  if (!authz.ok) {
+    return { ok: false, formError: TIERED_AUTHZ_MESSAGE }
   }
 
   const evidence = [
