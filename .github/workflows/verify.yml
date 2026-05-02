@@ -1,0 +1,30 @@
+name: Verify
+
+# Runs on every push and every PR. Mock-mode flags are set on each
+# `npm run` so the smoke scripts don't need real DB or Slack
+# credentials. The combined `verify:all` script runs typecheck
+# first, then the three smoke / verify scripts in series. Any
+# step's non-zero exit fails the workflow.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify (typecheck + smoke + verify scripts)
+        run: npm run verify:all

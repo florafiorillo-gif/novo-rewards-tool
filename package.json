@@ -13,7 +13,11 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:seed:prod": "SEED_MODE=prod tsx prisma/seed.ts"
+    "db:seed:prod": "SEED_MODE=prod tsx prisma/seed.ts",
+    "verify:dashboards": "USE_MOCK_DATA=true SEED_MODE=demo tsx scripts/verify-dashboards.ts",
+    "smoke:export": "USE_MOCK_DATA=true tsx scripts/smoke-quarterly-export.ts",
+    "smoke:authz": "USE_MOCK_DATA=true tsx scripts/smoke-tiered-authz.ts",
+    "verify:all": "npm run typecheck && npm run verify:dashboards && npm run smoke:export && npm run smoke:authz"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
