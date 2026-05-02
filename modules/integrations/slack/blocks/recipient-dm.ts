@@ -1,3 +1,5 @@
+import * as copy from '../copy'
+
 export const ACTION_ACKNOWLEDGE_RECOGNITION = 'acknowledge_recognition'
 
 export function buildRecipientDMBlocks(args: {
@@ -26,17 +28,19 @@ export function buildRecipientDMBlocks(args: {
       type: 'section' as const,
       text: {
         type: 'mrkdwn' as const,
-        text:
-          `${nominee_name}, you've been recognized.\n` +
-          `${nominator_name} saw you live *${value_name}*:\n` +
-          `_"${behavior_text}"_`,
+        text: copy.recipientDMHeader(
+          nominee_name,
+          nominator_name,
+          value_name,
+          behavior_text
+        ),
       },
     },
     {
       type: 'section' as const,
       text: {
         type: 'mrkdwn' as const,
-        text: `Your reward: ${reward_line}.\n${delivery_line}`,
+        text: copy.recipientDMReward(reward_line, delivery_line),
       },
     },
   ]
@@ -49,7 +53,7 @@ export function buildRecipientDMBlocks(args: {
         elements: [
           {
             type: 'mrkdwn' as const,
-            text: '_Acknowledged. Your recognition has been shared._',
+            text: copy.recipientDMAcknowledgedFootnote,
           },
         ],
       },
@@ -64,7 +68,10 @@ export function buildRecipientDMBlocks(args: {
         {
           type: 'button' as const,
           action_id: ACTION_ACKNOWLEDGE_RECOGNITION,
-          text: { type: 'plain_text' as const, text: 'React to acknowledge' },
+          text: {
+            type: 'plain_text' as const,
+            text: copy.buttonAcknowledgeRecognition,
+          },
           style: 'primary' as const,
           value: nomination_id,
         },

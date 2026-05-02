@@ -19,6 +19,7 @@ import {
   buildNominationModal,
 } from '../modal/nomination-modal'
 import { sendApproverDM } from '../notifications'
+import * as copy from '../copy'
 import type {
   ResponseOrVoid,
   SlackAction,
@@ -72,9 +73,7 @@ export async function handleNominationSubmit(
 
   const slackNominatorId = payload.user?.id
   if (!slackNominatorId) {
-    return modalError({
-      [BLOCK_NOMINEE]: "We couldn't identify you in Slack. Try again.",
-    })
+    return modalError({ [BLOCK_NOMINEE]: copy.actorNotIdentified })
   }
 
   const [nominator, nominee] = await Promise.all([
@@ -83,13 +82,11 @@ export async function handleNominationSubmit(
   ])
 
   if (!nominator) {
-    return modalError({
-      [BLOCK_NOMINEE]: "We couldn't find your record in our directory.",
-    })
+    return modalError({ [BLOCK_NOMINEE]: copy.actorNotFound })
   }
   if (!slackNomineeId || !nominee) {
     return modalError({
-      [BLOCK_NOMINEE]: "We couldn't find that teammate in our directory.",
+      [BLOCK_NOMINEE]: copy.nominationModalErrorMissingTeammate,
     })
   }
 
@@ -118,10 +115,10 @@ export async function handleNominationSubmit(
 
   // Nominator confirmation DM (§9.1).
   try {
-    const firstName = nominator.name.split(' ')[0]
+    const firstName = nominator.name.split(' ')[0] ?? nominator.name
     await getSlackClient().chat.postMessage({
       channel: slackNominatorId,
-      text: `Thank you, ${firstName}. Your nomination has been submitted. ${nominee.name} will be recognized if approved.`,
+      text: copy.nominatorSubmitConfirmation(firstName, nominee.name),
     })
   } catch (err) {
     console.error('[slack] nominator confirmation DM failed', err)
@@ -142,21 +139,25 @@ export async function handleNominationSubmit(
 function mapCreateErrorToModalError(code: string): ResponseOrVoid {
   switch (code) {
     case 'self_nomination':
-      return modalError({ [BLOCK_NOMINEE]: "You can't recognize yourself." })
+      return modalError({
+        [BLOCK_NOMINEE]: copy.nominationModalErrorSelfNomination,
+      })
     case 'nominee_not_found':
     case 'nominee_inactive':
-      return modalError({ [BLOCK_NOMINEE]: "That teammate isn't in our directory." })
+      return modalError({
+        [BLOCK_NOMINEE]: copy.nominationModalErrorNomineeNotFound,
+      })
     case 'value_not_found':
-      return modalError({ [BLOCK_VALUE]: 'Please choose one of the four values.' })
+      return modalError({
+        [BLOCK_VALUE]: copy.nominationModalErrorValueNotFound,
+      })
     case 'validation':
       return modalError({
-        [BLOCK_BEHAVIOR]:
-          'Behavior and outcome each need at least 30 characters and at most 500. Please adjust and resubmit.',
+        [BLOCK_BEHAVIOR]: copy.nominationModalErrorValidation,
       })
     default:
       return modalError({
-        [BLOCK_BEHAVIOR]:
-          "We couldn't submit your nomination. Please try again. If this keeps happening, reach out to the People team.",
+        [BLOCK_BEHAVIOR]: copy.nominationModalErrorGeneric,
       })
   }
 }

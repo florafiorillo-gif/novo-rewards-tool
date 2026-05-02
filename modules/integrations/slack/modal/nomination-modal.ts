@@ -1,5 +1,6 @@
 import type { ModalView } from '@slack/types'
 import { VALUES, getValueById } from '@/modules/values/constants'
+import * as copy from '../copy'
 
 // Block/action identifiers. Centralized so the submission handler can read
 // state.values without string-matching drift.
@@ -20,30 +21,31 @@ export const ACTION_OUTCOME = 'outcome_input'
 export const BLOCK_EVIDENCE_PREFIX = 'evidence_block_'
 export const ACTION_EVIDENCE_PREFIX = 'evidence_input_'
 
-const DEFAULT_BEHAVIOR_PLACEHOLDER = 'What did they do? Be specific.'
-const OUTCOME_HINT = 'What happened as a result? Why did it matter?'
-
 export function buildNominationModal(opts: {
   selectedValueId?: string
 } = {}): ModalView {
   const selected = opts.selectedValueId ? getValueById(opts.selectedValueId) : null
-  const behaviorPlaceholder = selected?.behavior_placeholder ?? DEFAULT_BEHAVIOR_PLACEHOLDER
+  const behaviorPlaceholder =
+    selected?.behavior_placeholder ?? copy.nominationModalBehaviorDefaultPlaceholder
 
   return {
     type: 'modal',
     callback_id: NOMINATION_CALLBACK_ID,
-    title: { type: 'plain_text', text: 'Recognize a teammate' },
-    submit: { type: 'plain_text', text: 'Submit' },
-    close: { type: 'plain_text', text: 'Cancel' },
+    title: { type: 'plain_text', text: copy.nominationModalTitle },
+    submit: { type: 'plain_text', text: copy.nominationModalSubmit },
+    close: { type: 'plain_text', text: copy.nominationModalCancel },
     blocks: [
       {
         type: 'input',
         block_id: BLOCK_NOMINEE,
-        label: { type: 'plain_text', text: 'Who are you recognizing?' },
+        label: { type: 'plain_text', text: copy.nominationModalNomineeLabel },
         element: {
           type: 'users_select',
           action_id: ACTION_NOMINEE,
-          placeholder: { type: 'plain_text', text: 'Pick a teammate' },
+          placeholder: {
+            type: 'plain_text',
+            text: copy.nominationModalNomineePlaceholder,
+          },
         },
       },
       {
@@ -52,11 +54,14 @@ export function buildNominationModal(opts: {
         // dispatch_action makes the select fire block_actions so we can swap
         // the behavior placeholder per value (spec §6.2).
         dispatch_action: true,
-        label: { type: 'plain_text', text: 'Which value did they live?' },
+        label: { type: 'plain_text', text: copy.nominationModalValueLabel },
         element: {
           type: 'static_select',
           action_id: ACTION_VALUE,
-          placeholder: { type: 'plain_text', text: 'Choose one' },
+          placeholder: {
+            type: 'plain_text',
+            text: copy.nominationModalValuePlaceholder,
+          },
           options: VALUES.map((v) => ({
             text: { type: 'plain_text', text: v.name },
             value: v.id,
@@ -74,8 +79,8 @@ export function buildNominationModal(opts: {
       {
         type: 'input',
         block_id: BLOCK_BEHAVIOR,
-        label: { type: 'plain_text', text: 'What specifically did they do?' },
-        hint: { type: 'plain_text', text: '30 to 500 characters.' },
+        label: { type: 'plain_text', text: copy.nominationModalBehaviorLabel },
+        hint: { type: 'plain_text', text: copy.nominationModalBehaviorHint },
         element: {
           type: 'plain_text_input',
           action_id: ACTION_BEHAVIOR,
@@ -88,8 +93,8 @@ export function buildNominationModal(opts: {
       {
         type: 'input',
         block_id: BLOCK_OUTCOME,
-        label: { type: 'plain_text', text: 'What was the outcome?' },
-        hint: { type: 'plain_text', text: OUTCOME_HINT },
+        label: { type: 'plain_text', text: copy.nominationModalOutcomeLabel },
+        hint: { type: 'plain_text', text: copy.nominationModalOutcomeHint },
         element: {
           type: 'plain_text_input',
           action_id: ACTION_OUTCOME,
@@ -103,7 +108,10 @@ export function buildNominationModal(opts: {
         type: 'input' as const,
         block_id: `${BLOCK_EVIDENCE_PREFIX}${n}`,
         optional: true,
-        label: { type: 'plain_text' as const, text: `Evidence link ${n} (optional)` },
+        label: {
+          type: 'plain_text' as const,
+          text: copy.nominationModalEvidenceLabel(n),
+        },
         element: {
           type: 'url_text_input' as const,
           action_id: `${ACTION_EVIDENCE_PREFIX}${n}`,

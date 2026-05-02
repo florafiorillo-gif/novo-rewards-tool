@@ -1,6 +1,7 @@
 import { getSlackClient } from './client'
 import { buildApproverDM } from './blocks/approver-dm'
 import { buildApprovedEphemeral } from './blocks/approved-ephemeral'
+import * as copy from './copy'
 import { getEmployeeById } from '@/modules/employees/service'
 import { getValueById } from '@/modules/values/constants'
 import type { NominationRecord } from '@/modules/nominations/types'
@@ -50,12 +51,12 @@ export async function sendApproverDM(
   try {
     const res = await getSlackClient().chat.postMessage({
       channel,
-      text: `New recognition nomination to review: ${nominee.name}`,
+      text: copy.approverDMFallbackText(nominee.name),
       blocks: buildApproverDM({
         nomination,
         nominator_name: nominator.name,
         nominee_name: nominee.name,
-        value_name: value?.name ?? 'a Novo value',
+        value_name: value?.name ?? copy.valueNameFallback,
       }),
     })
     if (!res.ts) return null
@@ -81,7 +82,7 @@ export async function sendNominatorApprovalDM(args: {
     const first = args.nominator_name.split(' ')[0]
     await getSlackClient().chat.postMessage({
       channel,
-      text: `Thank you, ${first}. ${args.nominee_name} has been recognized for ${args.value_name}.`,
+      text: copy.nominatorApprovalDM(first, args.nominee_name, args.value_name),
     })
   } catch {
     // Silent — nominator will see the outcome in the web dashboard regardless.
@@ -101,9 +102,11 @@ export async function sendNominatorDenialDM(args: {
   try {
     await getSlackClient().chat.postMessage({
       channel,
-      text:
-        `Your nomination of ${args.nominee_name} was not approved. ${args.reason_text}\n` +
-        `If you'd like to discuss or resubmit, talk with ${args.approver_name}.`,
+      text: copy.nominatorDenialDM(
+        args.nominee_name,
+        args.reason_text,
+        args.approver_name
+      ),
     })
   } catch {
     // Silent.
@@ -129,7 +132,7 @@ export async function updateApproverDMToApproved(args: {
     await getSlackClient().chat.update({
       channel: args.channel,
       ts: args.ts,
-      text: `Approved. ${args.nominee_name} will be recognized.`,
+      text: copy.approvedFallbackText(args.nominee_name),
       blocks: buildApprovedEphemeral({
         nominee_name: args.nominee_name,
         value_name: args.value_name,
@@ -158,9 +161,7 @@ export async function pingCommitteeUrgent(args: {
     try {
       await getSlackClient().chat.postMessage({
         channel,
-        text:
-          `Urgent Tier 3 recognition waiting for review: ${args.nominee_name} (${args.value_name}). ` +
-          `Please review in the committee queue.`,
+        text: copy.urgentCommitteePing(args.nominee_name, args.value_name),
       })
     } catch {
       // Silent.

@@ -3,6 +3,7 @@ import { getEmployeeById } from '@/modules/employees/service'
 import { getValueById } from '@/modules/values/constants'
 import { getNominationById } from '@/modules/nominations/service'
 import { buildRecipientDMBlocks } from './blocks/recipient-dm'
+import * as copy from './copy'
 import type { RewardRecord } from '@/modules/rewards/types'
 import type { NominationRecord } from '@/modules/nominations/types'
 
@@ -50,11 +51,12 @@ export async function sendRecipientRewardDM(args: {
   const rewardLine = describeReward(args.reward, nominee.geo)
   const deliveryLine = describeDelivery(args.reward)
 
+  const valueName = value?.name ?? copy.valueNameFallback
   const blocks = buildRecipientDMBlocks({
     nomination_id: nomination.id,
     nominee_name: nominee.name,
     nominator_name: nominator.name,
-    value_name: value?.name ?? 'a Novo value',
+    value_name: valueName,
     behavior_text: nomination.behavior_text,
     reward_line: rewardLine,
     delivery_line: deliveryLine,
@@ -67,9 +69,11 @@ export async function sendRecipientRewardDM(args: {
       blocks,
       // Fallback text for clients that can't render blocks (and for
       // Slack's own notification preview text).
-      text:
-        `${nominee.name}, you've been recognized. ` +
-        `${nominator.name} saw you live ${value?.name ?? 'a Novo value'}.`,
+      text: copy.recipientDMFallbackText(
+        nominee.name,
+        nominator.name,
+        valueName
+      ),
     })
   } catch (err) {
     console.error('[slack] recipient reward DM failed', err)
@@ -95,15 +99,15 @@ function describeReward(reward: RewardRecord, _geo: string): string {
 function describeDelivery(reward: RewardRecord): string {
   switch (reward.delivery_mechanism) {
     case 'tremendous':
-      return 'Details coming to your email shortly.'
+      return copy.deliveryTremendous
     case 'justworks_csv':
-      return 'Included in your next off-cycle paycheck.'
+      return copy.deliveryJustworks
     case 'zoho_payroll':
-      return 'Included in your next Zoho payroll cycle.'
+      return copy.deliveryZoho
     case 'manual':
-      return 'The People team will reach out with details.'
+      return copy.deliveryManual
     default:
-      return 'Details coming soon.'
+      return copy.deliveryFallback
   }
 }
 
@@ -130,14 +134,12 @@ export async function sendPeerRecognitionDM(args: {
   // First sentence (or full text up to 200 chars) of the behavior
   // narrative. Keeps the DM short — full record is in the web app.
   const behaviorSummary = summarize(nomination.behavior_text, 200)
-  const valueName = value?.name ?? 'a Novo value'
+  const valueName = value?.name ?? copy.valueNameFallback
 
   try {
     await getSlackClient().chat.postMessage({
       channel,
-      text:
-        `${nominator.name} recognized you for ${valueName}: ` +
-        `“${behaviorSummary}”. See your dashboard for the full note.`,
+      text: copy.peerRecognitionDM(nominator.name, valueName, behaviorSummary),
     })
   } catch (err) {
     console.error('[slack] peer recognition DM failed', err)

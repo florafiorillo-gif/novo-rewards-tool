@@ -1,4 +1,5 @@
 import type { NominationRecord } from '@/modules/nominations/types'
+import * as copy from '../copy'
 
 export const ACTION_APPROVE_T1 = 'approve_t1'
 export const ACTION_PROPOSE_UPGRADE_T1 = 'propose_upgrade_t1'
@@ -16,16 +17,17 @@ export function buildApproverDM(args: {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text:
-          `*New recognition nomination to review.*\n` +
-          `${nominator_name} recognized *${nominee_name}* for *${value_name}*.`,
+        text: copy.approverDMHeader(nominator_name, nominee_name, value_name),
       },
     },
     {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `_"${nomination.behavior_text}"_\n\n_"${nomination.outcome_text}"_`,
+        text: copy.approverDMNarrative(
+          nomination.behavior_text,
+          nomination.outcome_text
+        ),
       },
     },
     {
@@ -35,20 +37,20 @@ export function buildApproverDM(args: {
         {
           type: 'button',
           action_id: ACTION_APPROVE_T1,
-          text: { type: 'plain_text', text: 'Approve' },
+          text: { type: 'plain_text', text: copy.buttonApprove },
           style: 'primary',
           value: nomination.id,
         },
         {
           type: 'button',
           action_id: ACTION_PROPOSE_UPGRADE_T1,
-          text: { type: 'plain_text', text: 'Propose upgrade' },
+          text: { type: 'plain_text', text: copy.buttonProposeUpgrade },
           value: nomination.id,
         },
         {
           type: 'button',
           action_id: ACTION_REVIEW_AND_DECIDE_T1,
-          text: { type: 'plain_text', text: 'Review and decide' },
+          text: { type: 'plain_text', text: copy.buttonReviewAndDecide },
           value: nomination.id,
         },
       ],

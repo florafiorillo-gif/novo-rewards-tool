@@ -2,6 +2,7 @@ import { acknowledgeNomination, firePostIfReady } from '@/modules/communication/
 import { realPostSender } from '@/modules/communication/post'
 import { getSlackClient } from '../client'
 import { ACTION_ACKNOWLEDGE_RECOGNITION } from '../blocks/recipient-dm'
+import * as copy from '../copy'
 import type { SlackInteractivityPayload } from '../payloads'
 import { resolveSlackUserToEmployee, respondEphemeral } from './shared'
 
@@ -22,7 +23,7 @@ export async function onAcknowledgeButton(
   const slackUserId = payload.user?.id
   const actor = slackUserId ? await resolveSlackUserToEmployee(slackUserId) : null
   if (!actor) {
-    await respondEphemeral(payload, "We couldn't find your record in our directory.")
+    await respondEphemeral(payload, copy.actorNotFound)
     return
   }
 
@@ -44,13 +45,13 @@ export async function onAcknowledgeButton(
       await getSlackClient().chat.update({
         channel,
         ts,
-        text: 'Acknowledged. Your recognition has been shared.',
+        text: copy.ackUpdateText,
         blocks: [
           {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: '_Acknowledged. Your recognition has been shared._',
+              text: copy.ackUpdateMrkdwn,
             },
           },
         ],
@@ -64,11 +65,11 @@ export async function onAcknowledgeButton(
 function errorTextForAck(code: 'not_found' | 'not_recipient' | 'not_approved'): string {
   switch (code) {
     case 'not_recipient':
-      return 'Only the recognized teammate can acknowledge this.'
+      return copy.ackErrorNotRecipient
     case 'not_approved':
-      return 'This recognition isn\'t ready to acknowledge yet.'
+      return copy.ackErrorNotApproved
     case 'not_found':
     default:
-      return "We couldn't find that recognition. Try again in a minute."
+      return copy.ackErrorNotFound
   }
 }

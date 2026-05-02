@@ -15,6 +15,7 @@ import {
   pingCommitteeUrgent,
   sendApproverDM,
 } from '../notifications'
+import * as copy from '../copy'
 import type {
   ResponseOrVoid,
   SlackInteractivityPayload,
@@ -49,13 +50,15 @@ export async function handleUpgradeSubmit(
 
   const toTier = toTierStr === '2' ? 2 : toTierStr === '3' ? 3 : null
   if (!toTier) {
-    return modalError({ [BLOCK_UPGRADE_TIER]: 'Choose a target tier.' })
+    return modalError({ [BLOCK_UPGRADE_TIER]: copy.upgradeErrorTierRequired })
   }
 
   const slackUserId = payload.user?.id
   const actor = slackUserId ? await resolveSlackUserToEmployee(slackUserId) : null
   if (!actor) {
-    return modalError({ [BLOCK_UPGRADE_REASON]: "We couldn't find your record." })
+    return modalError({
+      [BLOCK_UPGRADE_REASON]: copy.upgradeErrorActorNotFound,
+    })
   }
 
   const result = await proposeUpgrade({
@@ -94,7 +97,7 @@ export async function handleUpgradeSubmit(
       await pingCommitteeUrgent({
         nomination_id: result.nomination.id,
         nominee_name: nominee.name,
-        value_name: value?.name ?? 'a Novo value',
+        value_name: value?.name ?? copy.valueNameFallback,
         committee_emails: committee.map((m) => m.email),
       })
     }
@@ -106,14 +109,14 @@ export async function handleUpgradeSubmit(
 function errorTextForProposeUpgrade(code: string): string {
   switch (code) {
     case 'no_department_head':
-      return "We couldn't find a department head for the nominee. Reach out to the People team."
+      return copy.upgradeErrorNoDeptHead
     case 'no_people_team_rep':
-      return 'No People team rep is currently available to review. Reach out to the People team.'
+      return copy.upgradeErrorNoPeopleTeamRep
     case 'reasoning_required':
-      return 'A short reasoning note is required.'
+      return copy.upgradeErrorReasoningRequired
     case 'forbidden':
-      return "You aren't authorized to propose an upgrade."
+      return copy.upgradeErrorForbidden
     default:
-      return "We couldn't send this nomination for review. Please try again. If this keeps happening, reach out to the People team."
+      return copy.upgradeErrorGeneric
   }
 }

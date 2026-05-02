@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { handleSlashCommand } from '@/modules/integrations/slack/handlers/commands'
 import { verifySlackSignature } from '@/modules/integrations/slack/signing'
+import * as slackCopy from '@/modules/integrations/slack/copy'
 
 export const runtime = 'nodejs'
 
@@ -38,10 +39,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[slack] slash command handler failed', err)
     return NextResponse.json(
-      {
-        response_type: 'ephemeral',
-        text: "We couldn't open the nomination form from Slack right now. Please try again in a minute, or recognize a teammate from your dashboard on the web.",
-      },
+      { response_type: 'ephemeral', text: slackCopy.slashCommandError },
       { status: 200 }
     )
   }

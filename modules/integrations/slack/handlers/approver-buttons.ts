@@ -13,6 +13,7 @@ import {
   sendNominatorApprovalDM,
   updateApproverDMToApproved,
 } from '../notifications'
+import * as copy from '../copy'
 import type { SlackInteractivityPayload } from '../payloads'
 import { resolveSlackUserToEmployee, respondEphemeral } from './shared'
 
@@ -24,7 +25,7 @@ export async function onApproveButton(
   const slackUserId = payload.user?.id
   const actor = slackUserId ? await resolveSlackUserToEmployee(slackUserId) : null
   if (!actor) {
-    await respondEphemeral(payload, "We couldn't find your record in our directory.")
+    await respondEphemeral(payload, copy.actorNotFound)
     return
   }
 
@@ -61,7 +62,7 @@ export async function onApproveButton(
       // ephemeral nudges them to refresh.
       await respondEphemeral(
         payload,
-        `Approved. ${nominee.name} will be recognized. The buttons above didn't refresh — please refresh Slack to see the latest.`
+        copy.approveStaleButtonsEphemeral(nominee.name)
       )
     }
   }
@@ -106,7 +107,7 @@ export async function onReviewAndDecideButton(
   // we'd build. /approvals/queue redirects to /review via next.config.
   const base = process.env.AUTH_URL ?? 'http://localhost:3000'
   const url = `${base}/review?nomination_id=${encodeURIComponent(nominationId)}`
-  await respondEphemeral(payload, `Opening in the review queue: ${url}`)
+  await respondEphemeral(payload, copy.reviewAndDecideEphemeral(url))
 }
 
 export async function onUndoButton(
@@ -117,7 +118,7 @@ export async function onUndoButton(
   const slackUserId = payload.user?.id
   const actor = slackUserId ? await resolveSlackUserToEmployee(slackUserId) : null
   if (!actor) {
-    await respondEphemeral(payload, "We couldn't find your record in our directory.")
+    await respondEphemeral(payload, copy.actorNotFound)
     return
   }
   const result = await undoApproval({
@@ -135,13 +136,13 @@ export async function onUndoButton(
       await getSlackClient().chat.update({
         channel,
         ts,
-        text: 'Undone. Waiting for your decision.',
+        text: copy.undoneInPlaceText,
         blocks: [
           {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: "_Undone. The nomination is back in your queue; open it again when you're ready._",
+              text: copy.undoneInPlaceMrkdwn,
             },
           },
         ],
@@ -150,10 +151,7 @@ export async function onUndoButton(
       console.error('[slack] undo update failed', err)
       // Undo succeeded server-side but the DM rewrite failed. Post
       // an ephemeral so the approver knows the click registered.
-      await respondEphemeral(
-        payload,
-        "Undone. The nomination is back in your queue. The buttons above didn't refresh — please refresh Slack to see the latest."
-      )
+      await respondEphemeral(payload, copy.undoneStaleButtonsEphemeral)
     }
   }
 }
@@ -164,25 +162,25 @@ export { ACTION_UNDO_APPROVAL }
 function errorTextForApprove(code: string): string {
   switch (code) {
     case 'wrong_status':
-      return 'This nomination has already been acted on.'
+      return copy.approveErrorWrongStatus
     case 'forbidden':
-      return "You aren't the approver for this nomination."
+      return copy.approveErrorForbidden
     case 'reflection_required':
-      return 'This is a self-approval. Please use the web form so you can choose a reflection type.'
+      return copy.approveErrorReflectionRequired
     default:
-      return "Couldn't approve right now. Try again in a minute."
+      return copy.approveErrorGeneric
   }
 }
 
 function errorTextForUndo(code: string): string {
   switch (code) {
     case 'window_expired':
-      return 'The 10-minute undo window has passed. Reach out to the People team to reverse this.'
+      return copy.undoErrorWindowExpired
     case 'forbidden':
-      return 'Only the approver can undo.'
+      return copy.undoErrorForbidden
     case 'nothing_to_undo':
-      return 'There is nothing to undo on this nomination.'
+      return copy.undoErrorNothingToUndo
     default:
-      return "Couldn't undo. Try again in a minute."
+      return copy.undoErrorGeneric
   }
 }

@@ -1,3 +1,5 @@
+import * as copy from '../copy'
+
 export const ACTION_UNDO_APPROVAL = 'undo_approval'
 
 // Shown in place of the action buttons after a Tier 1 approve click. The
@@ -13,9 +15,7 @@ export function buildApprovedEphemeral(args: {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text:
-          `Approved. *${args.nominee_name}* will be recognized for *${args.value_name}*.\n` +
-          `_Undo is available for 10 minutes._`,
+        text: copy.approvedHeader(args.nominee_name, args.value_name),
       },
     },
     {
@@ -25,7 +25,7 @@ export function buildApprovedEphemeral(args: {
         {
           type: 'button',
           action_id: ACTION_UNDO_APPROVAL,
-          text: { type: 'plain_text', text: 'Undo' },
+          text: { type: 'plain_text', text: copy.buttonUndo },
           value: args.nomination_id,
         },
       ],
