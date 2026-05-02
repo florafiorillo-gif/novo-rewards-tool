@@ -35,10 +35,15 @@ export function KeepViewLink({ href, children, ...rest }: Props) {
 }
 
 function appendQuery(href: string, key: string, value: string): string {
+  // Forward-looking guard: only append ?view= to internal app paths
+  // (anything starting with "/"). Anything else — mailto:, tel:, hash
+  // fragments, http(s):// external URLs, or relative paths future
+  // callsites might pass — gets returned unchanged. Every callsite
+  // today targets an internal route, so this is purely a foot-gun
+  // prevention measure for future code.
+  if (!href.startsWith('/')) return href
   // Preserve any existing query string on the target href (e.g.
   // /nominations/new?nominee=emp_042 → keep nominee, append view).
-  // External URLs are out of scope; persistent-nav links are always
-  // relative paths.
   const sep = href.includes('?') ? '&' : '?'
   return `${href}${sep}${key}=${encodeURIComponent(value)}`
 }
