@@ -5,9 +5,10 @@ import { ImageResponse } from 'next/og'
 // this when a user adds the site to their home screen, and as a
 // favicon fallback in some browsers.
 //
-// Same letterform as app/icon.tsx but sized up so the letter has
-// breathing room. iOS rounds the corners on its end so we leave
-// the image square.
+// Same letterform and palette as app/icon.tsx — brand red on white
+// (#EF1F2D matches the novo-coral Tailwind token, same red as the
+// Recognize CTA). Sized up so the letter has breathing room. iOS
+// rounds the corners on its end so we leave the image square.
 
 export const size = { width: 180, height: 180 }
 export const contentType = 'image/png'
@@ -19,8 +20,8 @@ export default function AppleIcon() {
         style={{
           width: '100%',
           height: '100%',
-          background: '#FAFAF7',
-          color: '#0A0A0A',
+          background: '#FFFFFF',
+          color: '#EF1F2D',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

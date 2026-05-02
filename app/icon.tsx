@@ -1,10 +1,16 @@
 import { ImageResponse } from 'next/og'
 
 // Browser favicon. Next.js App Router convention generates the
-// 32x32 PNG at build time and serves it at /icon. A simple bold
-// "n" letterform on the brand's off-white surface, in ink black —
-// matches the Novo wordmark at the smallest scale that still
-// reads. No detail beyond the letter survives at 16x16 anyway.
+// 32x32 PNG at build time and serves it at /icon. A bold "n"
+// letterform in brand red on white — reads as Novo at favicon
+// scale where the previous ink-on-off-white treatment looked like
+// the default Next.js placeholder.
+//
+// Color matches tailwind.config.ts → colors['novo-coral'] (#EF1F2D),
+// the same red used by the persistent Recognize CTA in AppHeader.
+// Hex is hard-coded here because the Tailwind theme isn't in scope
+// inside Next's ImageResponse renderer; keep this in sync if the
+// brand red token ever changes.
 //
 // Apple touch icon lives in app/apple-icon.tsx (separate file
 // so each size can be tuned independently).
@@ -19,8 +25,8 @@ export default function Icon() {
         style={{
           width: '100%',
           height: '100%',
-          background: '#FAFAF7',
-          color: '#0A0A0A',
+          background: '#FFFFFF',
+          color: '#EF1F2D',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
