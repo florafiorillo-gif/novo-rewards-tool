@@ -35,9 +35,11 @@ export async function handleNominationModalValueSelect(
 ): Promise<void> {
   const viewId = payload.view?.id
   if (!viewId) return
+  const client = getSlackClient()
+  if (!client) return
   const selectedValueId = action.selected_option?.value
   try {
-    await getSlackClient().views.update({
+    await client.views.update({
       view_id: viewId,
       hash: payload.view?.hash,
       view: buildNominationModal({ selectedValueId }),
@@ -113,15 +115,20 @@ export async function handleNominationSubmit(
 
   if (!result.ok) return mapCreateErrorToModalError(result.error.code)
 
-  // Nominator confirmation DM (§9.1).
-  try {
-    const firstName = nominator.name.split(' ')[0] ?? nominator.name
-    await getSlackClient().chat.postMessage({
-      channel: slackNominatorId,
-      text: copy.nominatorSubmitConfirmation(firstName, nominee.name),
-    })
-  } catch (err) {
-    console.error('[slack] nominator confirmation DM failed', err)
+  // Nominator confirmation DM (§9.1). Skipped silently if Slack is
+  // disabled — the web confirmation page already shows the nominator
+  // their submission landed.
+  const client = getSlackClient()
+  if (client) {
+    try {
+      const firstName = nominator.name.split(' ')[0] ?? nominator.name
+      await client.chat.postMessage({
+        channel: slackNominatorId,
+        text: copy.nominatorSubmitConfirmation(firstName, nominee.name),
+      })
+    } catch (err) {
+      console.error('[slack] nominator confirmation DM failed', err)
+    }
   }
 
   // Peer-routed Tier 1: DM the nominee's manager. Self-approval routes to

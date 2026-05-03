@@ -86,8 +86,10 @@ export async function onProposeUpgradeButton(
   if (!nominationId) return
   const triggerId = payload.trigger_id
   if (!triggerId) return
+  const client = getSlackClient()
+  if (!client) return
   try {
-    await getSlackClient().views.open({
+    await client.views.open({
       trigger_id: triggerId,
       view: buildUpgradeModal({ nomination_id: nominationId, from_tier: 1 }),
     })
@@ -131,9 +133,10 @@ export async function onUndoButton(
   }
   const channel = payload.container?.channel_id ?? payload.channel?.id
   const ts = payload.container?.message_ts ?? payload.message?.ts
-  if (channel && ts) {
+  const client = getSlackClient()
+  if (channel && ts && client) {
     try {
-      await getSlackClient().chat.update({
+      await client.chat.update({
         channel,
         ts,
         text: copy.undoneInPlaceText,

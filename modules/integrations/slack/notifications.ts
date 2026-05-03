@@ -7,16 +7,13 @@ import { getValueById } from '@/modules/values/constants'
 import type { NominationRecord } from '@/modules/nominations/types'
 
 // Slack is optional locally. All helpers no-op when SLACK_BOT_TOKEN is missing
-// or when the lookup fails (employee has no Slack account yet). This keeps
-// mock-mode dev functional without credentials.
-
-function slackEnabled(): boolean {
-  return Boolean(process.env.SLACK_BOT_TOKEN)
-}
+// (getSlackClient returns null) or when the lookup fails (employee has no
+// Slack account yet). This keeps mock-mode dev functional without credentials.
 
 async function openDMChannel(email: string): Promise<string | null> {
+  const client = getSlackClient()
+  if (!client) return null
   try {
-    const client = getSlackClient()
     const user = await client.users.lookupByEmail({ email })
     const userId = user.user?.id
     if (!userId) return null
@@ -34,7 +31,8 @@ async function openDMChannel(email: string): Promise<string | null> {
 export async function sendApproverDM(
   nomination: NominationRecord
 ): Promise<{ channel: string; ts: string } | null> {
-  if (!slackEnabled()) return null
+  const client = getSlackClient()
+  if (!client) return null
   if (!nomination.current_approver_id) return null
 
   const [approver, nominator, nominee] = await Promise.all([
@@ -49,7 +47,7 @@ export async function sendApproverDM(
   if (!channel) return null
 
   try {
-    const res = await getSlackClient().chat.postMessage({
+    const res = await client.chat.postMessage({
       channel,
       text: copy.approverDMFallbackText(nominee.name),
       blocks: buildApproverDM({
@@ -75,12 +73,13 @@ export async function sendNominatorApprovalDM(args: {
   nominee_name: string
   value_name: string
 }): Promise<void> {
-  if (!slackEnabled()) return
+  const client = getSlackClient()
+  if (!client) return
   const channel = await openDMChannel(args.nominator_email)
   if (!channel) return
   try {
     const first = args.nominator_name.split(' ')[0]
-    await getSlackClient().chat.postMessage({
+    await client.chat.postMessage({
       channel,
       text: copy.nominatorApprovalDM(first, args.nominee_name, args.value_name),
     })
@@ -96,11 +95,12 @@ export async function sendNominatorDenialDM(args: {
   approver_name: string
   reason_text: string
 }): Promise<void> {
-  if (!slackEnabled()) return
+  const client = getSlackClient()
+  if (!client) return
   const channel = await openDMChannel(args.nominator_email)
   if (!channel) return
   try {
-    await getSlackClient().chat.postMessage({
+    await client.chat.postMessage({
       channel,
       text: copy.nominatorDenialDM(
         args.nominee_name,
@@ -127,9 +127,10 @@ export async function updateApproverDMToApproved(args: {
   value_name: string
   nomination_id: string
 }): Promise<boolean> {
-  if (!slackEnabled()) return false
+  const client = getSlackClient()
+  if (!client) return false
   try {
-    await getSlackClient().chat.update({
+    await client.chat.update({
       channel: args.channel,
       ts: args.ts,
       text: copy.approvedFallbackText(args.nominee_name),
@@ -154,12 +155,13 @@ export async function pingCommitteeUrgent(args: {
   value_name: string
   committee_emails: string[]
 }): Promise<void> {
-  if (!slackEnabled()) return
+  const client = getSlackClient()
+  if (!client) return
   for (const email of args.committee_emails) {
     const channel = await openDMChannel(email)
     if (!channel) continue
     try {
-      await getSlackClient().chat.postMessage({
+      await client.chat.postMessage({
         channel,
         text: copy.urgentCommitteePing(args.nominee_name, args.value_name),
       })

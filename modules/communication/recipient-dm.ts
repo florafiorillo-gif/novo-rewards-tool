@@ -87,11 +87,11 @@ async function isRecipientActive(reward: RewardRecord): Promise<boolean> {
   // Mock / no-Slack dev treats "active" as false, which means the DM
   // never goes out until the 24h timeout. That matches the spec fallback
   // and keeps local runs deterministic.
-  if (!process.env.SLACK_BOT_TOKEN) return false
+  const client = getSlackClient()
+  if (!client) return false
   try {
     const email = await resolveRecipientEmail(reward.nomination_id)
     if (!email) return false
-    const client = getSlackClient()
     const lookup = await client.users.lookupByEmail({ email })
     const slackUserId = lookup.user?.id
     if (!slackUserId) return false

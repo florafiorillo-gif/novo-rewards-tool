@@ -7,10 +7,15 @@ import type {
 } from '../payloads'
 
 // Slack sends user IDs; our domain keys on employee ID. Resolve via email.
+// Returns null when Slack isn't configured or the lookup fails — every
+// caller already treats null as "couldn't resolve" and skips the
+// downstream gate, so the missing-token soft-disable lands here cleanly.
 export async function resolveSlackUserToEmployee(
   slackUserId: string
 ): Promise<Employee | null> {
-  const info = await getSlackClient().users.info({ user: slackUserId })
+  const client = getSlackClient()
+  if (!client) return null
+  const info = await client.users.info({ user: slackUserId })
   const email = info.user?.profile?.email
   if (!email) return null
   return getEmployeeByEmail(email)

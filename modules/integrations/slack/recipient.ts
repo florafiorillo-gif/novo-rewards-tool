@@ -14,13 +14,10 @@ import type { NominationRecord } from '@/modules/nominations/types'
 // timing. This module only composes and sends the DM — ack state lives in
 // modules/communication/ack.ts.
 
-function slackEnabled(): boolean {
-  return Boolean(process.env.SLACK_BOT_TOKEN)
-}
-
 async function openDMChannel(email: string): Promise<string | null> {
+  const client = getSlackClient()
+  if (!client) return null
   try {
-    const client = getSlackClient()
     const user = await client.users.lookupByEmail({ email })
     const userId = user.user?.id
     if (!userId) return null
@@ -35,7 +32,8 @@ export async function sendRecipientRewardDM(args: {
   reward: RewardRecord
   nomination_id: string
 }): Promise<void> {
-  if (!slackEnabled()) return
+  const client = getSlackClient()
+  if (!client) return
   const nomination = await getNominationById(args.nomination_id)
   if (!nomination) return
   const [nominator, nominee] = await Promise.all([
@@ -64,7 +62,7 @@ export async function sendRecipientRewardDM(args: {
   })
 
   try {
-    await getSlackClient().chat.postMessage({
+    await client.chat.postMessage({
       channel,
       blocks,
       // Fallback text for clients that can't render blocks (and for
@@ -119,7 +117,8 @@ function describeDelivery(reward: RewardRecord): string {
 export async function sendPeerRecognitionDM(args: {
   nomination: NominationRecord
 }): Promise<void> {
-  if (!slackEnabled()) return
+  const client = getSlackClient()
+  if (!client) return
   const { nomination } = args
   const [nominator, nominee] = await Promise.all([
     getEmployeeById(nomination.nominator_id),
@@ -137,7 +136,7 @@ export async function sendPeerRecognitionDM(args: {
   const valueName = value?.name ?? copy.valueNameFallback
 
   try {
-    await getSlackClient().chat.postMessage({
+    await client.chat.postMessage({
       channel,
       text: copy.peerRecognitionDM(nominator.name, valueName, behaviorSummary),
     })

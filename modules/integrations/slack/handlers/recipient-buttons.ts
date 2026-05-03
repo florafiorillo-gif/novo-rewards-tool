@@ -40,9 +40,10 @@ export async function onAcknowledgeButton(
 
   const channel = payload.container?.channel_id ?? payload.channel?.id
   const ts = payload.container?.message_ts ?? payload.message?.ts
-  if (channel && ts) {
+  const client = getSlackClient()
+  if (channel && ts && client) {
     try {
-      await getSlackClient().chat.update({
+      await client.chat.update({
         channel,
         ts,
         text: copy.ackUpdateText,

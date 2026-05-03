@@ -48,6 +48,11 @@ export async function handleSlashCommand(
   }
 
   const client = getSlackClient()
+  // No client → Slack isn't configured. The command was signature-verified,
+  // so something is mis-set up (token missing while signing secret is
+  // present). Return noop; the route handler converts this to a quiet 200
+  // and the warn-once log in client.ts already announced the disabled state.
+  if (!client) return { kind: 'noop' }
   await client.views.open({
     trigger_id: body.trigger_id,
     view: buildNominationModal(),

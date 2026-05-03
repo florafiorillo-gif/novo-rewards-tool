@@ -67,22 +67,21 @@ async function main() {
   const e2 = await ensureCanInitiateTieredNomination(managerId)
   assert(e2.ok, 'manager allowed by ensureCanInitiateTieredNomination')
 
-  // Case 3: slash command routed through the helper. Slack hands us
-  // user_id in slack-id form; the helper resolves it to an employee
-  // via resolveSlackUserToEmployee. We can't easily inject a Slack
-  // user id here, so we verify the slash-command code path is wired
-  // by passing an unresolvable user_id (resolves to null → modal opens
-  // because no employee record was found, which is the correct fallthrough).
-  // The substantive coverage comes from cases 1+2 since both web and
-  // Slack handlers route through the same helper.
+  // Case 3: slash command path with Slack unconfigured. The smoke env
+  // never sets SLACK_BOT_TOKEN, so resolveSlackUserToEmployee returns
+  // null (Slack disabled), the authz block is skipped, and the views.open
+  // call below it short-circuits on a null client. The handler returns
+  // { kind: 'noop' } — the unified soft-disable contract from
+  // modules/integrations/slack/client.ts. Throwing or opening-modal here
+  // would mean the missing-token behavior is back to inconsistent.
   const r = await handleSlashCommand({
     command: '/recognize',
     user_id: 'U_SLACK_NOT_REAL',
     trigger_id: 'TR_NOT_REAL',
   }).catch((err) => ({ kind: 'threw', err }) as const)
   assert(
-    r.kind === 'opened-modal' || r.kind === 'threw',
-    'slash command path invokes views.open or throws (Slack client unconfigured)'
+    r.kind === 'noop',
+    'slash command path no-ops cleanly when Slack is unconfigured'
   )
 
   // Case 4: createNomination invoked directly with a non-manager actor

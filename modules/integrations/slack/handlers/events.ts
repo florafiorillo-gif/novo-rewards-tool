@@ -97,8 +97,10 @@ async function handleMessageEvent(event: SlackMessageEvent): Promise<void> {
 
 async function resolveSlackUser(slack_user_id: string | undefined) {
   if (!slack_user_id) return null
+  const client = getSlackClient()
+  if (!client) return null
   try {
-    const info = await getSlackClient().users.info({ user: slack_user_id })
+    const info = await client.users.info({ user: slack_user_id })
     if (info.user?.is_bot) return null
     const email = info.user?.profile?.email
     if (!email) return null

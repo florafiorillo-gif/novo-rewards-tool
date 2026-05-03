@@ -159,10 +159,6 @@ async function resolveAttributedApprover(
 
 // ─── Visibility gate + send ──────────────────────────────────────────────────
 
-function slackEnabled(): boolean {
-  return Boolean(process.env.SLACK_BOT_TOKEN)
-}
-
 function madeItHappenChannel(): string | null {
   return process.env.SLACK_MADE_IT_HAPPEN_CHANNEL_ID ?? null
 }
@@ -190,12 +186,13 @@ export async function sendMadeItHappenPost(
   if (pref === 'team_only') return { message_ts: null, outcome: 'skipped_team_only' }
 
   const channel = madeItHappenChannel()
-  if (!slackEnabled() || !channel) {
+  const client = getSlackClient()
+  if (!client || !channel) {
     return { message_ts: null, outcome: 'skipped_unconfigured' }
   }
 
   try {
-    const res = await getSlackClient().chat.postMessage({
+    const res = await client.chat.postMessage({
       channel,
       blocks: buildPostBlocks(ctx.assembly),
       text: buildPostFallbackText(ctx.assembly),
@@ -276,12 +273,13 @@ export async function sendGroupMadeItHappenPost(
   }
 
   const channel = madeItHappenChannel()
-  if (!slackEnabled() || !channel) {
+  const client = getSlackClient()
+  if (!client || !channel) {
     return { message_ts: null, outcome: 'skipped_unconfigured' }
   }
 
   try {
-    const res = await getSlackClient().chat.postMessage({
+    const res = await client.chat.postMessage({
       channel,
       blocks: buildPostBlocks(assembly),
       text: buildPostFallbackText(assembly),
